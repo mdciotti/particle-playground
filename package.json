@@ -1,6 +1,6 @@
 {
   "name": "particle-playground",
-  "version": "0.0.1",
+  "version": "0.1.0-alpha",
   "description": "A 2D sandbox for particle physics and astrodynamics simulations",
   "main": "main.js",
   "dependencies": {},

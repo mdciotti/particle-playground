@@ -76,7 +76,7 @@
 		var infoBin = new Gui.Bin('Information', 'html');
 		infoBin.height = 16;
 		var info = new Gui.HTMLController('Introduction', null);
-		info.setHTML('<h1>Particle Playground</h1>' + '<p>This is a sandbox for simulating 2D particle physics. Play around to see what you can do!</p>' + '<hr>' + '<small>Created by <a href="https://twitter.com/mdciotti" target="_blank">@mdciotti</a> // ' + 'v0.0.1 // ' + '<a href="https://github.com/mdciotti/particle-playground" target="_blank">source</a></small>');
+		info.setHTML('<h1>Particle Playground</h1>' + '<p>This is a sandbox for simulating 2D particle physics. Play around to see what you can do!</p>' + '<hr>' + '<small>Created by <a href="https://twitter.com/mdciotti" target="_blank">@mdciotti</a> // ' + '<a href="https://github.com/mdciotti/particle-playground" target="_blank">v0.1.0-alpha</a></small>');
 		infoBin.addController(info);
 		p.gui.addBin(infoBin);
 	

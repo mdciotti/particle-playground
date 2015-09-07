@@ -16,8 +16,7 @@ window.addEventListener('load', () => {
 		'<p>This is a sandbox for simulating 2D particle physics. Play around to see what you can do!</p>' +
 		'<hr>' +
 		'<small>Created by <a href="https://twitter.com/mdciotti" target="_blank">@mdciotti</a> // ' +
-		'v0.0.1 // ' +
-		'<a href="https://github.com/mdciotti/particle-playground" target="_blank">source</a></small>'
+		'<a href="https://github.com/mdciotti/particle-playground" target="_blank">v0.1.0-alpha</a></small>'
 	);
 	infoBin.addController(info);
 	p.gui.addBin(infoBin);
