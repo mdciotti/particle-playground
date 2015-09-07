@@ -65,7 +65,7 @@
 	
 	var _srcPlotJs2 = _interopRequireDefault(_srcPlotJs);
 	
-	// var Playground = require('./src/playground.js').default;
+	var _srcEntityJs = __webpack_require__(/*! ./src/entity.js */ 22);
 	
 	window.addEventListener('load', function () {
 		window.p = new _srcPlaygroundJs2['default']({
@@ -76,7 +76,7 @@
 		var infoBin = new Gui.Bin('Information', 'html');
 		infoBin.height = 16;
 		var info = new Gui.HTMLController('Introduction', null);
-		info.setHTML('<h1>Particle Playground</h1>' + '<small>Version 0.0.1</small>' + '<p>This is a sandbox for simulating two-dimensional particle physics. Play around and see what you can do!</p>' + '<hr>' + '<small>Created by <a href="https://twitter.com/mdciotti" target="_blank">@mdciotti</a> // ' + '<a href="https://github.com/mdciotti/particle-playground" target="_blank">source</a></small>');
+		info.setHTML('<h1>Particle Playground</h1>' + '<p>This is a sandbox for simulating 2D particle physics. Play around to see what you can do!</p>' + '<hr>' + '<small>Created by <a href="https://twitter.com/mdciotti" target="_blank">@mdciotti</a> // ' + 'v0.0.1 // ' + '<a href="https://github.com/mdciotti/particle-playground" target="_blank">source</a></small>');
 		infoBin.addController(info);
 		p.gui.addBin(infoBin);
 	
@@ -89,7 +89,7 @@
 				p.setTool('PAN');
 			} }, { tooltip: 'zoom', selected: false, disabled: true, icon: 'ion-ios-search', shortcut: 'Z', onselect: function onselect() {
 				p.setTool('ZOOM');
-			} }, { tooltip: 'grab', selected: false, disabled: true, icon: '', shortcut: 'G', onselect: function onselect() {
+			} }, { tooltip: 'grab', selected: false, disabled: true, icon: 'ion-android-hand', shortcut: 'G', onselect: function onselect() {
 				p.setTool('GRAB');
 			} }]);
 		toolBin.addController(tools);
@@ -113,6 +113,25 @@
 			} });
 		physicsBin.addControllers(gravity, friction, bounded, collisions);
 		p.gui.addBin(physicsBin);
+	
+		var appearance = new Gui.Bin('Appearance', 'list');
+		var trails = new Gui.ToggleController('trails', p.renderer.options.trails, { ontoggle: function ontoggle(val) {
+				p.renderer.options.trails = val;
+			} });
+		var trailLength = new Gui.NumberController('trail length', p.renderer.options.trailLength, { min: 0, max: 100, step: 5, onchange: function onchange(val) {
+				p.renderer.options.trailLength = val;
+			} });
+		var trailFade = new Gui.ToggleController('trail fade', p.renderer.options.trailFade, { ontoggle: function ontoggle(val) {
+				p.renderer.options.trailFade = val;
+			} });
+		var motionBlur = new Gui.NumberController('motion blur', p.renderer.options.motionBlur, { min: 0, max: 1, step: 0.1, onchange: function onchange(val) {
+				p.renderer.options.motionBlur = val;
+			} });
+		var vectors = new Gui.ToggleController('vectors', p.renderer.options.debug, { ontoggle: function ontoggle(val) {
+				p.renderer.options.debug = val;
+			} });
+		appearance.addControllers(trails, trailLength, trailFade, motionBlur, vectors);
+		p.gui.addBin(appearance);
 	
 		var player = new Gui.Bin('Simulation', 'grid');
 		var playerActions = new Gui.GridController('playerActions', [{ tooltip: 'pause', disabled: true, icon: 'ion-ios-pause-outline', shortcut: 'P', action: function action() {
@@ -153,6 +172,29 @@
 		plot1.addSeries('KE', '#00aced', 1000, getKE);
 		plot1.addSeries('PE', '#ed00ac', 1000, getPE);
 		plot1.addSeries('TE', '#ededed', 1000, getTE);
+	
+		// Update properties bin on selection
+		p.setPropertiesBin = function (entity) {
+			var name = new Gui.TextController('name', entity.name, { onchange: function onchange(val) {
+					entity.name = val;
+				} });
+			var xpos = new Gui.NumberController('pos.x', entity.position.x, { onchange: function onchange(val) {
+					entity.position.x = val;
+				} });
+			var ypos = new Gui.NumberController('pos.y', entity.position.y, { onchange: function onchange(val) {
+					entity.position.y = val;
+				} });
+			var color = new Gui.ColorController('color', entity.color, { onchange: function onchange(val) {
+					entity.color = val;
+				} });
+			propertiesBin.addControllers(name, xpos, ypos, color);
+			if (_srcEntityJs.Entity instanceof _srcEntityJs.Body) {
+				var mass = new Gui.NumberController('mass', entity.mass, { onchange: function onchange(val) {
+						entity.mass = val;
+					} });
+				propertiesBin.addController(mass);
+			}
+		};
 	
 		p.setTool('CREATE');
 		p.start();
@@ -306,7 +348,7 @@
 			key: 'listener',
 			value: function listener(e) {
 				this.value = e.target.value;
-				console.log('Setting ' + this.title + ': ' + this.value);
+				// console.log(`Setting ${this.title}: ${this.value}`);
 				// this.callback(this.value);
 			}
 		}, {
@@ -410,7 +452,7 @@
 			key: 'listener',
 			value: function listener(e) {
 				this.value = e.target.value;
-				console.log('Setting ' + this.title + ': ' + this.value);
+				// console.log(`Setting ${this.title}: ${this.value}`);
 				this.options.onchange(parseFloat(this.value));
 			}
 		}]);
@@ -461,7 +503,7 @@
 			key: 'listener',
 			value: function listener(e) {
 				this.value = e.target.checked;
-				console.log('Toggling ' + this.title + ': ' + (this.value ? 'on' : 'off'));
+				// console.log(`Toggling ${this.title}: ${this.value ? 'on' : 'off'}`);
 				this.options.ontoggle(this.value);
 			}
 		}]);
@@ -531,7 +573,7 @@
 			key: 'listener',
 			value: function listener(e) {
 				this.value = this.input.value;
-				console.log('Setting ' + this.title + ': ' + this.value);
+				// console.log(`Setting ${this.title}: ${this.value}`);
 				this.options.onselect(this.value);
 			}
 		}]);
@@ -765,6 +807,56 @@
 	})(Controller);
 	
 	exports.InfoController = InfoController;
+	
+	var ColorController = (function (_Controller9) {
+		_inherits(ColorController, _Controller9);
+	
+		function ColorController(title, value, opts) {
+			var _this7 = this;
+	
+			_classCallCheck(this, ColorController);
+	
+			_get(Object.getPrototypeOf(ColorController.prototype), 'constructor', this).call(this, 'color', title);
+			// this.value = value;
+			this.height = 48;
+	
+			// Set default options
+			this.options = (0, _node_modulesDefaults2['default'])(opts, {
+				onchange: function onchange() {}
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.innerText = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('input');
+			this.input.type = 'color';
+			this.input.classList.add('bin-item-value');
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.input.addEventListener('change', function (e) {
+				_this7.listener(e);
+			});
+		}
+	
+		_createClass(ColorController, [{
+			key: 'listener',
+			value: function listener(e) {
+				this.value = this.input.value;
+				// console.log(`Setting ${this.title}: ${this.value}`);
+				this.options.onchange(this.value);
+			}
+		}]);
+	
+		return ColorController;
+	})(Controller);
+	
+	exports.ColorController = ColorController;
 	
 	var Pane = (function () {
 		function Pane(container, opts) {
@@ -3963,8 +4055,6 @@
 	
 	var _entityJs = __webpack_require__(/*! ./entity.js */ 22);
 	
-	var _entityJs2 = _interopRequireDefault(_entityJs);
-	
 	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 6);
 	
 	var _node_modulesDefaults2 = _interopRequireDefault(_node_modulesDefaults);
@@ -3976,14 +4066,16 @@
 			// Set default options
 			this.options = (0, _node_modulesDefaults2['default'])(opts, {
 				trails: false,
-				trailLength: 10,
+				trailLength: 50,
 				trailFade: false,
-				motionBlur: false,
+				trailSpace: 5,
+				motionBlur: 0,
 				debug: true
 			});
 			this.el = document.createElement('canvas');
 			this.el.style.display = 'block';
 			this.ctx = this.el.getContext('2d');
+			this.frame = 0;
 		}
 	
 		_createClass(CanvasRenderer, [{
@@ -4009,13 +4101,9 @@
 				    j = undefined,
 				    len = undefined;
 	
-				if (this.options.motionBlur) {
-					this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
-				} else {
-					this.ctx.fillStyle = 'black';
-				}
+				this.ctx.fillStyle = 'rgba(0, 0, 0, ' + (1 - this.options.motionBlur) + ')';
 				this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-				this.ctx.fillStyle = 'rgba(255,255,255,0.5)';
+				// this.ctx.fillStyle = 'rgba(255,255,255,0.5)';
 	
 				// this.ctx.fillStyle = '#FFFFFF';
 				// this.ctx.setLineDash([0]);
@@ -4045,10 +4133,12 @@
 					this.ctx.fill();
 	
 					// Trail Vectors
-					if (this.options.trails && e instanceof _entityJs2['default']) {
+					if (this.options.trails && e instanceof _entityJs.Body) {
 						// Add new positions
-						e.trailX.push(e.position.x);
-						e.trailY.push(e.position.y);
+						if (this.frame % this.options.trailSpace === 0) {
+							e.trailX.push(e.position.x);
+							e.trailY.push(e.position.y);
+						}
 						// Prune excess trails
 						while (e.trailX.length > this.options.trailLength) {
 							e.trailX.shift();
@@ -4078,14 +4168,14 @@
 						this.ctx.strokeStyle = 'rgba(255,0,255,1)';
 						this.ctx.beginPath();
 						this.ctx.moveTo(x, y);
-						this.ctx.lineTo(x + 1000 * e.position.ax, y + 1000 * e.position.ay);
+						this.ctx.lineTo(x + 10000 * e.acceleration.x, y + 10000 * e.acceleration.y);
 						this.ctx.stroke();
 	
 						// Velocity Vectors
 						this.ctx.strokeStyle = 'rgba(0,255,0,1)';
 						this.ctx.beginPath();
 						this.ctx.moveTo(x, y);
-						this.ctx.lineTo(x + 10 * e.position.vx, y + 10 * e.position.vy);
+						this.ctx.lineTo(x + 10 * e.velocity.x, y + 10 * e.velocity.y);
 						this.ctx.stroke();
 					}
 				}
@@ -4094,6 +4184,18 @@
 				switch (input.mouse.tool) {
 					case 'SELECT':
 						if (input.mouse.isDown) {
+							var x0 = input.mouse.dragStartX;
+							var x1 = x0 + input.mouse.dx;
+							var _ref = [Math.min(x0, x1), Math.max(x0, x1)];
+							x0 = _ref[0];
+							x1 = _ref[1];
+	
+							var y0 = input.mouse.dragStartY;
+							var y1 = y0 + input.mouse.dy;
+							var _ref2 = [Math.min(y0, y1), Math.max(y0, y1)];
+							y0 = _ref2[0];
+							y1 = _ref2[1];
+	
 							this.ctx.lineDashOffset = (this.ctx.lineDashOffset + 0.5) % 10;
 							// do @ctx.beginPath
 							this.ctx.save();
@@ -4101,9 +4203,10 @@
 							this.ctx.fillStyle = '#00ACED';
 							this.ctx.lineWidth = 2;
 							this.ctx.setLineDash([5]);
-							this.ctx.strokeRect(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dx, input.mouse.dy);
-							this.ctx.globalAlpha = 0.5;
-							this.ctx.fillRect(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dx, input.mouse.dy);
+							this.ctx.globalAlpha = 0.15;
+							this.ctx.fillRect(x0 + 8, y0 + 8, x1 - 16 - x0, y1 - 16 - y0);
+							this.ctx.globalAlpha = 1;
+							this.ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
 							this.ctx.restore();
 						}
 						break;
@@ -4142,6 +4245,8 @@
 						this.ctx.arc(x, y, Math.sqrt(params.createMass), 0, 2 * Math.PI, false);
 						this.ctx.stroke();
 				}
+	
+				++this.frame;
 			}
 		}]);
 	

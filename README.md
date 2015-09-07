@@ -7,6 +7,18 @@ interactive entertainment.
 
 View the [live example](https://mdciotti.github.io/particle-playground/).
 
+## To-do
+
+* [ ] Add bin menu
+* [ ] Add physics and appearance settings presets
+* [ ] Fix selections
+* [ ] Improve Gui binding
+* [ ] Simulation pause/play/speed
+* [ ] Multiple integrators
+* [ ] Pan, zoom, grab(?) tools
+* [ ] Color controller UI
+* [ ] Vector controller UI
+
 ## Build Instructions
 
 All source files are written in [ES6](http://babeljs.io/docs/learn-es2015/) and

@@ -24,7 +24,7 @@ export default class CanvasRenderer {
 
 		this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - this.options.motionBlur})`;
 		this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-		this.ctx.fillStyle = 'rgba(255,255,255,0.5)';
+		// this.ctx.fillStyle = 'rgba(255,255,255,0.5)';
 
 		// this.ctx.fillStyle = '#FFFFFF';
 		// this.ctx.setLineDash([0]);
@@ -85,14 +85,14 @@ export default class CanvasRenderer {
 				this.ctx.strokeStyle = 'rgba(255,0,255,1)';
 				this.ctx.beginPath();
 				this.ctx.moveTo(x, y);
-				this.ctx.lineTo(x + 1000 * e.position.ax, y + 1000 * e.position.ay);
+				this.ctx.lineTo(x + 10000 * e.acceleration.x, y + 10000 * e.acceleration.y);
 				this.ctx.stroke();
 
 				// Velocity Vectors
 				this.ctx.strokeStyle = 'rgba(0,255,0,1)';
 				this.ctx.beginPath();
 				this.ctx.moveTo(x, y);
-				this.ctx.lineTo(x + 10 * e.position.vx, y + 10 * e.position.vy);
+				this.ctx.lineTo(x + 10 * e.velocity.x, y + 10 * e.velocity.y);
 				this.ctx.stroke();
 			}
 		}

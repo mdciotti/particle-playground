@@ -1,7 +1,7 @@
 import * as Gui from './src/gui.js';
 import Playground from './src/playground.js';
 import Plot from './src/plot.js';
-// var Playground = require('./src/playground.js').default;
+import { Entity, Body } from './src/entity.js';
 
 window.addEventListener('load', () => {
 	window.p = new Playground({
@@ -13,10 +13,10 @@ window.addEventListener('load', () => {
 	infoBin.height = 16;
 	let info = new Gui.HTMLController('Introduction', null);
 	info.setHTML('<h1>Particle Playground</h1>' +
-		'<small>Version 0.0.1</small>' +
-		'<p>This is a sandbox for simulating two-dimensional particle physics. Play around and see what you can do!</p>' +
+		'<p>This is a sandbox for simulating 2D particle physics. Play around to see what you can do!</p>' +
 		'<hr>' +
 		'<small>Created by <a href="https://twitter.com/mdciotti" target="_blank">@mdciotti</a> // ' +
+		'v0.0.1 // ' +
 		'<a href="https://github.com/mdciotti/particle-playground" target="_blank">source</a></small>'
 	);
 	infoBin.addController(info);
@@ -28,7 +28,7 @@ window.addEventListener('load', () => {
 		{ tooltip: 'select', selected: false, disabled: false, icon: 'ion-ios-crop', shortcut: 'S', onselect: () => { p.setTool('SELECT'); } },
 		{ tooltip: 'pan', selected: false, disabled: true, icon: 'ion-arrow-move', shortcut: 'P', onselect: () => { p.setTool('PAN'); } },
 		{ tooltip: 'zoom', selected: false, disabled: true, icon: 'ion-ios-search', shortcut: 'Z', onselect: () => { p.setTool('ZOOM'); } },
-		{ tooltip: 'grab', selected: false, disabled: true, icon: '', shortcut: 'G', onselect: () => { p.setTool('GRAB'); } }
+		{ tooltip: 'grab', selected: false, disabled: true, icon: 'ion-android-hand', shortcut: 'G', onselect: () => { p.setTool('GRAB'); } }
 	]);
 	toolBin.addController(tools);
 	p.gui.addBin(toolBin);
@@ -85,7 +85,7 @@ window.addEventListener('load', () => {
 	statsBin.addControllers(ke, pe, te, momentum, canvas);
 	p.gui.addBin(statsBin);
 
-	var plot1 = new Plot(canvas.ctx);
+	let plot1 = new Plot(canvas.ctx);
 	plot1.addSeries('KE', '#00aced', 1000, getKE);
 	plot1.addSeries('PE', '#ed00ac', 1000, getPE);
 	plot1.addSeries('TE', '#ededed', 1000, getTE);

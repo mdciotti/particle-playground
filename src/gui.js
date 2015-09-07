@@ -77,7 +77,7 @@ class Controller {
 
 	listener(e) {
 		this.value = e.target.value;
-		console.log(`Setting ${this.title}: ${this.value}`);
+		// console.log(`Setting ${this.title}: ${this.value}`);
 		// this.callback(this.value);
 	}
 
@@ -155,7 +155,7 @@ export class NumberController extends Controller {
 
 	listener(e) {
 		this.value = e.target.value;
-		console.log(`Setting ${this.title}: ${this.value}`);
+		// console.log(`Setting ${this.title}: ${this.value}`);
 		this.options.onchange(parseFloat(this.value));
 	}
 }
@@ -191,7 +191,7 @@ export class ToggleController extends Controller {
 
 	listener(e) {
 		this.value = e.target.checked;
-		console.log(`Toggling ${this.title}: ${this.value ? 'on' : 'off'}`);
+		// console.log(`Toggling ${this.title}: ${this.value ? 'on' : 'off'}`);
 		this.options.ontoggle(this.value);
 	}
 }
@@ -241,7 +241,7 @@ export class DropdownController extends Controller {
 
 	listener(e) {
 		this.value = this.input.value;
-		console.log(`Setting ${this.title}: ${this.value}`);
+		// console.log(`Setting ${this.title}: ${this.value}`);
 		this.options.onselect(this.value);
 	}
 }
