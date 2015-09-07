@@ -1,5 +1,5 @@
 import Vec2 from './vec2.js';
-import { Body } from './entity.js';
+import { Entity, Body } from './entity.js';
 import defaults from '../node_modules/defaults';
 
 export default class CanvasRenderer {
@@ -17,14 +17,28 @@ export default class CanvasRenderer {
 		this.el.style.display = 'block';
 		this.ctx = this.el.getContext('2d');
 		this.frame = 0;
+		this.following = null;
 	}
 
-	render(entities, input, selectedEntities, stats, params) {
-		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, willSelect, x, y, i, j, len;
+	follow(entity) {
+		if (entity instanceof Entity) {
+			this.following = entity;
+		}
+	}
+
+	unfollow() {
+		this.following = null;
+	}
+
+	render(entities, input, selectedEntities, stats, params, tool) {
+		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, x, y, i, j, len;
 
 		this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - this.options.motionBlur})`;
 		this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 		// this.ctx.fillStyle = 'rgba(255,255,255,0.5)';
+		
+		// Only increment lineDashOffset once per frame
+		this.ctx.lineDashOffset = (this.ctx.lineDashOffset + 0.5) % 10;
 
 		// this.ctx.fillStyle = '#FFFFFF';
 		// this.ctx.setLineDash([0]);
@@ -33,25 +47,36 @@ export default class CanvasRenderer {
 			e = entities[i];
 			x = e.position.x;
 			y = e.position.y;
+			this.ctx.save();
 			this.ctx.fillStyle = e.color;
 			this.ctx.beginPath();
 			this.ctx.arc(x, y, e.radius, 0, 2 * Math.PI, false);
 			this.ctx.closePath();
+			this.ctx.fill();
+			this.ctx.restore();
 
 			// Mouse interaction
-			if (input.mouse.tool === 'select') {
+			if (tool._current === tool.SELECT) {
 				m = new Vec2(input.mouse.x, input.mouse.y);
-				willSelect = input.mouse.isDown && e.inRegion(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dx, input.mouse.dy);
-				if (m.dist(e.position) < e.radius || willSelect || selectedEntities.indexOf(e) >= 0) {
-					this.ctx.strokeStyle = '#FFFFFF';
-					this.ctx.strokeWidth = 2;
-					this.ctx.stroke();
+				inRadius = m.distSq(e.position) < e.radius * e.radius;
+				willSelect = e.inRegion(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dx, input.mouse.dy) && input.mouse.isDown;
+				if (inRadius && this.ctx.canvas.style.cursor !== 'pointer') {
+					this.ctx.canvas.style.cursor = 'pointer';
+				} else if (!inRadius) {
+					this.ctx.canvas.style.cursor = 'default';
 				}
-				if (selectedEntities.indexOf(e) >= 0) {
-					this.ctx.fillStyle = '#00ACED';
+				if (inRadius || willSelect || selectedEntities.indexOf(e) >= 0) {
+					this.ctx.save();
+					this.ctx.strokeStyle = '#FFFFFF';
+					this.ctx.lineWidth = 2;
+					this.ctx.setLineDash([5]);
+					this.ctx.beginPath();
+					this.ctx.arc(x, y, e.radius + 4, 0, 2 * Math.PI, false);
+					this.ctx.closePath();
+					this.ctx.stroke();
+					this.ctx.restore();
 				}
 			}
-			this.ctx.fill();
 
 			// Trail Vectors
 			if (this.options.trails && e instanceof Body) {
@@ -98,8 +123,8 @@ export default class CanvasRenderer {
 		}
 
 		// Mouse drag
-		switch (input.mouse.tool) {
-			case 'SELECT':
+		switch (tool._current) {
+			case tool.SELECT:
 				if (input.mouse.isDown) {
 					let x0 = input.mouse.dragStartX;
 					let x1 = x0 + input.mouse.dx;
@@ -108,7 +133,6 @@ export default class CanvasRenderer {
 					let y1 = y0 + input.mouse.dy;
 					[y0, y1] = [Math.min(y0, y1), Math.max(y0, y1)];
 
-					this.ctx.lineDashOffset = (this.ctx.lineDashOffset + 0.5) % 10;
 					// do @ctx.beginPath
 					this.ctx.save();
 					this.ctx.strokeStyle = '#00ACED';
@@ -123,7 +147,7 @@ export default class CanvasRenderer {
 				}
 				break;
 
-			case 'CREATE':
+			case tool.CREATE:
 				x = input.mouse.x;
 				y = input.mouse.y;
 
@@ -152,6 +176,7 @@ export default class CanvasRenderer {
 					this.ctx.stroke();
 				}
 
+				// Create entity preview around cursor
 				this.ctx.strokeStyle = 'rgba(128,128,128,1)';
 				this.ctx.beginPath();
 				this.ctx.arc(x, y, Math.sqrt(params.createMass), 0, 2 * Math.PI, false);

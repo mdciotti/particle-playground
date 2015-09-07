@@ -23,11 +23,11 @@ window.addEventListener('load', () => {
 
 	let toolBin = new Gui.Bin('Tools', 'grid');
 	let tools = new Gui.GridController('tools', [
-		{ tooltip: 'create', selected: true, disabled: false, icon: 'ion-ios-plus-outline', shortcut: 'C', onselect: () => { p.setTool('CREATE'); } },
-		{ tooltip: 'select', selected: false, disabled: false, icon: 'ion-ios-crop', shortcut: 'S', onselect: () => { p.setTool('SELECT'); } },
-		{ tooltip: 'pan', selected: false, disabled: true, icon: 'ion-arrow-move', shortcut: 'P', onselect: () => { p.setTool('PAN'); } },
-		{ tooltip: 'zoom', selected: false, disabled: true, icon: 'ion-ios-search', shortcut: 'Z', onselect: () => { p.setTool('ZOOM'); } },
-		{ tooltip: 'grab', selected: false, disabled: true, icon: 'ion-android-hand', shortcut: 'G', onselect: () => { p.setTool('GRAB'); } }
+		{ tooltip: 'create', selected: true, disabled: false, icon: 'ion-ios-plus-outline', shortcut: 'C', onselect: () => { p.setTool(p.tool.CREATE); } },
+		{ tooltip: 'select', selected: false, disabled: false, icon: 'ion-ios-crop', shortcut: 'S', onselect: () => { p.setTool(p.tool.SELECT); } },
+		{ tooltip: 'pan', selected: false, disabled: true, icon: 'ion-arrow-move', shortcut: 'P', onselect: () => { p.setTool(p.tool.PAN); } },
+		{ tooltip: 'zoom', selected: false, disabled: true, icon: 'ion-ios-search', shortcut: 'Z', onselect: () => { p.setTool(p.tool.ZOOM); } },
+		{ tooltip: 'grab', selected: false, disabled: true, icon: 'ion-android-hand', shortcut: 'G', onselect: () => { p.setTool(p.tool.GRAB); } }
 	]);
 	toolBin.addController(tools);
 	p.gui.addBin(toolBin);
@@ -36,9 +36,9 @@ window.addEventListener('load', () => {
 	p.gui.addBin(propertiesBin);
 
 	let physicsBin = new Gui.Bin('Physics', 'list');
-	let gravity = new Gui.ToggleController('gravity', p.simulator.options.gravity, { ontoggle: (val) => { p.simulator.options.gravity = val; } });
+	let gravity = new Gui.ToggleController('gravity', p.simulator.options.gravity, { onchange: (val) => { p.simulator.options.gravity = val; } });
 	let friction = new Gui.NumberController('friction', p.simulator.options.friction, { min: 0, onchange: (val) => { p.simulator.options.friction = val; } });
-	let bounded = new Gui.ToggleController('bounded', p.simulator.options.bounded, { ontoggle: (val) => { p.simulator.options.bounded = val; } });
+	let bounded = new Gui.ToggleController('bounded', p.simulator.options.bounded, { onchange: (val) => { p.simulator.options.bounded = val; } });
 	let collisions = new Gui.DropdownController('collisions', [
 		{ value: 'none', selected: false, disabled: false },
 		{ value: 'elastic', selected: true, disabled: false },
@@ -52,11 +52,11 @@ window.addEventListener('load', () => {
 	p.gui.addBin(physicsBin);
 
 	let appearance = new Gui.Bin('Appearance', 'list');
-	let trails = new Gui.ToggleController('trails', p.renderer.options.trails, { ontoggle: (val) => { p.renderer.options.trails = val; } });
+	let trails = new Gui.ToggleController('trails', p.renderer.options.trails, { onchange: (val) => { p.renderer.options.trails = val; } });
 	let trailLength = new Gui.NumberController('trail length', p.renderer.options.trailLength, { min: 0, max: 100, step: 5, onchange: (val) => { p.renderer.options.trailLength = val; } });
-	let trailFade = new Gui.ToggleController('trail fade', p.renderer.options.trailFade, { ontoggle: (val) => { p.renderer.options.trailFade = val; } });
+	let trailFade = new Gui.ToggleController('trail fade', p.renderer.options.trailFade, { onchange: (val) => { p.renderer.options.trailFade = val; } });
 	let motionBlur = new Gui.NumberController('motion blur', p.renderer.options.motionBlur, { min: 0, max: 1, step: 0.1, onchange: (val) => { p.renderer.options.motionBlur = val; } });
-	let vectors = new Gui.ToggleController('vectors', p.renderer.options.debug, { ontoggle: (val) => { p.renderer.options.debug = val; } });
+	let vectors = new Gui.ToggleController('vectors', p.renderer.options.debug, { onchange: (val) => { p.renderer.options.debug = val; } });
 	appearance.addControllers(trails, trailLength, trailFade, motionBlur, vectors);
 	p.gui.addBin(appearance);
 
@@ -90,18 +90,22 @@ window.addEventListener('load', () => {
 	plot1.addSeries('TE', '#ededed', 1000, getTE);
 
 	// Update properties bin on selection
-	p.setPropertiesBin = function (entity) {
-		let name = new Gui.TextController('name', entity.name, { onchange: val => { entity.name = val; } });
-		let xpos = new Gui.NumberController('pos.x', entity.position.x, { onchange: val => { entity.position.x = val; } });
-		let ypos = new Gui.NumberController('pos.y', entity.position.y, { onchange: val => { entity.position.y = val; } });
-		let color = new Gui.ColorController('color', entity.color, { onchange: val => { entity.color = val; } });
+	p.listen('selection' , entities => {
+		propertiesBin.removeAllControllers();
+		if (entities.length === 0) { return; }
+
+		let e = entities[0];
+		let name = new Gui.TextController('name', e.name, { onchange: val => { e.name = val; } });
+		let xpos = new Gui.NumberController('pos.x', e.position.x, { onchange: val => { e.position.x = val; } });
+		let ypos = new Gui.NumberController('pos.y', e.position.y, { onchange: val => { e.position.y = val; } });
+		let color = new Gui.ColorController('color', e.color, { onchange: val => { e.color = val; } });
 		propertiesBin.addControllers(name, xpos, ypos, color);
-		if (Entity instanceof Body) {
-			let mass = new Gui.NumberController('mass', entity.mass, { onchange: val => { entity.mass = val; } });
+		if (e instanceof Body) {
+			let mass = new Gui.NumberController('mass', e.mass, { onchange: val => { e.setMass(val); } });
 			propertiesBin.addController(mass);
 		}
-	};
+	});
 
-	p.setTool('CREATE');
+	p.setTool(p.tool.CREATE);
 	p.start();
 });

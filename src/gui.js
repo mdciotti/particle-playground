@@ -62,6 +62,20 @@ export class Bin {
 	addControllers(...controllers) {
 		controllers.forEach(this.addController.bind(this));
 	}
+
+	removeController(controller) {
+		this.height -= controller.height;
+		controller.destroy();
+		this.setHeight();
+		let i = this.controllers.indexOf(controller);
+		delete this.controllers[i];
+		// this.controllers.splice(i, 1);
+	}
+
+	removeAllControllers() {
+		this.controllers.forEach(this.removeController.bind(this));
+		this.controllers.length = 0;
+	}
 }
 
 class Controller {
@@ -78,11 +92,12 @@ class Controller {
 	listener(e) {
 		this.value = e.target.value;
 		// console.log(`Setting ${this.title}: ${this.value}`);
-		// this.callback(this.value);
+		// this.options.onchange(this.value);
 	}
 
 	destroy() {
-		// TODO: properly destroy
+		// TODO: ensure properly destruction
+		this.node.parentNode.removeChild(this.node);
 		this.node = null;
 		this.parent = null;
 	}
@@ -96,7 +111,8 @@ export class TextController extends Controller {
 
 		// Set default options
 		this.options = defaults(opts, {
-			size: Number.MAX_VALUE
+			size: Number.MAX_VALUE,
+			onchange: function (e) {}
 		});
 
 		let label = document.createElement('label');
@@ -106,15 +122,21 @@ export class TextController extends Controller {
 		name.innerText = title;
 		label.appendChild(name);
 
-		let input = document.createElement('input');
-		input.classList.add('bin-item-value');
-		input.type = 'text';
-		input.value = this.value;
-		label.appendChild(input);
+		this.input = document.createElement('input');
+		this.input.classList.add('bin-item-value');
+		this.input.type = 'text';
+		this.input.value = this.value;
+		label.appendChild(this.input);
 
 		this.node.appendChild(label);
 
-		input.addEventListener('change', e => { this.listener(e); });
+		this.input.addEventListener('change', this.listener.bind(this));
+	}
+
+	listener(e) {
+		this.value = e.target.value;
+		// console.log(`Setting ${this.title}: ${this.value}`);
+		this.options.onchange(this.value);
 	}
 }
 
@@ -139,18 +161,18 @@ export class NumberController extends Controller {
 		name.innerText = title;
 		label.appendChild(name);
 
-		let input = document.createElement('input');
-		input.classList.add('bin-item-value');
-		input.type = 'number';
-		input.value = this.value;
-		if (this.options.min !== null) input.min = this.options.min;
-		if (this.options.max !== null) input.max = this.options.max;
-		if (this.options.step !== null) input.step = this.options.step;
-		label.appendChild(input);
+		this.input = document.createElement('input');
+		this.input.classList.add('bin-item-value');
+		this.input.type = 'number';
+		this.input.value = this.value;
+		if (this.options.min !== null) this.input.min = this.options.min;
+		if (this.options.max !== null) this.input.max = this.options.max;
+		if (this.options.step !== null) this.input.step = this.options.step;
+		label.appendChild(this.input);
 
 		this.node.appendChild(label);
 
-		input.addEventListener('change', e => { this.listener(e); });
+		this.input.addEventListener('change', this.listener.bind(this));
 	}
 
 	listener(e) {
@@ -168,7 +190,7 @@ export class ToggleController extends Controller {
 
 		// Set default options
 		this.options = defaults(opts, {
-			ontoggle: function () {}
+			onchange: function () {}
 		});
 
 		let label = document.createElement('label');
@@ -186,13 +208,13 @@ export class ToggleController extends Controller {
 
 		this.node.appendChild(label);
 
-		input.addEventListener('change', e => { this.listener(e); });
+		input.addEventListener('change', this.listener.bind(this));
 	}
 
 	listener(e) {
 		this.value = e.target.checked;
 		// console.log(`Toggling ${this.title}: ${this.value ? 'on' : 'off'}`);
-		this.options.ontoggle(this.value);
+		this.options.onchange(this.value);
 	}
 }
 
@@ -221,7 +243,7 @@ export class DropdownController extends Controller {
 
 		this.node.appendChild(label);
 
-		this.input.addEventListener('change', e => { this.listener(e); });
+		this.input.addEventListener('change', this.listener.bind(this));
 	}
 
 	createItems(list) {
@@ -420,7 +442,7 @@ export class ColorController extends Controller {
 
 		this.node.appendChild(label);
 
-		this.input.addEventListener('change', e => { this.listener(e); });
+		this.input.addEventListener('change', this.listener.bind(this));
 	}
 
 	listener(e) {

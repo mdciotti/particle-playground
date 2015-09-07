@@ -3,6 +3,7 @@ import * as Gui from './gui.js';
 import Clock from './clock.js';
 import { Body } from './entity.js';
 import CanvasRenderer from './canvas-renderer.js';
+import { TaggedUnion } from './enum.js';
 import defaults from '../node_modules/defaults';
 
 // Webpack: load stylesheet
@@ -47,12 +48,14 @@ export default class Playground {
 		// TODO: should this be stored as a member of Playground?
 		this.selectedEntities = [];
 
-		// Define tools
-		this.tools = {};
-		this.tools.SELECT = { cursor: 'default' };
-		this.tools.CREATE = { cursor: 'crosshair' };
-		this.tools.MOVE = { cursor: 'grab', activeCursor: 'grabbing' };
-		this.tools.ZOOM = { cursor: 'zoom-in', altCursor: 'zoom-in' };
+		// Define tools (enum-like)
+		// this.TOOL = new Enum('SELECT', 'CREATE', 'MOVE', 'ZOOM');
+		this.tool = new TaggedUnion({
+			SELECT: { cursor: 'default' },
+			CREATE: { cursor: 'crosshair' },
+			MOVE: { cursor: 'grab', activeCursor: 'grabbing' },
+			ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-in' }
+		});
 
 		// Input State
 		this.input = {
@@ -63,9 +66,7 @@ export default class Playground {
 				dy: 0,
 				dragStartX: 0,
 				dragStartY: 0,
-				isDown: false,
-				tool: null,
-				lastTool: 'CREATE'
+				isDown: false
 			}
 		};
 
@@ -98,26 +99,31 @@ export default class Playground {
 			this.simulator.parameters.createMass = Math.max(10, this.simulator.parameters.createMass + e.wheelDelta / 10);
 		};
 		this.events.mouseup = function(e) {
+			let particle;
 			this.input.mouse.isDown = false;
 			this.input.mouse.dx = e.layerX - this.input.mouse.dragStartX;
 			this.input.mouse.dy = e.layerY - this.input.mouse.dragStartY;
-			switch (this.input.mouse.tool) {
-				case 'CREATE':
-					this.simulator.entities.push(new Body(
+			switch (this.tool._current) {
+				case this.tool.CREATE:
+					particle = new Body(
 						this.input.mouse.dragStartX,
 						this.input.mouse.dragStartY,
 						this.simulator.parameters.createMass,
 						this.input.mouse.dx / 50,
 						this.input.mouse.dy / 50
-					));
+					);
+					this.simulator.entities.push(particle);
+					this.selectedEntities = [particle];
+					this.events.selection(this.selectedEntities);
 					break;
-				case 'SELECT':
+				case this.tool.SELECT:
 					this.selectRegion(this.input.mouse.dragStartX, this.input.mouse.dragStartY,
 						this.input.mouse.dx, this.input.mouse.dy
 					);
 					break;
 			}
 		};
+		this.events.selection = function(entities) {};
 
 		// Attach event handlers
 		window.addEventListener('resize', this.events.resize.bind(this));
@@ -128,64 +134,32 @@ export default class Playground {
 		this.renderer.el.addEventListener('mousewheel', this.events.mousewheel.bind(this));
 	}
 
+	listen(eventName, handler) {
+		this.events[eventName] = handler;
+	}
+
 	selectRegion(x, y, w, h) {
-		let e, e_x, e_y, i, idx, withinX, withinY;
-
 		this.selectedEntities.length = 0;
-		this.selectedEntities = [];
 
-		if (this.input.mouse.dx === 0 && this.input.mouse.dy === 0) {
-			return this;
-		}
+		this.selectedEntities = this.simulator.entities.filter(e => {
+			return e.inRegion(x, y, w, h);
+		});
 
-		[x, w] = [Math.min(x, w), Math.max(x, w)];
-		[y, h] = [Math.min(y, h), Math.max(y, h)];
+		this.events.selection(this.selectedEntities);
 
-		let len = this.simulator.entities.length;
-		for (i = 0; i < len; i++) {
-			e = this.simulator.entities[i];
-			e_x = e.position.x;
-			e_y = e.position.y;
-
-			withinX = x - e.radius < e_x && e_x < x + w + e.radius;
-			withinY = y - e.radius < e_y && e_y < y + h + e.radius;
-
-			if (withinX && withinY) {
-				this.selectedEntities.push(e);
-			} else {
-				idx = this.selectedEntities.indexOf(e);
-				if (idx > 0) {
-					this.selectedEntities.splice(idx, 1);
-				}
-			}
-		}
 		return this;
 	}
 
 	setTool(tool) {
-		if (tool !== this.input.mouse.tool) {
-			this.input.mouse.lastTool = this.input.mouse.tool;
-			this.input.mouse.tool = tool;
-			this.renderer.el.style.cursor = this.tools[tool].cursor;
+		if (tool !== this.tool._current) {
+			// this.input.mouse.lastTool = this.input.mouse.tool;
+			this.tool.setCurrent(tool);
+			this.renderer.el.style.cursor = this.tool._currentData.cursor;
 		}
 		return this;
 	}
 
-	toggleTool() {
-		this.setTool(this.input.mouse.lastTool);
-		return this;
-	}
-
 	start() {
-		// this.clock.register(this.simulator.update.bind(this.simulator, this.clock.dt));
-		// this.clock.register(this.renderer.render.bind(
-		// 	this.renderer,
-		// 	this.simulator.entities,
-		// 	this.input,
-		// 	this.selectedEntities,
-		// 	this.simulator.stats,
-		// 	this.simulator.parameters
-		// ));
 		this.loop(1 / 60);
 	}
 
@@ -203,7 +177,8 @@ export default class Playground {
 			this.input,
 			this.selectedEntities,
 			this.simulator.stats,
-			this.simulator.parameters
+			this.simulator.parameters,
+			this.tool
 		);
 		// this.clock.tick();
 	}

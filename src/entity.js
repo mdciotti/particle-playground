@@ -26,11 +26,14 @@ export class Entity {
 		let e_x = this.position.x;
 		let e_y = this.position.y;
 
-		[x, w] = [Math.min(x, w), Math.max(x, w)];
-		[y, h] = [Math.min(y, h), Math.max(y, h)];
+		let x0 = x, x1 = x + w;
+		let y0 = y, y1 = y + h;
 
-		let withinX = x - this.radius < e_x && e_x < x + w + this.radius;
-		let withinY = y - this.radius < e_y && e_y < y + h + this.radius;
+		[x0, x1] = [Math.min(x0, x1), Math.max(x0, x1)];
+		[y0, y1] = [Math.min(y0, y1), Math.max(y0, y1)];
+
+		let withinX = x0 - this.radius < e_x && e_x < x1 + this.radius;
+		let withinY = y0 - this.radius < e_y && e_y < y1 + this.radius;
 
 		return withinX && withinY;
 	}

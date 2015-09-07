@@ -82,15 +82,15 @@
 	
 		var toolBin = new Gui.Bin('Tools', 'grid');
 		var tools = new Gui.GridController('tools', [{ tooltip: 'create', selected: true, disabled: false, icon: 'ion-ios-plus-outline', shortcut: 'C', onselect: function onselect() {
-				p.setTool('CREATE');
+				p.setTool(p.tool.CREATE);
 			} }, { tooltip: 'select', selected: false, disabled: false, icon: 'ion-ios-crop', shortcut: 'S', onselect: function onselect() {
-				p.setTool('SELECT');
+				p.setTool(p.tool.SELECT);
 			} }, { tooltip: 'pan', selected: false, disabled: true, icon: 'ion-arrow-move', shortcut: 'P', onselect: function onselect() {
-				p.setTool('PAN');
+				p.setTool(p.tool.PAN);
 			} }, { tooltip: 'zoom', selected: false, disabled: true, icon: 'ion-ios-search', shortcut: 'Z', onselect: function onselect() {
-				p.setTool('ZOOM');
+				p.setTool(p.tool.ZOOM);
 			} }, { tooltip: 'grab', selected: false, disabled: true, icon: 'ion-android-hand', shortcut: 'G', onselect: function onselect() {
-				p.setTool('GRAB');
+				p.setTool(p.tool.GRAB);
 			} }]);
 		toolBin.addController(tools);
 		p.gui.addBin(toolBin);
@@ -99,13 +99,13 @@
 		p.gui.addBin(propertiesBin);
 	
 		var physicsBin = new Gui.Bin('Physics', 'list');
-		var gravity = new Gui.ToggleController('gravity', p.simulator.options.gravity, { ontoggle: function ontoggle(val) {
+		var gravity = new Gui.ToggleController('gravity', p.simulator.options.gravity, { onchange: function onchange(val) {
 				p.simulator.options.gravity = val;
 			} });
 		var friction = new Gui.NumberController('friction', p.simulator.options.friction, { min: 0, onchange: function onchange(val) {
 				p.simulator.options.friction = val;
 			} });
-		var bounded = new Gui.ToggleController('bounded', p.simulator.options.bounded, { ontoggle: function ontoggle(val) {
+		var bounded = new Gui.ToggleController('bounded', p.simulator.options.bounded, { onchange: function onchange(val) {
 				p.simulator.options.bounded = val;
 			} });
 		var collisions = new Gui.DropdownController('collisions', [{ value: 'none', selected: false, disabled: false }, { value: 'elastic', selected: true, disabled: false }, { value: 'merge', selected: false, disabled: false }, { value: 'pass', selected: false, disabled: true, name: 'pass through' }, { value: 'absorb', selected: false, disabled: false }, { value: 'shatter', selected: false, disabled: false }, { value: 'explode', selected: false, disabled: false }], { onselect: function onselect(val) {
@@ -115,19 +115,19 @@
 		p.gui.addBin(physicsBin);
 	
 		var appearance = new Gui.Bin('Appearance', 'list');
-		var trails = new Gui.ToggleController('trails', p.renderer.options.trails, { ontoggle: function ontoggle(val) {
+		var trails = new Gui.ToggleController('trails', p.renderer.options.trails, { onchange: function onchange(val) {
 				p.renderer.options.trails = val;
 			} });
 		var trailLength = new Gui.NumberController('trail length', p.renderer.options.trailLength, { min: 0, max: 100, step: 5, onchange: function onchange(val) {
 				p.renderer.options.trailLength = val;
 			} });
-		var trailFade = new Gui.ToggleController('trail fade', p.renderer.options.trailFade, { ontoggle: function ontoggle(val) {
+		var trailFade = new Gui.ToggleController('trail fade', p.renderer.options.trailFade, { onchange: function onchange(val) {
 				p.renderer.options.trailFade = val;
 			} });
 		var motionBlur = new Gui.NumberController('motion blur', p.renderer.options.motionBlur, { min: 0, max: 1, step: 0.1, onchange: function onchange(val) {
 				p.renderer.options.motionBlur = val;
 			} });
-		var vectors = new Gui.ToggleController('vectors', p.renderer.options.debug, { ontoggle: function ontoggle(val) {
+		var vectors = new Gui.ToggleController('vectors', p.renderer.options.debug, { onchange: function onchange(val) {
 				p.renderer.options.debug = val;
 			} });
 		appearance.addControllers(trails, trailLength, trailFade, motionBlur, vectors);
@@ -174,29 +174,35 @@
 		plot1.addSeries('TE', '#ededed', 1000, getTE);
 	
 		// Update properties bin on selection
-		p.setPropertiesBin = function (entity) {
-			var name = new Gui.TextController('name', entity.name, { onchange: function onchange(val) {
-					entity.name = val;
+		p.listen('selection', function (entities) {
+			propertiesBin.removeAllControllers();
+			if (entities.length === 0) {
+				return;
+			}
+	
+			var e = entities[0];
+			var name = new Gui.TextController('name', e.name, { onchange: function onchange(val) {
+					e.name = val;
 				} });
-			var xpos = new Gui.NumberController('pos.x', entity.position.x, { onchange: function onchange(val) {
-					entity.position.x = val;
+			var xpos = new Gui.NumberController('pos.x', e.position.x, { onchange: function onchange(val) {
+					e.position.x = val;
 				} });
-			var ypos = new Gui.NumberController('pos.y', entity.position.y, { onchange: function onchange(val) {
-					entity.position.y = val;
+			var ypos = new Gui.NumberController('pos.y', e.position.y, { onchange: function onchange(val) {
+					e.position.y = val;
 				} });
-			var color = new Gui.ColorController('color', entity.color, { onchange: function onchange(val) {
-					entity.color = val;
+			var color = new Gui.ColorController('color', e.color, { onchange: function onchange(val) {
+					e.color = val;
 				} });
 			propertiesBin.addControllers(name, xpos, ypos, color);
-			if (_srcEntityJs.Entity instanceof _srcEntityJs.Body) {
-				var mass = new Gui.NumberController('mass', entity.mass, { onchange: function onchange(val) {
-						entity.mass = val;
+			if (e instanceof _srcEntityJs.Body) {
+				var mass = new Gui.NumberController('mass', e.mass, { onchange: function onchange(val) {
+						e.setMass(val);
 					} });
 				propertiesBin.addController(mass);
 			}
-		};
+		});
 	
-		p.setTool('CREATE');
+		p.setTool(p.tool.CREATE);
 		p.start();
 	});
 
@@ -324,6 +330,22 @@
 	
 				controllers.forEach(this.addController.bind(this));
 			}
+		}, {
+			key: 'removeController',
+			value: function removeController(controller) {
+				this.height -= controller.height;
+				controller.destroy();
+				this.setHeight();
+				var i = this.controllers.indexOf(controller);
+				delete this.controllers[i];
+				// this.controllers.splice(i, 1);
+			}
+		}, {
+			key: 'removeAllControllers',
+			value: function removeAllControllers() {
+				this.controllers.forEach(this.removeController.bind(this));
+				this.controllers.length = 0;
+			}
 		}]);
 	
 		return Bin;
@@ -349,12 +371,13 @@
 			value: function listener(e) {
 				this.value = e.target.value;
 				// console.log(`Setting ${this.title}: ${this.value}`);
-				// this.callback(this.value);
+				// this.options.onchange(this.value);
 			}
 		}, {
 			key: 'destroy',
 			value: function destroy() {
-				// TODO: properly destroy
+				// TODO: ensure properly destruction
+				this.node.parentNode.removeChild(this.node);
 				this.node = null;
 				this.parent = null;
 			}
@@ -367,8 +390,6 @@
 		_inherits(TextController, _Controller);
 	
 		function TextController(title, value, opts) {
-			var _this = this;
-	
 			_classCallCheck(this, TextController);
 	
 			_get(Object.getPrototypeOf(TextController.prototype), 'constructor', this).call(this, 'text', title);
@@ -377,7 +398,8 @@
 	
 			// Set default options
 			this.options = (0, _node_modulesDefaults2['default'])(opts, {
-				size: Number.MAX_VALUE
+				size: Number.MAX_VALUE,
+				onchange: function onchange(e) {}
 			});
 	
 			var label = document.createElement('label');
@@ -387,18 +409,25 @@
 			name.innerText = title;
 			label.appendChild(name);
 	
-			var input = document.createElement('input');
-			input.classList.add('bin-item-value');
-			input.type = 'text';
-			input.value = this.value;
-			label.appendChild(input);
+			this.input = document.createElement('input');
+			this.input.classList.add('bin-item-value');
+			this.input.type = 'text';
+			this.input.value = this.value;
+			label.appendChild(this.input);
 	
 			this.node.appendChild(label);
 	
-			input.addEventListener('change', function (e) {
-				_this.listener(e);
-			});
+			this.input.addEventListener('change', this.listener.bind(this));
 		}
+	
+		_createClass(TextController, [{
+			key: 'listener',
+			value: function listener(e) {
+				this.value = e.target.value;
+				// console.log(`Setting ${this.title}: ${this.value}`);
+				this.options.onchange(this.value);
+			}
+		}]);
 	
 		return TextController;
 	})(Controller);
@@ -409,8 +438,6 @@
 		_inherits(NumberController, _Controller2);
 	
 		function NumberController(title, value, opts) {
-			var _this2 = this;
-	
 			_classCallCheck(this, NumberController);
 	
 			_get(Object.getPrototypeOf(NumberController.prototype), 'constructor', this).call(this, 'number', title);
@@ -432,20 +459,18 @@
 			name.innerText = title;
 			label.appendChild(name);
 	
-			var input = document.createElement('input');
-			input.classList.add('bin-item-value');
-			input.type = 'number';
-			input.value = this.value;
-			if (this.options.min !== null) input.min = this.options.min;
-			if (this.options.max !== null) input.max = this.options.max;
-			if (this.options.step !== null) input.step = this.options.step;
-			label.appendChild(input);
+			this.input = document.createElement('input');
+			this.input.classList.add('bin-item-value');
+			this.input.type = 'number';
+			this.input.value = this.value;
+			if (this.options.min !== null) this.input.min = this.options.min;
+			if (this.options.max !== null) this.input.max = this.options.max;
+			if (this.options.step !== null) this.input.step = this.options.step;
+			label.appendChild(this.input);
 	
 			this.node.appendChild(label);
 	
-			input.addEventListener('change', function (e) {
-				_this2.listener(e);
-			});
+			this.input.addEventListener('change', this.listener.bind(this));
 		}
 	
 		_createClass(NumberController, [{
@@ -466,8 +491,6 @@
 		_inherits(ToggleController, _Controller3);
 	
 		function ToggleController(title, value, opts) {
-			var _this3 = this;
-	
 			_classCallCheck(this, ToggleController);
 	
 			_get(Object.getPrototypeOf(ToggleController.prototype), 'constructor', this).call(this, 'toggle', title);
@@ -476,7 +499,7 @@
 	
 			// Set default options
 			this.options = (0, _node_modulesDefaults2['default'])(opts, {
-				ontoggle: function ontoggle() {}
+				onchange: function onchange() {}
 			});
 	
 			var label = document.createElement('label');
@@ -494,9 +517,7 @@
 	
 			this.node.appendChild(label);
 	
-			input.addEventListener('change', function (e) {
-				_this3.listener(e);
-			});
+			input.addEventListener('change', this.listener.bind(this));
 		}
 	
 		_createClass(ToggleController, [{
@@ -504,7 +525,7 @@
 			value: function listener(e) {
 				this.value = e.target.checked;
 				// console.log(`Toggling ${this.title}: ${this.value ? 'on' : 'off'}`);
-				this.options.ontoggle(this.value);
+				this.options.onchange(this.value);
 			}
 		}]);
 	
@@ -517,8 +538,6 @@
 		_inherits(DropdownController, _Controller4);
 	
 		function DropdownController(title, items, opts) {
-			var _this4 = this;
-	
 			_classCallCheck(this, DropdownController);
 	
 			_get(Object.getPrototypeOf(DropdownController.prototype), 'constructor', this).call(this, 'dropdown', title);
@@ -544,15 +563,13 @@
 	
 			this.node.appendChild(label);
 	
-			this.input.addEventListener('change', function (e) {
-				_this4.listener(e);
-			});
+			this.input.addEventListener('change', this.listener.bind(this));
 		}
 	
 		_createClass(DropdownController, [{
 			key: 'createItems',
 			value: function createItems(list) {
-				var _this5 = this;
+				var _this = this;
 	
 				this.items = list;
 				this.items.forEach(function (item) {
@@ -566,7 +583,7 @@
 					if (item.disabled) {
 						itemNode.disabled = true;
 					}
-					_this5.input.appendChild(itemNode);
+					_this.input.appendChild(itemNode);
 				});
 			}
 		}, {
@@ -636,7 +653,7 @@
 		_createClass(GridController, [{
 			key: 'createItems',
 			value: function createItems(list) {
-				var _this6 = this;
+				var _this2 = this;
 	
 				this.height = 48 * Math.ceil(list.length / Math.floor(256 / 48));
 	
@@ -654,7 +671,7 @@
 						itemNode.classList.add('disabled');
 					}
 					itemNode.addEventListener('click', function (e) {
-						_this6.listener(e);
+						_this2.listener(e);
 					});
 					// itemNode.addEventListener('click', item.onclick);
 					var icon = document.createElement('i');
@@ -664,7 +681,7 @@
 						icon.innerText = item.shortcut.toUpperCase().charAt(0);
 					}
 					itemNode.appendChild(icon);
-					_this6.node.appendChild(itemNode);
+					_this2.node.appendChild(itemNode);
 				});
 			}
 		}, {
@@ -812,8 +829,6 @@
 		_inherits(ColorController, _Controller9);
 	
 		function ColorController(title, value, opts) {
-			var _this7 = this;
-	
 			_classCallCheck(this, ColorController);
 	
 			_get(Object.getPrototypeOf(ColorController.prototype), 'constructor', this).call(this, 'color', title);
@@ -839,9 +854,7 @@
 	
 			this.node.appendChild(label);
 	
-			this.input.addEventListener('change', function (e) {
-				_this7.listener(e);
-			});
+			this.input.addEventListener('change', this.listener.bind(this));
 		}
 	
 		_createClass(ColorController, [{
@@ -2924,6 +2937,8 @@
 	
 	var _canvasRendererJs2 = _interopRequireDefault(_canvasRendererJs);
 	
+	var _enumJs = __webpack_require__(/*! ./enum.js */ 28);
+	
 	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 6);
 	
 	var _node_modulesDefaults2 = _interopRequireDefault(_node_modulesDefaults);
@@ -2972,12 +2987,14 @@
 			// TODO: should this be stored as a member of Playground?
 			this.selectedEntities = [];
 	
-			// Define tools
-			this.tools = {};
-			this.tools.SELECT = { cursor: 'default' };
-			this.tools.CREATE = { cursor: 'crosshair' };
-			this.tools.MOVE = { cursor: 'grab', activeCursor: 'grabbing' };
-			this.tools.ZOOM = { cursor: 'zoom-in', altCursor: 'zoom-in' };
+			// Define tools (enum-like)
+			// this.TOOL = new Enum('SELECT', 'CREATE', 'MOVE', 'ZOOM');
+			this.tool = new _enumJs.TaggedUnion({
+				SELECT: { cursor: 'default' },
+				CREATE: { cursor: 'crosshair' },
+				MOVE: { cursor: 'grab', activeCursor: 'grabbing' },
+				ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-in' }
+			});
 	
 			// Input State
 			this.input = {
@@ -2988,9 +3005,7 @@
 					dy: 0,
 					dragStartX: 0,
 					dragStartY: 0,
-					isDown: false,
-					tool: null,
-					lastTool: 'CREATE'
+					isDown: false
 				}
 			};
 	
@@ -3023,18 +3038,23 @@
 				this.simulator.parameters.createMass = Math.max(10, this.simulator.parameters.createMass + e.wheelDelta / 10);
 			};
 			this.events.mouseup = function (e) {
+				var particle = undefined;
 				this.input.mouse.isDown = false;
 				this.input.mouse.dx = e.layerX - this.input.mouse.dragStartX;
 				this.input.mouse.dy = e.layerY - this.input.mouse.dragStartY;
-				switch (this.input.mouse.tool) {
-					case 'CREATE':
-						this.simulator.entities.push(new _entityJs.Body(this.input.mouse.dragStartX, this.input.mouse.dragStartY, this.simulator.parameters.createMass, this.input.mouse.dx / 50, this.input.mouse.dy / 50));
+				switch (this.tool._current) {
+					case this.tool.CREATE:
+						particle = new _entityJs.Body(this.input.mouse.dragStartX, this.input.mouse.dragStartY, this.simulator.parameters.createMass, this.input.mouse.dx / 50, this.input.mouse.dy / 50);
+						this.simulator.entities.push(particle);
+						this.selectedEntities = [particle];
+						this.events.selection(this.selectedEntities);
 						break;
-					case 'SELECT':
+					case this.tool.SELECT:
 						this.selectRegion(this.input.mouse.dragStartX, this.input.mouse.dragStartY, this.input.mouse.dx, this.input.mouse.dy);
 						break;
 				}
 			};
+			this.events.selection = function (entities) {};
 	
 			// Attach event handlers
 			window.addEventListener('resize', this.events.resize.bind(this));
@@ -3046,78 +3066,36 @@
 		}
 	
 		_createClass(Playground, [{
+			key: 'listen',
+			value: function listen(eventName, handler) {
+				this.events[eventName] = handler;
+			}
+		}, {
 			key: 'selectRegion',
 			value: function selectRegion(x, y, w, h) {
-				var e = undefined,
-				    e_x = undefined,
-				    e_y = undefined,
-				    i = undefined,
-				    idx = undefined,
-				    withinX = undefined,
-				    withinY = undefined;
-	
 				this.selectedEntities.length = 0;
-				this.selectedEntities = [];
 	
-				if (this.input.mouse.dx === 0 && this.input.mouse.dy === 0) {
-					return this;
-				}
+				this.selectedEntities = this.simulator.entities.filter(function (e) {
+					return e.inRegion(x, y, w, h);
+				});
 	
-				var _ref = [Math.min(x, w), Math.max(x, w)];
-				x = _ref[0];
-				w = _ref[1];
-				var _ref2 = [Math.min(y, h), Math.max(y, h)];
-				y = _ref2[0];
-				h = _ref2[1];
+				this.events.selection(this.selectedEntities);
 	
-				var len = this.simulator.entities.length;
-				for (i = 0; i < len; i++) {
-					e = this.simulator.entities[i];
-					e_x = e.position.x;
-					e_y = e.position.y;
-	
-					withinX = x - e.radius < e_x && e_x < x + w + e.radius;
-					withinY = y - e.radius < e_y && e_y < y + h + e.radius;
-	
-					if (withinX && withinY) {
-						this.selectedEntities.push(e);
-					} else {
-						idx = this.selectedEntities.indexOf(e);
-						if (idx > 0) {
-							this.selectedEntities.splice(idx, 1);
-						}
-					}
-				}
 				return this;
 			}
 		}, {
 			key: 'setTool',
 			value: function setTool(tool) {
-				if (tool !== this.input.mouse.tool) {
-					this.input.mouse.lastTool = this.input.mouse.tool;
-					this.input.mouse.tool = tool;
-					this.renderer.el.style.cursor = this.tools[tool].cursor;
+				if (tool !== this.tool._current) {
+					// this.input.mouse.lastTool = this.input.mouse.tool;
+					this.tool.setCurrent(tool);
+					this.renderer.el.style.cursor = this.tool._currentData.cursor;
 				}
-				return this;
-			}
-		}, {
-			key: 'toggleTool',
-			value: function toggleTool() {
-				this.setTool(this.input.mouse.lastTool);
 				return this;
 			}
 		}, {
 			key: 'start',
 			value: function start() {
-				// this.clock.register(this.simulator.update.bind(this.simulator, this.clock.dt));
-				// this.clock.register(this.renderer.render.bind(
-				// 	this.renderer,
-				// 	this.simulator.entities,
-				// 	this.input,
-				// 	this.selectedEntities,
-				// 	this.simulator.stats,
-				// 	this.simulator.parameters
-				// ));
 				this.loop(1 / 60);
 			}
 		}, {
@@ -3132,7 +3110,7 @@
 				this.runtime = t;
 				this.animator = requestAnimationFrame(this.loop.bind(this));
 				this.simulator.update(dt);
-				this.renderer.render(this.simulator.entities, this.input, this.selectedEntities, this.simulator.stats, this.simulator.parameters);
+				this.renderer.render(this.simulator.entities, this.input, this.selectedEntities, this.simulator.stats, this.simulator.parameters, this.tool);
 				// this.clock.tick();
 			}
 		}]);
@@ -3871,15 +3849,20 @@
 				var e_x = this.position.x;
 				var e_y = this.position.y;
 	
-				var _ref = [Math.min(x, w), Math.max(x, w)];
-				x = _ref[0];
-				w = _ref[1];
-				var _ref2 = [Math.min(y, h), Math.max(y, h)];
-				y = _ref2[0];
-				h = _ref2[1];
+				var x0 = x,
+				    x1 = x + w;
+				var y0 = y,
+				    y1 = y + h;
 	
-				var withinX = x - this.radius < e_x && e_x < x + w + this.radius;
-				var withinY = y - this.radius < e_y && e_y < y + h + this.radius;
+				var _ref = [Math.min(x0, x1), Math.max(x0, x1)];
+				x0 = _ref[0];
+				x1 = _ref[1];
+				var _ref2 = [Math.min(y0, y1), Math.max(y0, y1)];
+				y0 = _ref2[0];
+				y1 = _ref2[1];
+	
+				var withinX = x0 - this.radius < e_x && e_x < x1 + this.radius;
+				var withinY = y0 - this.radius < e_y && e_y < y1 + this.radius;
 	
 				return withinX && withinY;
 			}
@@ -4084,11 +4067,24 @@
 			this.el.style.display = 'block';
 			this.ctx = this.el.getContext('2d');
 			this.frame = 0;
+			this.following = null;
 		}
 	
 		_createClass(CanvasRenderer, [{
+			key: 'follow',
+			value: function follow(entity) {
+				if (entity instanceof _entityJs.Entity) {
+					this.following = entity;
+				}
+			}
+		}, {
+			key: 'unfollow',
+			value: function unfollow() {
+				this.following = null;
+			}
+		}, {
 			key: 'render',
-			value: function render(entities, input, selectedEntities, stats, params) {
+			value: function render(entities, input, selectedEntities, stats, params, tool) {
 				var KE = undefined,
 				    PE = undefined,
 				    TE = undefined,
@@ -4102,6 +4098,7 @@
 				    unv = undefined,
 				    uv = undefined,
 				    v = undefined,
+				    inRadius = undefined,
 				    willSelect = undefined,
 				    x = undefined,
 				    y = undefined,
@@ -4113,6 +4110,9 @@
 				this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 				// this.ctx.fillStyle = 'rgba(255,255,255,0.5)';
 	
+				// Only increment lineDashOffset once per frame
+				this.ctx.lineDashOffset = (this.ctx.lineDashOffset + 0.5) % 10;
+	
 				// this.ctx.fillStyle = '#FFFFFF';
 				// this.ctx.setLineDash([0]);
 	
@@ -4120,25 +4120,36 @@
 					e = entities[i];
 					x = e.position.x;
 					y = e.position.y;
+					this.ctx.save();
 					this.ctx.fillStyle = e.color;
 					this.ctx.beginPath();
 					this.ctx.arc(x, y, e.radius, 0, 2 * Math.PI, false);
 					this.ctx.closePath();
+					this.ctx.fill();
+					this.ctx.restore();
 	
 					// Mouse interaction
-					if (input.mouse.tool === 'select') {
+					if (tool._current === tool.SELECT) {
 						m = new _vec2Js2['default'](input.mouse.x, input.mouse.y);
-						willSelect = input.mouse.isDown && e.inRegion(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dx, input.mouse.dy);
-						if (m.dist(e.position) < e.radius || willSelect || selectedEntities.indexOf(e) >= 0) {
-							this.ctx.strokeStyle = '#FFFFFF';
-							this.ctx.strokeWidth = 2;
-							this.ctx.stroke();
+						inRadius = m.distSq(e.position) < e.radius * e.radius;
+						willSelect = e.inRegion(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dx, input.mouse.dy) && input.mouse.isDown;
+						if (inRadius && this.ctx.canvas.style.cursor !== 'pointer') {
+							this.ctx.canvas.style.cursor = 'pointer';
+						} else if (!inRadius) {
+							this.ctx.canvas.style.cursor = 'default';
 						}
-						if (selectedEntities.indexOf(e) >= 0) {
-							this.ctx.fillStyle = '#00ACED';
+						if (inRadius || willSelect || selectedEntities.indexOf(e) >= 0) {
+							this.ctx.save();
+							this.ctx.strokeStyle = '#FFFFFF';
+							this.ctx.lineWidth = 2;
+							this.ctx.setLineDash([5]);
+							this.ctx.beginPath();
+							this.ctx.arc(x, y, e.radius + 4, 0, 2 * Math.PI, false);
+							this.ctx.closePath();
+							this.ctx.stroke();
+							this.ctx.restore();
 						}
 					}
-					this.ctx.fill();
 	
 					// Trail Vectors
 					if (this.options.trails && e instanceof _entityJs.Body) {
@@ -4189,8 +4200,8 @@
 				}
 	
 				// Mouse drag
-				switch (input.mouse.tool) {
-					case 'SELECT':
+				switch (tool._current) {
+					case tool.SELECT:
 						if (input.mouse.isDown) {
 							var x0 = input.mouse.dragStartX;
 							var x1 = x0 + input.mouse.dx;
@@ -4200,12 +4211,11 @@
 	
 							var y0 = input.mouse.dragStartY;
 							var y1 = y0 + input.mouse.dy;
+	
+							// do @ctx.beginPath
 							var _ref2 = [Math.min(y0, y1), Math.max(y0, y1)];
 							y0 = _ref2[0];
 							y1 = _ref2[1];
-	
-							this.ctx.lineDashOffset = (this.ctx.lineDashOffset + 0.5) % 10;
-							// do @ctx.beginPath
 							this.ctx.save();
 							this.ctx.strokeStyle = '#00ACED';
 							this.ctx.fillStyle = '#00ACED';
@@ -4219,7 +4229,7 @@
 						}
 						break;
 	
-					case 'CREATE':
+					case tool.CREATE:
 						x = input.mouse.x;
 						y = input.mouse.y;
 	
@@ -4248,6 +4258,7 @@
 							this.ctx.stroke();
 						}
 	
+						// Create entity preview around cursor
 						this.ctx.strokeStyle = 'rgba(128,128,128,1)';
 						this.ctx.beginPath();
 						this.ctx.arc(x, y, Math.sqrt(params.createMass), 0, 2 * Math.PI, false);
@@ -4400,6 +4411,74 @@
 	function mapRange(val, min, max, newMin, newMax) {
 		return (val - min) / (max - min) * (newMax - newMin) + newMin;
 	}
+
+/***/ },
+/* 28 */
+/*!*********************!*\
+  !*** ./src/enum.js ***!
+  \*********************/
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	var Enum = function Enum() {
+		var _this = this;
+	
+		_classCallCheck(this, Enum);
+	
+		var i = 0;
+	
+		for (var _len = arguments.length, names = Array(_len), _key = 0; _key < _len; _key++) {
+			names[_key] = arguments[_key];
+		}
+	
+		names.forEach(function (n) {
+			_this[n] = i++;
+		});
+	};
+	
+	exports["default"] = Enum;
+	
+	var TaggedUnion = (function () {
+		function TaggedUnion(hash) {
+			_classCallCheck(this, TaggedUnion);
+	
+			this._data = [];
+			this._current = null;
+			this._currentData = null;
+	
+			var i = 0;
+			for (var key in hash) {
+				if (hash.hasOwnProperty(key)) {
+					this[key] = i++;
+					this._data.push(hash[key]);
+				}
+			}
+			this.setCurrent(0);
+		}
+	
+		_createClass(TaggedUnion, [{
+			key: "setCurrent",
+			value: function setCurrent(i) {
+				if (i >= 0 && i < this._data.length) {
+					this._current = i;
+					this._currentData = this._data[i];
+				}
+			}
+		}]);
+	
+		return TaggedUnion;
+	})();
+
+	exports.TaggedUnion = TaggedUnion;
 
 /***/ }
 /******/ ]);
