@@ -90,6 +90,19 @@ window.addEventListener('load', () => {
 	plot1.addSeries('PE', '#ed00ac', 1000, getPE);
 	plot1.addSeries('TE', '#ededed', 1000, getTE);
 
+	// Update properties bin on selection
+	p.setPropertiesBin = function (entity) {
+		let name = new Gui.TextController('name', entity.name, { onchange: val => { entity.name = val; } });
+		let xpos = new Gui.NumberController('pos.x', entity.position.x, { onchange: val => { entity.position.x = val; } });
+		let ypos = new Gui.NumberController('pos.y', entity.position.y, { onchange: val => { entity.position.y = val; } });
+		let color = new Gui.ColorController('color', entity.color, { onchange: val => { entity.color = val; } });
+		propertiesBin.addControllers(name, xpos, ypos, color);
+		if (Entity instanceof Body) {
+			let mass = new Gui.NumberController('mass', entity.mass, { onchange: val => { entity.mass = val; } });
+			propertiesBin.addController(mass);
+		}
+	};
+
 	p.setTool('CREATE');
 	p.start();
 });
