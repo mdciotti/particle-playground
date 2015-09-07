@@ -52,6 +52,15 @@ window.addEventListener('load', () => {
 	physicsBin.addControllers(gravity, friction, bounded, collisions);
 	p.gui.addBin(physicsBin);
 
+	let appearance = new Gui.Bin('Appearance', 'list');
+	let trails = new Gui.ToggleController('trails', p.renderer.options.trails, { ontoggle: (val) => { p.renderer.options.trails = val; } });
+	let trailLength = new Gui.NumberController('trail length', p.renderer.options.trailLength, { min: 0, max: 100, step: 5, onchange: (val) => { p.renderer.options.trailLength = val; } });
+	let trailFade = new Gui.ToggleController('trail fade', p.renderer.options.trailFade, { ontoggle: (val) => { p.renderer.options.trailFade = val; } });
+	let motionBlur = new Gui.NumberController('motion blur', p.renderer.options.motionBlur, { min: 0, max: 1, step: 0.1, onchange: (val) => { p.renderer.options.motionBlur = val; } });
+	let vectors = new Gui.ToggleController('vectors', p.renderer.options.debug, { ontoggle: (val) => { p.renderer.options.debug = val; } });
+	appearance.addControllers(trails, trailLength, trailFade, motionBlur, vectors);
+	p.gui.addBin(appearance);
+
 	let player = new Gui.Bin('Simulation', 'grid');
 	let playerActions = new Gui.GridController('playerActions', [
 		{ tooltip: 'pause', disabled: true, icon: 'ion-ios-pause-outline', shortcut: 'P', action: () => { p.simulator.pause(); } },

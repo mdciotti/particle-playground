@@ -1,5 +1,5 @@
 import Vec2 from './vec2.js';
-import Body from './entity.js';
+import { Body } from './entity.js';
 import defaults from '../node_modules/defaults';
 
 export default class CanvasRenderer {
@@ -7,24 +7,22 @@ export default class CanvasRenderer {
 		// Set default options
 		this.options = defaults(opts, {
 			trails: false,
-			trailLength: 10,
+			trailLength: 50,
 			trailFade: false,
-			motionBlur: false,
+			trailSpace: 5,
+			motionBlur: 0,
 			debug: true
 		});
 		this.el = document.createElement('canvas');
 		this.el.style.display = 'block';
 		this.ctx = this.el.getContext('2d');
+		this.frame = 0;
 	}
 
 	render(entities, input, selectedEntities, stats, params) {
 		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, willSelect, x, y, i, j, len;
 
-		if (this.options.motionBlur) {
-			this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
-		} else {
-			this.ctx.fillStyle = 'black';
-		}
+		this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - this.options.motionBlur})`;
 		this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 		this.ctx.fillStyle = 'rgba(255,255,255,0.5)';
 
@@ -58,8 +56,10 @@ export default class CanvasRenderer {
 			// Trail Vectors
 			if (this.options.trails && e instanceof Body) {
 				// Add new positions
-				e.trailX.push(e.position.x);
-				e.trailY.push(e.position.y);
+				if (this.frame % this.options.trailSpace === 0) {
+					e.trailX.push(e.position.x);
+					e.trailY.push(e.position.y);
+				}
 				// Prune excess trails
 				while (e.trailX.length > this.options.trailLength) { e.trailX.shift(); }
 				while (e.trailY.length > this.options.trailLength) { e.trailY.shift(); }
@@ -101,6 +101,13 @@ export default class CanvasRenderer {
 		switch (input.mouse.tool) {
 			case 'SELECT':
 				if (input.mouse.isDown) {
+					let x0 = input.mouse.dragStartX;
+					let x1 = x0 + input.mouse.dx;
+					[x0, x1] = [Math.min(x0, x1), Math.max(x0, x1)];
+					let y0 = input.mouse.dragStartY;
+					let y1 = y0 + input.mouse.dy;
+					[y0, y1] = [Math.min(y0, y1), Math.max(y0, y1)];
+
 					this.ctx.lineDashOffset = (this.ctx.lineDashOffset + 0.5) % 10;
 					// do @ctx.beginPath
 					this.ctx.save();
@@ -108,9 +115,10 @@ export default class CanvasRenderer {
 					this.ctx.fillStyle = '#00ACED';
 					this.ctx.lineWidth = 2;
 					this.ctx.setLineDash([5]);
-					this.ctx.strokeRect(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dx, input.mouse.dy);
-					this.ctx.globalAlpha = 0.5;
-					this.ctx.fillRect(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dx, input.mouse.dy);
+					this.ctx.globalAlpha = 0.15;
+					this.ctx.fillRect(x0 + 8, y0 + 8, x1 - 16 - x0, y1 - 16 - y0);
+					this.ctx.globalAlpha = 1;
+					this.ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
 					this.ctx.restore();
 				}
 				break;
@@ -149,5 +157,7 @@ export default class CanvasRenderer {
 				this.ctx.arc(x, y, Math.sqrt(params.createMass), 0, 2 * Math.PI, false);
 				this.ctx.stroke();
 		}
+
+		++this.frame;
 	}
 }
