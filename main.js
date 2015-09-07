@@ -89,8 +89,7 @@ window.addEventListener('load', () => {
 	plot1.addSeries('PE', '#ed00ac', 1000, getPE);
 	plot1.addSeries('TE', '#ededed', 1000, getTE);
 
-	// Update properties bin on selection
-	p.listen('selection' , entities => {
+	function setEntityControllers(entities) {
 		propertiesBin.removeAllControllers();
 		if (entities.length === 0) { return; }
 
@@ -99,12 +98,24 @@ window.addEventListener('load', () => {
 		let xpos = new Gui.NumberController('pos.x', e.position.x, { onchange: val => { e.position.x = val; } });
 		let ypos = new Gui.NumberController('pos.y', e.position.y, { onchange: val => { e.position.y = val; } });
 		let color = new Gui.ColorController('color', e.color, { onchange: val => { e.color = val; } });
+		let remove = new Gui.ActionController('delete', { action: () => {
+			e.willDelete = true;
+			propertiesBin.removeAllControllers();
+			entities.splice(0, 1);
+			setEntityControllers(entities);
+		} });
 		propertiesBin.addControllers(name, xpos, ypos, color);
 		if (e instanceof Body) {
 			let mass = new Gui.NumberController('mass', e.mass, { onchange: val => { e.setMass(val); } });
-			propertiesBin.addController(mass);
+			let fixed = new Gui.ToggleController('fixed', e.fixed, { onchange: val => { e.fixed = val; } });
+			let collidable = new Gui.ToggleController('collidable', !e.ignoreCollisions, { onchange: val => { e.ignoreCollisions = !val; } });
+			propertiesBin.addControllers(mass, fixed, collidable);
 		}
-	});
+		propertiesBin.addController(remove);
+	}
+
+	// Update properties bin on selection
+	p.listen('selection', setEntityControllers);
 
 	p.setTool(p.tool.CREATE);
 	p.start();

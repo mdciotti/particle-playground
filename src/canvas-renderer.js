@@ -45,6 +45,9 @@ export default class CanvasRenderer {
 
 		for (i = 0, len = entities.length; i < len; ++i) {
 			e = entities[i];
+
+			if (e.willDelete) { continue; }
+
 			x = e.position.x;
 			y = e.position.y;
 			this.ctx.save();

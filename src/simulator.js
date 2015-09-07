@@ -85,6 +85,11 @@ export default class Simulator {
 		// Integrator
 		for (i = 0; i < len; i++) {
 			e = this.entities[i];
+			if (e.fixed) {
+				e.acceleration.zero();
+				e.velocity.zero();
+				continue;
+			}
 
 			switch (this.options.integrator) {
 				case 'euler':
