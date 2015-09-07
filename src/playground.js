@@ -56,7 +56,8 @@ export default class Playground {
 			CREATE: { cursor: 'crosshair' },
 			PAN: { cursor: 'move' },
 			ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-out' },
-			GRAB: { cursor: 'grab', altCursor: 'grabbing' }
+			GRAB: { cursor: 'grab', altCursor: 'grabbing' },
+			NONE: { cursor: 'not-allowed' }
 		});
 
 		// Input State
@@ -173,6 +174,8 @@ export default class Playground {
 			}
 		};
 		this.events.selection = function(entities) {};
+		this.events.pause = function () {};
+		this.events.resume = function () {};
 
 		// Attach event handlers
 		window.addEventListener('resize', this.events.resize.bind(this));
@@ -199,10 +202,14 @@ export default class Playground {
 		return this;
 	}
 
+	deselect() {
+		this.selectedEntities.length = 0;
+		this.events.selection(this.selectedEntities);
+	}
+
 	setTool(tool) {
 		if (tool !== this.tool._current) {
 			this.tool.setCurrent(tool);
-			// this.renderer.el.style.cursor = this.tool._currentData.cursor;
 			this.renderer.setCursor(this.tool);
 		}
 		return this;
@@ -214,10 +221,15 @@ export default class Playground {
 
 	pause() {
 		this.paused = !this.paused;
+		if (this.paused) { this.events.pause(); }
+		else { this.events.resume(); }
 	}
 
 	stop() {
 		cancelAnimationFrame(this.animator);
+		this.setTool(this.tool.NONE);
+		this.deselect();
+
 	}
 
 	loop(t) {

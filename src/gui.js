@@ -88,6 +88,12 @@ export class Bin {
 		this.controllers.forEach(this.removeController.bind(this));
 		this.controllers.length = 0;
 	}
+
+	disable() {
+		this.controllers.forEach(controller => {
+			controller.disable();
+		});
+	}
 }
 
 class Controller {
@@ -98,20 +104,64 @@ class Controller {
 		this.node.classList.add('bin-item', 'controller', type);
 		this.parent = null;
 		this.height = null;
+		this.updater = null;
+		this.enabled = false;
 		// this.node.appendChild();
 	}
 
+	setState(s) {
+		this.enabled = s;
+		if (this.enabled) {this.node.classList.remove('disabled'); }
+		else { this.node.classList.add('disabled'); }
+	}
+
+	setValue(val) {
+		this.value = val;
+	}
+
 	listener(e) {
-		this.value = e.target.value;
+		this.setValue(e.target.value);
 		// console.log(`Setting ${this.title}: ${this.value}`);
 		// this.options.onchange(this.value);
+	}
+
+	watch(getter) {
+		this.getter = getter;
+		this.setState(false);
+		this.update();
+		return this;
+	}
+
+	update() {
+		this.updater = requestAnimationFrame(this.update.bind(this));
+		this.setValue(this.getter());
+	}
+
+	unwatch() {
+		cancelAnimationFrame(this.updater);
+		this.setState(true);
+	}
+
+	rewatch() {
+		this.setState(false);
+		this.update();
+	}
+
+	disable() {
+		this.setState(false);
+	}
+
+	enable() {
+		this.setState(true);
 	}
 
 	destroy() {
 		// TODO: ensure properly destruction
 		this.node.parentNode.removeChild(this.node);
+		this.unwatch();
 		this.node = null;
 		this.parent = null;
+		this.getter = null;
 	}
 }
 
@@ -145,6 +195,18 @@ export class TextController extends Controller {
 		this.input.addEventListener('change', this.listener.bind(this));
 	}
 
+	setState(s) {
+		this.enabled = s;
+		this.input.disabled = !s;
+		if (this.enabled) {this.node.classList.remove('disabled'); }
+		else { this.node.classList.add('disabled'); }
+	}
+
+	setValue(val) {
+		this.value = val;
+		this.input.value = this.value;
+	}
+
 	listener(e) {
 		this.value = e.target.value;
 		// console.log(`Setting ${this.title}: ${this.value}`);
@@ -163,6 +225,7 @@ export class NumberController extends Controller {
 			min: null,
 			max: null,
 			step: null,
+			decimals: 3,
 			onchange: function (val) {}
 		});
 
@@ -185,6 +248,18 @@ export class NumberController extends Controller {
 		this.node.appendChild(label);
 
 		this.input.addEventListener('change', this.listener.bind(this));
+	}
+
+	setValue(val) {
+		this.value = val;
+		this.input.value = this.value.toFixed(this.options.decimals);
+	}
+
+	setState(s) {
+		this.enabled = s;
+		this.input.disabled = !s;
+		if (this.enabled) {this.node.classList.remove('disabled'); }
+		else { this.node.classList.add('disabled'); }
 	}
 
 	listener(e) {
@@ -213,7 +288,7 @@ export class ToggleController extends Controller {
 		label.appendChild(name);
 
 		this.input = document.createElement('input');
-		this.input.classList.add('bin-item-value');
+		this.input.classList.add('bin-item-value', 'icon');
 		this.input.type = 'checkbox';
 		this.input.checked = this.value;
 		label.appendChild(this.input);
@@ -221,6 +296,18 @@ export class ToggleController extends Controller {
 		this.node.appendChild(label);
 
 		this.input.addEventListener('change', this.listener.bind(this));
+	}
+
+	setValue(val) {
+		this.value = val;
+		this.input.value = this.value;
+	}
+
+	setState(s) {
+		this.enabled = s;
+		this.input.disabled = !s;
+		if (this.enabled) {this.node.classList.remove('disabled'); }
+		else { this.node.classList.add('disabled'); }
 	}
 
 	listener(e) {
@@ -247,14 +334,26 @@ export class ActionController extends Controller {
 		name.innerText = title;
 		label.appendChild(name);
 
-		this.input = document.createElement('input');
-		this.input.classList.add('bin-item-value');
-		this.input.type = 'button';
+		this.input = document.createElement('button');
+		this.input.classList.add('bin-item-value', 'icon');
+		// this.input.type = 'button';
 		label.appendChild(this.input);
 
 		this.node.appendChild(label);
 
 		this.input.addEventListener('click', this.listener.bind(this));
+	}
+
+	setValue(val) {
+		this.value = val;
+		this.input.value = this.value;
+	}
+
+	setState(s) {
+		this.enabled = s;
+		this.input.disabled = !s;
+		if (this.enabled) {this.node.classList.remove('disabled'); }
+		else { this.node.classList.add('disabled'); }
 	}
 
 	listener(e) {
@@ -306,6 +405,18 @@ export class DropdownController extends Controller {
 		});
 	}
 
+	setValue(val) {
+		this.value = val;
+		this.input.value = this.value;
+	}
+
+	setState(s) {
+		this.enabled = s;
+		this.input.disabled = !s;
+		if (this.enabled) {this.node.classList.remove('disabled'); }
+		else { this.node.classList.add('disabled'); }
+	}
+
 	listener(e) {
 		this.value = this.input.value;
 		// console.log(`Setting ${this.title}: ${this.value}`);
@@ -314,7 +425,7 @@ export class DropdownController extends Controller {
 }
 
 export class HTMLController extends Controller {
-	constructor(title, value, opts) {
+	constructor(title, opts) {
 		super('html', title);
 		this.height = 160;
 	}
@@ -376,7 +487,7 @@ export class GridController extends Controller {
 			if (type === 'select') { this.select(i); }
 			else if (type === 'toggle') { this.toggle(i); }
 			else if (type === 'action') {
-				if (!this.items[i].disabled) { this.items[i].action(el); }
+				if (!this.items[i].disabled) { this.items[i].action.call(this, el); }
 			}
 		}
 	}
@@ -409,6 +520,13 @@ export class GridController extends Controller {
 	}
 
 	multiSelect(i) {}
+
+	disable() {
+		this.items.forEach(item => {
+			item.disabled = true;
+			item.node.classList.add('disabled');
+		});
+	}
 }
 
 export class CanvasController extends Controller {
@@ -505,6 +623,18 @@ export class ColorController extends Controller {
 		this.input.addEventListener('change', this.listener.bind(this));
 	}
 
+	setState(s) {
+		this.enabled = s;
+		this.input.disabled = !s;
+		if (this.enabled) {this.node.classList.remove('disabled'); }
+		else { this.node.classList.add('disabled'); }
+	}
+
+	setValue(val) {
+		this.value = val;
+		this.input.value = this.value;
+	}
+
 	listener(e) {
 		this.value = this.input.value;
 		// console.log(`Setting ${this.title}: ${this.value}`);
@@ -527,5 +657,11 @@ export class Pane {
 	addBin(bin) {
 		this.bins.push(bin);
 		this.node.appendChild(bin.node);
+	}
+
+	disableAll() {
+		this.bins.forEach(bin => {
+			bin.disable();
+		});
 	}
 }
