@@ -139,8 +139,8 @@ export default class CanvasRenderer {
 					if (this.options.trailFade) {
 						this.ctx.globalAlpha = j / e.trailX.length;
 					}
-					this.ctx.moveTo(e.trailX[j - 1] - e.camera.x, e.trailY[j - 1] - e.camera.y);
-					this.ctx.lineTo(e.trailX[j] - e.camera.x, e.trailY[j] - e.camera.y);
+					this.ctx.moveTo(e.trailX[j - 1] - this.camera.x, e.trailY[j - 1] - this.camera.y);
+					this.ctx.lineTo(e.trailX[j] - this.camera.x, e.trailY[j] - this.camera.y);
 					this.ctx.stroke();
 				}
 				this.ctx.restore();
