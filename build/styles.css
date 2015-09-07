@@ -2980,7 +2980,7 @@ MIT License: https://github.com/driftyco/ionicons
   flex: 0 0 auto;
   display: block;
 }
-.gui-pane .bin[open] .bin-title-bar i {
+.gui-pane .bin.open .bin-title-bar i {
   transform: rotate(90deg);
 }
 .gui-pane .bin .bin-title-bar {
@@ -3009,7 +3009,6 @@ MIT License: https://github.com/driftyco/ionicons
 }
 .gui-pane .bin-container {
   display: block;
-  height: 0;
   transition: height 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
 }

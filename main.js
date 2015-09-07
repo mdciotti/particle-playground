@@ -51,7 +51,7 @@ window.addEventListener('load', () => {
 	physicsBin.addControllers(gravity, friction, bounded, collisions);
 	p.gui.addBin(physicsBin);
 
-	let appearance = new Gui.Bin('Appearance', 'list');
+	let appearance = new Gui.Bin('Appearance', 'list', false);
 	let trails = new Gui.ToggleController('trails', p.renderer.options.trails, { onchange: (val) => { p.renderer.options.trails = val; } });
 	let trailLength = new Gui.NumberController('trail length', p.renderer.options.trailLength, { min: 0, max: 100, step: 5, onchange: (val) => { p.renderer.options.trailLength = val; } });
 	let trailFade = new Gui.ToggleController('trail fade', p.renderer.options.trailFade, { onchange: (val) => { p.renderer.options.trailFade = val; } });
@@ -75,7 +75,7 @@ window.addEventListener('load', () => {
 	function getTE() { return p.simulator.stats.totalPotentialEnergy + p.simulator.stats.totalKineticEnergy + p.simulator.stats.totalHeat; }
 	function getMomentum() { return p.simulator.stats.totalMomentum; }
 
-	let statsBin = new Gui.Bin('Stats', 'list');
+	let statsBin = new Gui.Bin('Stats', 'list', false);
 	let ke = new Gui.InfoController('Kinetic Energy', getKE, { interval: 100, format: 'number' });
 	let pe = new Gui.InfoController('Potential Energy', getPE, { interval: 100, format: 'number' });
 	let te = new Gui.InfoController('Total Energy', getTE, { interval: 100, format: 'number' });

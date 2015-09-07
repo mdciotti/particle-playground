@@ -10,15 +10,16 @@ export class Bin {
 	constructor(title, type, open = true) {
 		this.title = title;
 		this.type = type;
-		this.height = null;
+		this.height = 0;
 		this.container = null;
 		this.controllers = [];
 		this.node = null;
-		this.node = document.createElement('details');
+		this.node = document.createElement('div');
 		this.node.classList.add('bin');
 
-		let titlebar = document.createElement('summary');
+		let titlebar = document.createElement('div');
 		titlebar.classList.add('bin-title-bar');
+		titlebar.addEventListener('click', e => { this.toggle(); });
 
 		let icon = document.createElement('i');
 		icon.classList.add('ion-ios-arrow-right');
@@ -36,19 +37,30 @@ export class Bin {
 		this.container.classList.add(`bin-${this.type}`);
 		this.node.appendChild(this.container);
 
+		this.setHeight(this.height);
+
 		if (open) { this.open(); }
 	}
 
-	isOpen() { return this.node.hasAttribute('open'); }
-	open() { this.node.setAttribute('open', ''); }
-	close() { this.node.removeAttribute('open'); }
+	isOpen() { return this.node.classList.contains('open'); }
+
+	open() {
+		this.node.classList.add('open');
+		this.setHeight(this.height);
+	}
+
+	close() {
+		this.node.classList.remove('open');
+		this.setHeight(0);
+	}
+
 	toggle() {
 		if (this.isOpen()) { this.close(); }
 		else { this.open(); }
 	}
 
 	setHeight(h) {
-		this.container.style.height = `${this.height}px`;
+		this.container.style.height = `${h}px`;
 	}
 
 	addController(controller) {
@@ -56,7 +68,7 @@ export class Bin {
 		this.container.appendChild(controller.node);
 		controller.parent = this;
 		this.height += controller.height;
-		this.setHeight();
+		if (this.isOpen()) { this.setHeight(this.height); }
 	}
 
 	addControllers(...controllers) {
@@ -66,7 +78,7 @@ export class Bin {
 	removeController(controller) {
 		this.height -= controller.height;
 		controller.destroy();
-		this.setHeight();
+		this.setHeight(this.height);
 		let i = this.controllers.indexOf(controller);
 		delete this.controllers[i];
 		// this.controllers.splice(i, 1);
@@ -200,15 +212,15 @@ export class ToggleController extends Controller {
 		name.innerText = title;
 		label.appendChild(name);
 
-		let input = document.createElement('input');
-		input.classList.add('bin-item-value');
-		input.type = 'checkbox';
-		input.checked = this.value;
-		label.appendChild(input);
+		this.input = document.createElement('input');
+		this.input.classList.add('bin-item-value');
+		this.input.type = 'checkbox';
+		this.input.checked = this.value;
+		label.appendChild(this.input);
 
 		this.node.appendChild(label);
 
-		input.addEventListener('change', this.listener.bind(this));
+		this.input.addEventListener('change', this.listener.bind(this));
 	}
 
 	listener(e) {
