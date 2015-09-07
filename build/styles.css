@@ -3198,8 +3198,143 @@ MIT License: https://github.com/driftyco/ionicons
 .gui-pane .bin-container button.icon[type="radio"]:checked:before {
   content: "\F400";
 }
+.modal-overlay {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  font-size: 24px;
+  color: #ffffff;
+  align-items: center;
+  font-family: 'Segoe UI', 'Source Sans Pro', 'Helvetica Neue', sans-serif;
+  font-weight: 300;
+  cursor: default;
+  background-color: rgba(0, 98, 135, 0.25);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  animation: fadein 1s 1 linear 0s;
+}
+.modal-overlay .container {
+  width: 100%;
+  height: 60%;
+  background-color: rgba(0, 172, 237, 0.9);
+  animation: slideupin 1s 1 cubic-bezier(0.2, 0.8, 0.2, 1) 0s, fadein 1s 1 linear 0s;
+  overflow: hidden;
+}
+.modal-overlay .container .content {
+  margin: 0 auto;
+  width: 60%;
+  height: 100%;
+  padding: 32px 32px 32px 160px;
+  position: relative;
+  box-sizing: border-box;
+}
+.modal-overlay .container .content i {
+  width: 64px;
+  height: 64px;
+  display: block;
+  line-height: 1;
+  position: absolute;
+  left: 32px;
+  top: 32px;
+  font-size: 128px;
+  animation: slideupin 1s 1 cubic-bezier(0.2, 0.8, 0.2, 1) 0.05s, fadein 1.05s 1 linear 0s;
+}
+.modal-overlay .container .content h1 {
+  font-size: 300%;
+  font-weight: 100;
+  text-transform: lowercase;
+  line-height: 1;
+  margin: 0 0 16px 0;
+  animation: slideupin 1s 1 cubic-bezier(0.2, 0.8, 0.2, 1) 0.05s, fadein 1.05s 1 linear 0s;
+}
+.modal-overlay .container .content p {
+  line-height: 1.5;
+  margin: 0;
+  color: #99def8;
+  animation: slideupin 1s 1 cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s, fadein 1.1s 1 linear 0s;
+}
+.modal-overlay .container .content .actions {
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+  animation: slideupin 1s 1 cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s, fadein 1.2s 1 linear 0s;
+}
+.modal-overlay .container .content .actions a {
+  display: inline-block;
+  cursor: default;
+  padding: 8px 32px;
+  border: 2px solid #99def8;
+  margin-left: 32px;
+  color: #99def8;
+  text-decoration: none;
+  transition: all 0.1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.modal-overlay .container .content .actions a:hover,
+.modal-overlay .container .content .actions a:focus {
+  background: #33bdf1;
+  color: #ffffff;
+  border-color: #ffffff;
+}
+.modal-overlay .container .content .actions a:active {
+  background: #ffffff;
+  color: #00aced;
+}
+.modal-overlay .container .content .actions a.soft {
+  border: none;
+  background: none;
+}
+.modal-overlay.hidden {
+  animation: fadeout 1s 1 linear 0s;
+}
+.modal-overlay.hidden .container {
+  animation: slideupout 1s 1 cubic-bezier(0.2, 0.8, 0.2, 1) 0s, fadeout 1s 1 linear 0s;
+}
+@keyframes fadein {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes fadeout {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes slideupin {
+  0% {
+    transform: translate3D(0, 64px, 0);
+  }
+  100% {
+    transform: translate3D(0, 0, 0);
+  }
+}
+@keyframes slideupout {
+  0% {
+    transform: translate3D(0, 0, 0);
+  }
+  100% {
+    transform: translate3D(0, -64px, 0);
+  }
+}
 .playground {
   display: flex;
+  background: #000000;
 }
 .playground canvas[data-cursor="default"] {
   cursor: default;
@@ -3235,6 +3370,9 @@ MIT License: https://github.com/driftyco/ionicons
 }
 .playground canvas[data-cursor="not-allowed"] {
   cursor: not-allowed;
+}
+.playground.defocus {
+  filter: blur(32px);
 }
 
 /*# sourceMappingURL=styles.css.map*/

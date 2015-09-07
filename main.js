@@ -2,6 +2,7 @@ import * as Gui from './src/gui.js';
 import Playground from './src/playground.js';
 import Plot from './src/plot.js';
 import { Entity, Body } from './src/entity.js';
+import ModalOverlay from './src/modal-overlay.js';
 
 window.addEventListener('load', () => {
 	window.p = new Playground({
@@ -148,5 +149,16 @@ window.addEventListener('load', () => {
 	p.listen('selection', setEntityControllers);
 
 	p.setTool(p.tool.CREATE);
-	p.start();
+	// p.start();
+
+	let startInfo = new ModalOverlay(
+		'Particle Playground',
+		'This is a sandbox for simulating 2D particle physics. Play around to see what you can do!',
+		[
+			{ text: 'Hide', soft: true, onclick: (e) => { /* TODO: set localstorage setings */ } },
+			{ text: 'Start', onclick: (e) => { startInfo.destroy(); p.start(); } }
+		],
+		'ion-ionic'
+	);
+	startInfo.appendTo(p.el);
 });

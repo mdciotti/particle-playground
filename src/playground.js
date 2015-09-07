@@ -5,6 +5,7 @@ import { Body } from './entity.js';
 import CanvasRenderer from './canvas-renderer.js';
 import { TaggedUnion } from './enum.js';
 import Vec2 from './vec2.js';
+import ModalOverlay from './modal-overlay.js';
 import defaults from '../node_modules/defaults';
 
 // Webpack: load stylesheet
@@ -230,6 +231,24 @@ export default class Playground {
 		this.setTool(this.tool.NONE);
 		this.deselect();
 
+		let refreshMessage = new ModalOverlay(
+			'Simulation stopped',
+			'Reload the page to restart the simulation.',
+			[
+				{ text: 'Cancel', soft: true, onclick: (e) => { refreshMessage.destroy(); } },
+				{ text: 'Reload', onclick: (e) => { document.location.reload(); } }
+			],
+			'ion-ios-refresh-outline'
+		);
+		refreshMessage.appendTo(this.el);
+
+		// Blur background
+		this.el.classList.add('defocus');
+	}
+
+	reset() {
+		this.simulator.reset();
+		this.deselect();
 	}
 
 	loop(t) {

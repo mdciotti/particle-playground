@@ -1,0 +1,150 @@
+@background: #00ACED;
+@foreground: #FFFFFF;
+
+@snappy: cubic-bezier(0.2, 0.8, 0.2, 1.0);
+
+.fadeupin(@duration: 1s, @delay: 0s) {
+	animation: slideupin @duration 1 @snappy @delay,
+		fadein (@duration + @delay) 1 linear 0s;
+}
+
+.fadeupout(@duration: 1s, @delay: 0s) {
+	animation: slideupout @duration 1 @snappy @delay,
+		fadeout (@duration + @delay) 1 linear 0s;
+}
+
+.modal-overlay {
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	font-size: 24px;
+	color: @foreground;
+	align-items: center;
+	font-family: 'Segoe UI', 'Source Sans Pro', 'Helvetica Neue', sans-serif;
+	font-weight: 300;
+	cursor: default;
+	// background-color: rgba(0, 0, 0, 0.2);
+	background-color: fade(darken(@background, 20%), 25%);
+	user-select: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	animation: fadein 1s 1 linear 0s;
+
+	.container {
+		width: 100%;
+		height: 60%;
+		background-color: fade(@background, 90%);
+		// opacity: 0;
+		.fadeupin(1s, 0s);
+		overflow: hidden;
+
+		.content {
+			margin: 0 auto;
+			width: 60%;
+			height: 100%;
+			padding: 32px 32px 32px 160px;
+			position: relative;
+			box-sizing: border-box;
+
+			i {
+				width: 64px;
+				height: 64px;
+				display: block;
+				line-height: 1;
+				position: absolute;
+				left: 32px;
+				top: 32px;
+				font-size: 128px;
+				.fadeupin(1s, 0.05s);
+			}
+
+			h1 {
+				font-size: 300%;
+				font-weight: 100;
+				text-transform: lowercase;
+				line-height: 1;
+				margin: 0 0 16px 0;
+				// opacity: 0;
+				.fadeupin(1s, 0.05s);
+			}
+
+			p {
+				line-height: 1.5;
+				margin: 0;
+				color: mix(@foreground, @background, 60%);
+				// opacity: 0;
+				.fadeupin(1s, 0.1s);
+			}
+
+			.actions {
+				position: absolute;
+				bottom: 32px;
+				right: 32px;
+				// opacity: 0;
+				.fadeupin(1s, 0.2s);
+
+				a {
+					display: inline-block;
+					cursor: default;
+					padding: 8px 32px;
+					border: 2px solid mix(@foreground, @background, 60%);
+					margin-left: 32px;
+					color: mix(@foreground, @background, 60%);
+					text-decoration: none;
+					transition: all 0.1s @snappy;
+
+					&:hover, &:focus {
+						background: mix(@foreground, @background, 20%);
+						color: @foreground;
+						border-color: @foreground;
+					}
+
+					&:active {
+						background: @foreground;
+						color: @background;
+						// border-color: mix(@background, @foreground, 20%);
+					}
+
+					&.soft {
+						border: none;
+						background: none;
+					}
+				}
+			}
+		}
+	}
+
+	&.hidden {
+		animation: fadeout 1s 1 linear 0s;
+
+		.container {
+			.fadeupout(1s, 0s);
+		}
+	}
+}
+
+@keyframes fadein {
+	0% { opacity: 0; }
+	50% { opacity: 1; }
+	100% { opacity: 1; }
+}
+
+@keyframes fadeout {
+	0% { opacity: 1; }
+	50% { opacity: 0; }
+	100% { opacity: 0; }
+}
+
+@keyframes slideupin {
+	0% { transform: translate3D(0, 64px, 0); }
+	100% { transform: translate3D(0, 0, 0); }
+}
+
+@keyframes slideupout {
+	0% { transform: translate3D(0, 0, 0); }
+	100% { transform: translate3D(0, -64px, 0); }
+}
