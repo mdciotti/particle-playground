@@ -80,6 +80,20 @@
 		infoBin.addController(info);
 		p.gui.addBin(infoBin);
 	
+		var player = new Gui.Bin('Simulation', 'grid');
+		var playerActions = new Gui.GridController('playerActions', [{ tooltip: 'pause', disabled: false, icon: 'ion-ios-pause-outline', shortcut: 'P',
+			tooltip_alt: 'resume', icon_alt: 'ion-ios-play-outline', type: 'toggle',
+			onchange: function onchange(el) {
+				p.pause();
+			}
+		}, { tooltip: 'stop', disabled: false, icon: 'ion-ios-close-outline', shortcut: '[ESC]', type: 'action', action: function action() {
+				p.stop();
+			} }, { tooltip: 'reset', disabled: false, icon: 'ion-ios-reload', shortcut: 'R', type: 'action', action: function action() {
+				p.simulator.reset();
+			} }], { type: 'mixed' });
+		player.addController(playerActions);
+		p.gui.addBin(player);
+	
 		var toolBin = new Gui.Bin('Tools', 'grid');
 		var tools = new Gui.GridController('tools', [{ tooltip: 'create', selected: true, disabled: false, icon: 'ion-ios-plus-outline', shortcut: 'C', onselect: function onselect() {
 				p.setTool(p.tool.CREATE);
@@ -89,7 +103,7 @@
 				p.setTool(p.tool.PAN);
 			} }, { tooltip: 'zoom', selected: false, disabled: true, icon: 'ion-ios-search', shortcut: 'Z', onselect: function onselect() {
 				p.setTool(p.tool.ZOOM);
-			} }, { tooltip: 'grab', selected: false, disabled: true, icon: 'ion-android-hand', shortcut: 'G', onselect: function onselect() {
+			} }, { tooltip: 'grab', selected: false, disabled: false, icon: 'ion-android-hand', shortcut: 'G', onselect: function onselect() {
 				p.setTool(p.tool.GRAB);
 			} }]);
 		toolBin.addController(tools);
@@ -114,7 +128,7 @@
 		physicsBin.addControllers(gravity, friction, bounded, collisions);
 		p.gui.addBin(physicsBin);
 	
-		var appearance = new Gui.Bin('Appearance', 'list');
+		var appearance = new Gui.Bin('Appearance', 'list', false);
 		var trails = new Gui.ToggleController('trails', p.renderer.options.trails, { onchange: function onchange(val) {
 				p.renderer.options.trails = val;
 			} });
@@ -133,19 +147,6 @@
 		appearance.addControllers(trails, trailLength, trailFade, motionBlur, vectors);
 		p.gui.addBin(appearance);
 	
-		var player = new Gui.Bin('Simulation', 'grid');
-		var playerActions = new Gui.GridController('playerActions', [{ tooltip: 'pause', disabled: true, icon: 'ion-ios-pause-outline', shortcut: 'P', action: function action() {
-				p.simulator.pause();
-			} }, { tooltip: 'play', disabled: true, icon: 'ion-ios-play-outline', shortcut: ' ', action: function action() {
-				p.simulator.resume();
-			} }, { tooltip: 'stop', disabled: false, icon: 'ion-ios-close-outline', shortcut: '[ESC]', action: function action() {
-				p.stop();
-			} }, { tooltip: 'reset', disabled: false, icon: 'ion-ios-reload', shortcut: 'R', action: function action() {
-				p.simulator.reset();
-			} }], { type: 'action' });
-		player.addController(playerActions);
-		p.gui.addBin(player);
-	
 		function getKE() {
 			return p.simulator.stats.totalKineticEnergy;
 		}
@@ -159,7 +160,7 @@
 			return p.simulator.stats.totalMomentum;
 		}
 	
-		var statsBin = new Gui.Bin('Stats', 'list');
+		var statsBin = new Gui.Bin('Stats', 'list', false);
 		var ke = new Gui.InfoController('Kinetic Energy', getKE, { interval: 100, format: 'number' });
 		var pe = new Gui.InfoController('Potential Energy', getPE, { interval: 100, format: 'number' });
 		var te = new Gui.InfoController('Total Energy', getTE, { interval: 100, format: 'number' });
@@ -173,8 +174,7 @@
 		plot1.addSeries('PE', '#ed00ac', 1000, getPE);
 		plot1.addSeries('TE', '#ededed', 1000, getTE);
 	
-		// Update properties bin on selection
-		p.listen('selection', function (entities) {
+		function setEntityControllers(entities) {
 			propertiesBin.removeAllControllers();
 			if (entities.length === 0) {
 				return;
@@ -193,14 +193,30 @@
 			var color = new Gui.ColorController('color', e.color, { onchange: function onchange(val) {
 					e.color = val;
 				} });
+			var remove = new Gui.ActionController('delete', { action: function action() {
+					e.willDelete = true;
+					propertiesBin.removeAllControllers();
+					entities.splice(0, 1);
+					setEntityControllers(entities);
+				} });
 			propertiesBin.addControllers(name, xpos, ypos, color);
 			if (e instanceof _srcEntityJs.Body) {
 				var mass = new Gui.NumberController('mass', e.mass, { onchange: function onchange(val) {
 						e.setMass(val);
 					} });
-				propertiesBin.addController(mass);
+				var fixed = new Gui.ToggleController('fixed', e.fixed, { onchange: function onchange(val) {
+						e.fixed = val;
+					} });
+				var collidable = new Gui.ToggleController('collidable', !e.ignoreCollisions, { onchange: function onchange(val) {
+						e.ignoreCollisions = !val;
+					} });
+				propertiesBin.addControllers(mass, fixed, collidable);
 			}
-		});
+			propertiesBin.addController(remove);
+		}
+	
+		// Update properties bin on selection
+		p.listen('selection', setEntityControllers);
 	
 		p.setTool(p.tool.CREATE);
 		p.start();
@@ -246,21 +262,26 @@
 	
 	var Bin = (function () {
 		function Bin(title, type) {
+			var _this = this;
+	
 			var open = arguments.length <= 2 || arguments[2] === undefined ? true : arguments[2];
 	
 			_classCallCheck(this, Bin);
 	
 			this.title = title;
 			this.type = type;
-			this.height = null;
+			this.height = 0;
 			this.container = null;
 			this.controllers = [];
 			this.node = null;
-			this.node = document.createElement('details');
+			this.node = document.createElement('div');
 			this.node.classList.add('bin');
 	
-			var titlebar = document.createElement('summary');
+			var titlebar = document.createElement('div');
 			titlebar.classList.add('bin-title-bar');
+			titlebar.addEventListener('click', function (e) {
+				_this.toggle();
+			});
 	
 			var icon = document.createElement('i');
 			icon.classList.add('ion-ios-arrow-right');
@@ -278,6 +299,8 @@
 			this.container.classList.add('bin-' + this.type);
 			this.node.appendChild(this.container);
 	
+			this.setHeight(this.height);
+	
 			if (open) {
 				this.open();
 			}
@@ -286,17 +309,19 @@
 		_createClass(Bin, [{
 			key: 'isOpen',
 			value: function isOpen() {
-				return this.node.hasAttribute('open');
+				return this.node.classList.contains('open');
 			}
 		}, {
 			key: 'open',
 			value: function open() {
-				this.node.setAttribute('open', '');
+				this.node.classList.add('open');
+				this.setHeight(this.height);
 			}
 		}, {
 			key: 'close',
 			value: function close() {
-				this.node.removeAttribute('open');
+				this.node.classList.remove('open');
+				this.setHeight(0);
 			}
 		}, {
 			key: 'toggle',
@@ -310,7 +335,7 @@
 		}, {
 			key: 'setHeight',
 			value: function setHeight(h) {
-				this.container.style.height = this.height + 'px';
+				this.container.style.height = h + 'px';
 			}
 		}, {
 			key: 'addController',
@@ -319,7 +344,9 @@
 				this.container.appendChild(controller.node);
 				controller.parent = this;
 				this.height += controller.height;
-				this.setHeight();
+				if (this.isOpen()) {
+					this.setHeight(this.height);
+				}
 			}
 		}, {
 			key: 'addControllers',
@@ -335,7 +362,7 @@
 			value: function removeController(controller) {
 				this.height -= controller.height;
 				controller.destroy();
-				this.setHeight();
+				this.setHeight(this.height);
 				var i = this.controllers.indexOf(controller);
 				delete this.controllers[i];
 				// this.controllers.splice(i, 1);
@@ -509,15 +536,15 @@
 			name.innerText = title;
 			label.appendChild(name);
 	
-			var input = document.createElement('input');
-			input.classList.add('bin-item-value');
-			input.type = 'checkbox';
-			input.checked = this.value;
-			label.appendChild(input);
+			this.input = document.createElement('input');
+			this.input.classList.add('bin-item-value');
+			this.input.type = 'checkbox';
+			this.input.checked = this.value;
+			label.appendChild(this.input);
 	
 			this.node.appendChild(label);
 	
-			input.addEventListener('change', this.listener.bind(this));
+			this.input.addEventListener('change', this.listener.bind(this));
 		}
 	
 		_createClass(ToggleController, [{
@@ -534,8 +561,52 @@
 	
 	exports.ToggleController = ToggleController;
 	
-	var DropdownController = (function (_Controller4) {
-		_inherits(DropdownController, _Controller4);
+	var ActionController = (function (_Controller4) {
+		_inherits(ActionController, _Controller4);
+	
+		function ActionController(title, opts) {
+			_classCallCheck(this, ActionController);
+	
+			_get(Object.getPrototypeOf(ActionController.prototype), 'constructor', this).call(this, 'action', title);
+			this.height = 48;
+	
+			// Set default options
+			this.options = (0, _node_modulesDefaults2['default'])(opts, {
+				action: function action(e) {}
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.innerText = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('input');
+			this.input.classList.add('bin-item-value');
+			this.input.type = 'button';
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.input.addEventListener('click', this.listener.bind(this));
+		}
+	
+		_createClass(ActionController, [{
+			key: 'listener',
+			value: function listener(e) {
+				// console.log(`Running ${this.title}`);
+				this.options.action(e);
+			}
+		}]);
+	
+		return ActionController;
+	})(Controller);
+	
+	exports.ActionController = ActionController;
+	
+	var DropdownController = (function (_Controller5) {
+		_inherits(DropdownController, _Controller5);
 	
 		function DropdownController(title, items, opts) {
 			_classCallCheck(this, DropdownController);
@@ -569,7 +640,7 @@
 		_createClass(DropdownController, [{
 			key: 'createItems',
 			value: function createItems(list) {
-				var _this = this;
+				var _this2 = this;
 	
 				this.items = list;
 				this.items.forEach(function (item) {
@@ -583,7 +654,7 @@
 					if (item.disabled) {
 						itemNode.disabled = true;
 					}
-					_this.input.appendChild(itemNode);
+					_this2.input.appendChild(itemNode);
 				});
 			}
 		}, {
@@ -600,8 +671,8 @@
 	
 	exports.DropdownController = DropdownController;
 	
-	var HTMLController = (function (_Controller5) {
-		_inherits(HTMLController, _Controller5);
+	var HTMLController = (function (_Controller6) {
+		_inherits(HTMLController, _Controller6);
 	
 		function HTMLController(title, value, opts) {
 			_classCallCheck(this, HTMLController);
@@ -629,14 +700,14 @@
 	
 	exports.HTMLController = HTMLController;
 	
-	var GridController = (function (_Controller6) {
-		_inherits(GridController, _Controller6);
+	var GridController = (function (_Controller7) {
+		_inherits(GridController, _Controller7);
 	
 		function GridController(title, items, opts) {
 			_classCallCheck(this, GridController);
 	
 			_get(Object.getPrototypeOf(GridController.prototype), 'constructor', this).call(this, 'grid', title);
-			this.height = 48;
+			this.height = 0;
 	
 			// Set default options
 			this.options = (0, _node_modulesDefaults2['default'])(opts, {
@@ -653,52 +724,58 @@
 		_createClass(GridController, [{
 			key: 'createItems',
 			value: function createItems(list) {
-				var _this2 = this;
+				var _this3 = this;
 	
 				this.height = 48 * Math.ceil(list.length / Math.floor(256 / 48));
 	
 				var i = 0;
 				this.items = list;
 				this.items.forEach(function (item) {
-					var itemNode = document.createElement('div');
-					itemNode.classList.add('bin-item');
-					itemNode.dataset.index = i++;
-					itemNode.title = item.tooltip;
+					item.node = document.createElement('div');
+					item.node.classList.add('bin-item');
+					item.node.dataset.index = i++;
+					item.node.title = item.tooltip;
 					if (item.selected) {
-						itemNode.classList.add('selected');
+						item.node.classList.add('selected');
 					}
 					if (item.disabled) {
-						itemNode.classList.add('disabled');
+						item.node.classList.add('disabled');
 					}
-					itemNode.addEventListener('click', function (e) {
-						_this2.listener(e);
+					if (_this3.options.type === 'toggle' || item.type === 'toggle') {
+						item.alt = false;
+					}
+					item.node.addEventListener('click', function (e) {
+						_this3.listener(e);
 					});
-					// itemNode.addEventListener('click', item.onclick);
-					var icon = document.createElement('i');
+					// item.node.addEventListener('click', item.onclick);
+					item.iconNode = document.createElement('i');
 					if (item.hasOwnProperty('icon') && item.icon.length > 0) {
-						icon.classList.add(item.icon);
+						item.iconNode.classList.add(item.icon);
 					} else if (item.hasOwnProperty('shortcut') && item.shortcut.length > 0) {
-						icon.innerText = item.shortcut.toUpperCase().charAt(0);
+						item.iconNode.innerText = item.shortcut.toUpperCase().charAt(0);
 					}
-					itemNode.appendChild(icon);
-					_this2.node.appendChild(itemNode);
+					item.node.appendChild(item.iconNode);
+					_this3.node.appendChild(item.node);
 				});
 			}
 		}, {
 			key: 'listener',
 			value: function listener(e) {
 				var el = e.target,
-				    i = undefined;
+				    i = undefined,
+				    type = undefined;
 				while (el.parentElement !== null && typeof el.dataset.index === 'undefined') {
 					el = el.parentElement;
 				}
 				if (typeof el.dataset.index !== 'undefined') {
 					i = parseInt(el.dataset.index);
-					if (this.options.type === 'select') {
+					type = this.options.type === 'mixed' ? this.items[i].type : this.options.type;
+					// console.log(type);
+					if (type === 'select') {
 						this.select(i);
-					} else if (this.options.type === 'multi') {
-						this.multiSelect(i);
-					} else if (this.options.type === 'action') {
+					} else if (type === 'toggle') {
+						this.toggle(i);
+					} else if (type === 'action') {
 						if (!this.items[i].disabled) {
 							this.items[i].action(el);
 						}
@@ -724,6 +801,21 @@
 				this.items[i].onselect(children[i]);
 			}
 		}, {
+			key: 'toggle',
+			value: function toggle(i) {
+				var item = this.items[i];
+				if (item.disabled) {
+					return;
+				}
+	
+				item.alt = !item.alt;
+				item.node.classList.toggle('alt');
+				// console.log(item);
+				item.node.title = item.alt ? item.tooltip_alt : item.tooltip;
+				item.iconNode.className = item.alt ? item.icon_alt : item.icon;
+				item.onchange(item.node);
+			}
+		}, {
 			key: 'multiSelect',
 			value: function multiSelect(i) {}
 		}]);
@@ -733,8 +825,8 @@
 	
 	exports.GridController = GridController;
 	
-	var CanvasController = (function (_Controller7) {
-		_inherits(CanvasController, _Controller7);
+	var CanvasController = (function (_Controller8) {
+		_inherits(CanvasController, _Controller8);
 	
 		function CanvasController(opts) {
 			_classCallCheck(this, CanvasController);
@@ -752,8 +844,8 @@
 	
 	exports.CanvasController = CanvasController;
 	
-	var InfoController = (function (_Controller8) {
-		_inherits(InfoController, _Controller8);
+	var InfoController = (function (_Controller9) {
+		_inherits(InfoController, _Controller9);
 	
 		function InfoController(title, getter, opts) {
 			_classCallCheck(this, InfoController);
@@ -825,8 +917,8 @@
 	
 	exports.InfoController = InfoController;
 	
-	var ColorController = (function (_Controller9) {
-		_inherits(ColorController, _Controller9);
+	var ColorController = (function (_Controller10) {
+		_inherits(ColorController, _Controller10);
 	
 		function ColorController(title, value, opts) {
 			_classCallCheck(this, ColorController);
@@ -2939,6 +3031,10 @@
 	
 	var _enumJs = __webpack_require__(/*! ./enum.js */ 28);
 	
+	var _vec2Js = __webpack_require__(/*! ./vec2.js */ 20);
+	
+	var _vec2Js2 = _interopRequireDefault(_vec2Js);
+	
 	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 6);
 	
 	var _node_modulesDefaults2 = _interopRequireDefault(_node_modulesDefaults);
@@ -2992,19 +3088,18 @@
 			this.tool = new _enumJs.TaggedUnion({
 				SELECT: { cursor: 'default' },
 				CREATE: { cursor: 'crosshair' },
-				MOVE: { cursor: 'grab', activeCursor: 'grabbing' },
-				ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-in' }
+				PAN: { cursor: 'move' },
+				ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-in' },
+				GRAB: { cursor: 'grab', activeCursor: 'grabbing' }
 			});
 	
 			// Input State
 			this.input = {
 				mouse: {
-					x: 0,
-					y: 0,
-					dx: 0,
-					dy: 0,
-					dragStartX: 0,
-					dragStartY: 0,
+					x: 0, y: 0,
+					dx: 0, dy: 0,
+					dragX: 0, dragY: 0,
+					dragStartX: 0, dragStartY: 0,
 					isDown: false
 				}
 			};
@@ -3024,14 +3119,34 @@
 				this.input.mouse.isDown = true;
 				this.input.mouse.dragStartX = e.layerX;
 				this.input.mouse.dragStartY = e.layerY;
+				this.input.mouse.dragX = 0;
+				this.input.mouse.dragY = 0;
 				this.input.mouse.dx = 0;
 				this.input.mouse.dy = 0;
 			};
 			this.events.mousemove = function (e) {
-				this.input.mouse.dx = e.layerX - this.input.mouse.dragStartX;
-				this.input.mouse.dy = e.layerY - this.input.mouse.dragStartY;
+				var _this = this;
+	
+				this.input.mouse.dx = e.layerX - this.input.mouse.x;
+				this.input.mouse.dy = e.layerY - this.input.mouse.y;
+				this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
+				this.input.mouse.dragY = e.layerY - this.input.mouse.dragStartY;
 				this.input.mouse.x = e.layerX;
 				this.input.mouse.y = e.layerY;
+	
+				switch (this.tool._current) {
+					case this.tool.GRAB:
+						if (this.input.mouse.isDown) {
+							(function () {
+								// console.log(e);
+								var delta = new _vec2Js2['default'](_this.input.mouse.dx, _this.input.mouse.dy);
+								_this.selectedEntities.forEach(function (entity) {
+									entity.position.addSelf(delta);
+								});
+							})();
+						}
+						break;
+				}
 			};
 			this.events.mousewheel = function (e) {
 				this.input.mouse.wheel = e.wheelDelta;
@@ -3040,17 +3155,23 @@
 			this.events.mouseup = function (e) {
 				var particle = undefined;
 				this.input.mouse.isDown = false;
-				this.input.mouse.dx = e.layerX - this.input.mouse.dragStartX;
-				this.input.mouse.dy = e.layerY - this.input.mouse.dragStartY;
+				this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
+				this.input.mouse.dragY = e.layerY - this.input.mouse.dragStartY;
+	
 				switch (this.tool._current) {
 					case this.tool.CREATE:
-						particle = new _entityJs.Body(this.input.mouse.dragStartX, this.input.mouse.dragStartY, this.simulator.parameters.createMass, this.input.mouse.dx / 50, this.input.mouse.dy / 50);
+						particle = new _entityJs.Body(this.input.mouse.dragStartX, this.input.mouse.dragStartY, this.simulator.parameters.createMass, this.input.mouse.dragX / 50, this.input.mouse.dragY / 50);
 						this.simulator.entities.push(particle);
 						this.selectedEntities = [particle];
 						this.events.selection(this.selectedEntities);
 						break;
+	
 					case this.tool.SELECT:
-						this.selectRegion(this.input.mouse.dragStartX, this.input.mouse.dragStartY, this.input.mouse.dx, this.input.mouse.dy);
+						this.selectRegion(this.input.mouse.dragStartX, this.input.mouse.dragStartY, this.input.mouse.dragX, this.input.mouse.dragY);
+						break;
+	
+					case this.tool.GRAB:
+						// Apply velocity to selected entities
 						break;
 				}
 			};
@@ -3099,6 +3220,11 @@
 				this.loop(1 / 60);
 			}
 		}, {
+			key: 'pause',
+			value: function pause() {
+				this.paused = !this.paused;
+			}
+		}, {
 			key: 'stop',
 			value: function stop() {
 				cancelAnimationFrame(this.animator);
@@ -3109,7 +3235,9 @@
 				var dt = (t - this.runtime) / 10;
 				this.runtime = t;
 				this.animator = requestAnimationFrame(this.loop.bind(this));
-				this.simulator.update(dt);
+				if (!this.paused) {
+					this.simulator.update(dt);
+				}
 				this.renderer.render(this.simulator.entities, this.input, this.selectedEntities, this.simulator.stats, this.simulator.parameters, this.tool);
 				// this.clock.tick();
 			}
@@ -3259,6 +3387,11 @@
 				// Integrator
 				for (i = 0; i < len; i++) {
 					e = this.entities[i];
+					if (e.fixed) {
+						e.acceleration.zero();
+						e.velocity.zero();
+						continue;
+					}
 	
 					switch (this.options.integrator) {
 						case 'euler':
@@ -4100,6 +4233,7 @@
 				    v = undefined,
 				    inRadius = undefined,
 				    willSelect = undefined,
+				    selectTool = undefined,
 				    x = undefined,
 				    y = undefined,
 				    i = undefined,
@@ -4118,6 +4252,11 @@
 	
 				for (i = 0, len = entities.length; i < len; ++i) {
 					e = entities[i];
+	
+					if (e.willDelete) {
+						continue;
+					}
+	
 					x = e.position.x;
 					y = e.position.y;
 					this.ctx.save();
@@ -4129,26 +4268,25 @@
 					this.ctx.restore();
 	
 					// Mouse interaction
-					if (tool._current === tool.SELECT) {
-						m = new _vec2Js2['default'](input.mouse.x, input.mouse.y);
-						inRadius = m.distSq(e.position) < e.radius * e.radius;
-						willSelect = e.inRegion(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dx, input.mouse.dy) && input.mouse.isDown;
-						if (inRadius && this.ctx.canvas.style.cursor !== 'pointer') {
-							this.ctx.canvas.style.cursor = 'pointer';
-						} else if (!inRadius) {
-							this.ctx.canvas.style.cursor = 'default';
-						}
-						if (inRadius || willSelect || selectedEntities.indexOf(e) >= 0) {
-							this.ctx.save();
-							this.ctx.strokeStyle = '#FFFFFF';
-							this.ctx.lineWidth = 2;
-							this.ctx.setLineDash([5]);
-							this.ctx.beginPath();
-							this.ctx.arc(x, y, e.radius + 4, 0, 2 * Math.PI, false);
-							this.ctx.closePath();
-							this.ctx.stroke();
-							this.ctx.restore();
-						}
+					m = new _vec2Js2['default'](input.mouse.x, input.mouse.y);
+					selectTool = tool._current === tool.SELECT;
+					inRadius = m.distSq(e.position) < e.radius * e.radius && selectTool;
+					willSelect = e.inRegion(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dragX, input.mouse.dragY) && input.mouse.isDown && selectTool;
+					if (inRadius && this.ctx.canvas.style.cursor !== 'pointer') {
+						this.ctx.canvas.style.cursor = 'pointer';
+					} else if (!inRadius) {
+						this.ctx.canvas.style.cursor = 'default';
+					}
+					if (inRadius || willSelect || selectedEntities.indexOf(e) >= 0) {
+						this.ctx.save();
+						this.ctx.strokeStyle = '#FFFFFF';
+						this.ctx.lineWidth = 2;
+						this.ctx.setLineDash([5]);
+						this.ctx.beginPath();
+						this.ctx.arc(x, y, e.radius + 4, 0, 2 * Math.PI, false);
+						this.ctx.closePath();
+						this.ctx.stroke();
+						this.ctx.restore();
 					}
 	
 					// Trail Vectors
@@ -4204,13 +4342,13 @@
 					case tool.SELECT:
 						if (input.mouse.isDown) {
 							var x0 = input.mouse.dragStartX;
-							var x1 = x0 + input.mouse.dx;
+							var x1 = x0 + input.mouse.dragX;
 							var _ref = [Math.min(x0, x1), Math.max(x0, x1)];
 							x0 = _ref[0];
 							x1 = _ref[1];
 	
 							var y0 = input.mouse.dragStartY;
-							var y1 = y0 + input.mouse.dy;
+							var y1 = y0 + input.mouse.dragY;
 	
 							// do @ctx.beginPath
 							var _ref2 = [Math.min(y0, y1), Math.max(y0, y1)];
@@ -4237,15 +4375,15 @@
 							x = input.mouse.dragStartX;
 							y = input.mouse.dragStartY;
 	
-							v = new _vec2Js2['default'](input.mouse.dx, input.mouse.dy);
+							v = new _vec2Js2['default'](input.mouse.dragX, input.mouse.dragY);
 							uv = v.normalize();
 							unv = new _vec2Js2['default'](-uv.y, uv.x);
 	
 							p1 = v.subtract(uv.subtract(unv).scale(10));
 							p2 = p1.subtract(unv.scale(20));
 	
-							Xend = input.mouse.dragStartX + input.mouse.dx;
-							Yend = input.mouse.dragStartY + input.mouse.dy;
+							Xend = input.mouse.dragStartX + input.mouse.dragX;
+							Yend = input.mouse.dragStartY + input.mouse.dragY;
 	
 							this.ctx.strokeStyle = 'rgba(255,0,0,1)';
 	

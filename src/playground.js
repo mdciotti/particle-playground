@@ -185,6 +185,10 @@ export default class Playground {
 		this.loop(1 / 60);
 	}
 
+	pause() {
+		this.paused = !this.paused;
+	}
+
 	stop() {
 		cancelAnimationFrame(this.animator);
 	}
@@ -193,7 +197,7 @@ export default class Playground {
 		let dt = (t - this.runtime) / 10;
 		this.runtime = t;
 		this.animator = requestAnimationFrame(this.loop.bind(this));
-		this.simulator.update(dt);
+		if (!this.paused) { this.simulator.update(dt); }
 		this.renderer.render(
 			this.simulator.entities,
 			this.input,

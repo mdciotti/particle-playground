@@ -327,7 +327,7 @@ export class HTMLController extends Controller {
 export class GridController extends Controller {
 	constructor(title, items, opts) {
 		super('grid', title);
-		this.height = 48;
+		this.height = 0;
 
 		// Set default options
 		this.options = defaults(opts, {
@@ -347,32 +347,35 @@ export class GridController extends Controller {
 		let i = 0;
 		this.items = list;
 		this.items.forEach(item => {
-			let itemNode = document.createElement('div');
-			itemNode.classList.add('bin-item');
-			itemNode.dataset.index = i++;
-			itemNode.title = item.tooltip;
-			if (item.selected) { itemNode.classList.add('selected'); }
-			if (item.disabled) { itemNode.classList.add('disabled'); }
-			itemNode.addEventListener('click', e => { this.listener(e); });
-			// itemNode.addEventListener('click', item.onclick);
-			let icon = document.createElement('i');
-			if (item.hasOwnProperty('icon') && item.icon.length > 0) { icon.classList.add(item.icon); }
-			else if (item.hasOwnProperty('shortcut') && item.shortcut.length > 0) { icon.innerText = item.shortcut.toUpperCase().charAt(0); }
-			itemNode.appendChild(icon);
-			this.node.appendChild(itemNode);
+			item.node = document.createElement('div');
+			item.node.classList.add('bin-item');
+			item.node.dataset.index = i++;
+			item.node.title = item.tooltip;
+			if (item.selected) { item.node.classList.add('selected'); }
+			if (item.disabled) { item.node.classList.add('disabled'); }
+			if (this.options.type === 'toggle' || item.type === 'toggle') { item.alt = false; }
+			item.node.addEventListener('click', e => { this.listener(e); });
+			// item.node.addEventListener('click', item.onclick);
+			item.iconNode = document.createElement('i');
+			if (item.hasOwnProperty('icon') && item.icon.length > 0) { item.iconNode.classList.add(item.icon); }
+			else if (item.hasOwnProperty('shortcut') && item.shortcut.length > 0) { item.iconNode.innerText = item.shortcut.toUpperCase().charAt(0); }
+			item.node.appendChild(item.iconNode);
+			this.node.appendChild(item.node);
 		});
 	}
 
 	listener(e) {
-		let el = e.target, i;
+		let el = e.target, i, type;
 		while (el.parentElement !== null && typeof el.dataset.index === 'undefined') {
 			el = el.parentElement;
 		}
 		if (typeof el.dataset.index !== 'undefined') {
 			i = parseInt(el.dataset.index);
-			if (this.options.type === 'select') { this.select(i); }
-			else if (this.options.type === 'multi') { this.multiSelect(i); }
-			else if (this.options.type === 'action') {
+			type = this.options.type === 'mixed' ? this.items[i].type : this.options.type;
+			// console.log(type);
+			if (type === 'select') { this.select(i); }
+			else if (type === 'toggle') { this.toggle(i); }
+			else if (type === 'action') {
 				if (!this.items[i].disabled) { this.items[i].action(el); }
 			}
 		}
@@ -391,6 +394,18 @@ export class GridController extends Controller {
 		// el = this.parent.container.querySelector(`.bin-item[data-index=${i}]`);
 		children[i].classList.add('selected');
 		this.items[i].onselect(children[i]);
+	}
+
+	toggle(i) {
+		let item = this.items[i];
+		if (item.disabled) { return; }
+
+		item.alt = !item.alt;
+		item.node.classList.toggle('alt');
+		// console.log(item);
+		item.node.title = item.alt ? item.tooltip_alt : item.tooltip;
+		item.iconNode.className = item.alt ? item.icon_alt : item.icon;
+		item.onchange(item.node);
 	}
 
 	multiSelect(i) {}

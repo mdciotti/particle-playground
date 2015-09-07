@@ -21,6 +21,20 @@ window.addEventListener('load', () => {
 	infoBin.addController(info);
 	p.gui.addBin(infoBin);
 
+	let player = new Gui.Bin('Simulation', 'grid');
+	let playerActions = new Gui.GridController('playerActions', [
+		{ tooltip: 'pause', disabled: false, icon: 'ion-ios-pause-outline', shortcut: 'P',
+			tooltip_alt: 'resume', icon_alt: 'ion-ios-play-outline', type: 'toggle',
+			onchange: (el) => {
+				p.pause();
+			}
+		},
+		{ tooltip: 'stop', disabled: false, icon: 'ion-ios-close-outline', shortcut: '[ESC]', type: 'action', action: () => { p.stop(); } },
+		{ tooltip: 'reset', disabled: false, icon: 'ion-ios-reload', shortcut: 'R', type: 'action', action: () => { p.simulator.reset(); } }
+	], { type: 'mixed' });
+	player.addController(playerActions);
+	p.gui.addBin(player);
+
 	let toolBin = new Gui.Bin('Tools', 'grid');
 	let tools = new Gui.GridController('tools', [
 		{ tooltip: 'create', selected: true, disabled: false, icon: 'ion-ios-plus-outline', shortcut: 'C', onselect: () => { p.setTool(p.tool.CREATE); } },
@@ -59,16 +73,6 @@ window.addEventListener('load', () => {
 	let vectors = new Gui.ToggleController('vectors', p.renderer.options.debug, { onchange: (val) => { p.renderer.options.debug = val; } });
 	appearance.addControllers(trails, trailLength, trailFade, motionBlur, vectors);
 	p.gui.addBin(appearance);
-
-	let player = new Gui.Bin('Simulation', 'grid');
-	let playerActions = new Gui.GridController('playerActions', [
-		{ tooltip: 'pause', disabled: true, icon: 'ion-ios-pause-outline', shortcut: 'P', action: () => { p.simulator.pause(); } },
-		{ tooltip: 'play', disabled: true, icon: 'ion-ios-play-outline', shortcut: ' ', action: () => { p.simulator.resume(); } },
-		{ tooltip: 'stop', disabled: false, icon: 'ion-ios-close-outline', shortcut: '[ESC]', action: () => { p.stop(); } },
-		{ tooltip: 'reset', disabled: false, icon: 'ion-ios-reload', shortcut: 'R', action: () => { p.simulator.reset(); } }
-	], { type: 'action' });
-	player.addController(playerActions);
-	p.gui.addBin(player);
 
 	function getKE() { return p.simulator.stats.totalKineticEnergy; }
 	function getPE() { return p.simulator.stats.totalPotentialEnergy; }
