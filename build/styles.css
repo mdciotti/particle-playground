@@ -3055,6 +3055,7 @@ MIT License: https://github.com/driftyco/ionicons
   width: 48px;
   flex: 0 0 auto;
   position: relative;
+  transition: all 0.1s ease-out;
 }
 .gui-pane .bin-container.bin-grid .bin-item:not(.disabled):hover {
   background-color: #193952;
