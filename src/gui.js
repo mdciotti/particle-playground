@@ -126,9 +126,9 @@ export class NumberController extends Controller {
 
 		// Set default options
 		this.options = defaults(opts, {
-			min: -Number.MAX_VALUE,
-			max: Number.MAX_VALUE,
-			step: 1,
+			min: null,
+			max: null,
+			step: null,
 			onchange: function (val) {}
 		});
 
@@ -143,9 +143,9 @@ export class NumberController extends Controller {
 		input.classList.add('bin-item-value');
 		input.type = 'number';
 		input.value = this.value;
-		input.min = this.options.min;
-		input.max = this.options.max;
-		input.step = this.options.step;
+		if (this.options.min !== null) input.min = this.options.min;
+		if (this.options.max !== null) input.max = this.options.max;
+		if (this.options.step !== null) input.step = this.options.step;
 		label.appendChild(input);
 
 		this.node.appendChild(label);

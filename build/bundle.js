@@ -102,7 +102,7 @@
 		var gravity = new Gui.ToggleController('gravity', p.simulator.options.gravity, { ontoggle: function ontoggle(val) {
 				p.simulator.options.gravity = val;
 			} });
-		var friction = new Gui.NumberController('friction', p.simulator.options.friction, { min: 0, max: 1, step: 0.1, onchange: function onchange(val) {
+		var friction = new Gui.NumberController('friction', p.simulator.options.friction, { min: 0, onchange: function onchange(val) {
 				p.simulator.options.friction = val;
 			} });
 		var bounded = new Gui.ToggleController('bounded', p.simulator.options.bounded, { ontoggle: function ontoggle(val) {
@@ -419,9 +419,9 @@
 	
 			// Set default options
 			this.options = (0, _node_modulesDefaults2['default'])(opts, {
-				min: -Number.MAX_VALUE,
-				max: Number.MAX_VALUE,
-				step: 1,
+				min: null,
+				max: null,
+				step: null,
 				onchange: function onchange(val) {}
 			});
 	
@@ -436,9 +436,9 @@
 			input.classList.add('bin-item-value');
 			input.type = 'number';
 			input.value = this.value;
-			input.min = this.options.min;
-			input.max = this.options.max;
-			input.step = this.options.step;
+			if (this.options.min !== null) input.min = this.options.min;
+			if (this.options.max !== null) input.max = this.options.max;
+			if (this.options.step !== null) input.step = this.options.step;
 			label.appendChild(input);
 	
 			this.node.appendChild(label);
@@ -3224,7 +3224,8 @@
 				    FB = undefined,
 				    e = undefined,
 				    next = undefined,
-				    to_create = undefined;
+				    to_create = undefined,
+				    v2 = undefined;
 				this.stats.totalMass = 0;
 				this.stats.totalKineticEnergy = 0;
 				this.stats.totalPotentialEnergy = 0;
@@ -3238,19 +3239,26 @@
 				len = this.entities.length;
 	
 				// Force Accumulator
-				if (this.options.gravity) {
+				for (iA = 0; iA < len; iA++) {
+					A = this.entities[iA];
 	
-					for (iA = 0; iA < len; iA++) {
-						A = this.entities[iA];
+					if (!A.hasOwnProperty('mass') || A.fixed) {
+						continue;
+					}
 	
-						if (!A.hasOwnProperty('mass')) {
-							continue;
+					// Apply friction
+					if (this.options.friction > 0) {
+						v2 = A.velocity.magnitudeSq();
+						if (v2 > 0) {
+							A.applyForce(A.velocity.normalize().scaleSelf(-v2 * this.options.friction * A.radius / 100));
 						}
+					}
 	
+					if (this.options.gravity) {
 						for (iB = iA + 1; iB < len; iB++) {
 							B = this.entities[iB];
 	
-							if (!B.hasOwnProperty('mass')) {
+							if (!B.hasOwnProperty('mass') || B.fixed) {
 								continue;
 							}
 	

@@ -34,7 +34,7 @@ export default class Simulator {
 	}
 
 	update(dt) {
-		let i, len, iA, A, iB, B, d, dist2, f, FA, FB, e, next, to_create;
+		let i, len, iA, A, iB, B, d, dist2, f, FA, FB, e, next, to_create, v2;
 		this.stats.totalMass = 0;
 		this.stats.totalKineticEnergy = 0;
 		this.stats.totalPotentialEnergy = 0;
@@ -46,17 +46,25 @@ export default class Simulator {
 		len = this.entities.length;
 
 		// Force Accumulator
-		if (this.options.gravity) {
+		for (iA = 0; iA < len; iA++) {
+			A = this.entities[iA];
 
-			for (iA = 0; iA < len; iA++) {
-				A = this.entities[iA];
+			if (!A.hasOwnProperty('mass') || A.fixed) { continue; }
 
-				if (!A.hasOwnProperty('mass')) { continue; }
+			// Apply friction
+			if (this.options.friction > 0) {
+				v2 = A.velocity.magnitudeSq();
+				if (v2 > 0) {
+					A.applyForce(A.velocity.normalize()
+						.scaleSelf(-v2 * this.options.friction * A.radius / 100));
+				}
+			}
 
+			if (this.options.gravity) {
 				for (iB = iA + 1; iB < len; iB++) {
 					B = this.entities[iB];
 
-					if (!B.hasOwnProperty('mass')) { continue; }
+					if (!B.hasOwnProperty('mass') || B.fixed) { continue; }
 
 					d = B.position.subtract(A.position).normalizeSelf();
 					dist2 = A.position.distSq(B.position);

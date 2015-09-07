@@ -38,7 +38,7 @@ window.addEventListener('load', () => {
 
 	let physicsBin = new Gui.Bin('Physics', 'list');
 	let gravity = new Gui.ToggleController('gravity', p.simulator.options.gravity, { ontoggle: (val) => { p.simulator.options.gravity = val; } });
-	let friction = new Gui.NumberController('friction', p.simulator.options.friction, { min: 0, max: 1, step: 0.1, onchange: (val) => { p.simulator.options.friction = val; } });
+	let friction = new Gui.NumberController('friction', p.simulator.options.friction, { min: 0, onchange: (val) => { p.simulator.options.friction = val; } });
 	let bounded = new Gui.ToggleController('bounded', p.simulator.options.bounded, { ontoggle: (val) => { p.simulator.options.bounded = val; } });
 	let collisions = new Gui.DropdownController('collisions', [
 		{ value: 'none', selected: false, disabled: false },
