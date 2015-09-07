@@ -4,6 +4,7 @@ import Clock from './clock.js';
 import { Body } from './entity.js';
 import CanvasRenderer from './canvas-renderer.js';
 import { TaggedUnion } from './enum.js';
+import Vec2 from './vec2.js';
 import defaults from '../node_modules/defaults';
 
 // Webpack: load stylesheet
@@ -53,19 +54,18 @@ export default class Playground {
 		this.tool = new TaggedUnion({
 			SELECT: { cursor: 'default' },
 			CREATE: { cursor: 'crosshair' },
-			MOVE: { cursor: 'grab', activeCursor: 'grabbing' },
-			ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-in' }
+			PAN: { cursor: 'move' },
+			ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-in' },
+			GRAB: { cursor: 'grab', activeCursor: 'grabbing' }
 		});
 
 		// Input State
 		this.input = {
 			mouse: {
-				x: 0,
-				y: 0,
-				dx: 0,
-				dy: 0,
-				dragStartX: 0,
-				dragStartY: 0,
+				x: 0, y: 0,
+				dx: 0, dy: 0,
+				dragX: 0, dragY: 0,
+				dragStartX: 0, dragStartY: 0,
 				isDown: false
 			}
 		};
@@ -85,14 +85,30 @@ export default class Playground {
 			this.input.mouse.isDown = true;
 			this.input.mouse.dragStartX = e.layerX;
 			this.input.mouse.dragStartY = e.layerY;
+			this.input.mouse.dragX = 0;
+			this.input.mouse.dragY = 0;
 			this.input.mouse.dx = 0;
 			this.input.mouse.dy = 0;
 		};
 		this.events.mousemove = function(e) {
-			this.input.mouse.dx = e.layerX - this.input.mouse.dragStartX;
-			this.input.mouse.dy = e.layerY - this.input.mouse.dragStartY;
+			this.input.mouse.dx = e.layerX - this.input.mouse.x;
+			this.input.mouse.dy = e.layerY - this.input.mouse.y;
+			this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
+			this.input.mouse.dragY = e.layerY - this.input.mouse.dragStartY;
 			this.input.mouse.x = e.layerX;
 			this.input.mouse.y = e.layerY;
+
+			switch (this.tool._current) {
+				case this.tool.GRAB:
+					if (this.input.mouse.isDown) {
+						// console.log(e);
+						let delta = new Vec2(this.input.mouse.dx, this.input.mouse.dy);
+						this.selectedEntities.forEach(entity => {
+							entity.position.addSelf(delta);
+						});
+					}
+					break;
+			}
 		};
 		this.events.mousewheel = function(e) {
 			this.input.mouse.wheel = e.wheelDelta;
@@ -101,25 +117,31 @@ export default class Playground {
 		this.events.mouseup = function(e) {
 			let particle;
 			this.input.mouse.isDown = false;
-			this.input.mouse.dx = e.layerX - this.input.mouse.dragStartX;
-			this.input.mouse.dy = e.layerY - this.input.mouse.dragStartY;
+			this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
+			this.input.mouse.dragY = e.layerY - this.input.mouse.dragStartY;
+
 			switch (this.tool._current) {
 				case this.tool.CREATE:
 					particle = new Body(
 						this.input.mouse.dragStartX,
 						this.input.mouse.dragStartY,
 						this.simulator.parameters.createMass,
-						this.input.mouse.dx / 50,
-						this.input.mouse.dy / 50
+						this.input.mouse.dragX / 50,
+						this.input.mouse.dragY / 50
 					);
 					this.simulator.entities.push(particle);
 					this.selectedEntities = [particle];
 					this.events.selection(this.selectedEntities);
 					break;
+
 				case this.tool.SELECT:
 					this.selectRegion(this.input.mouse.dragStartX, this.input.mouse.dragStartY,
-						this.input.mouse.dx, this.input.mouse.dy
+						this.input.mouse.dragX, this.input.mouse.dragY
 					);
+					break;
+
+				case this.tool.GRAB:
+					// Apply velocity to selected entities
 					break;
 			}
 		};

@@ -27,7 +27,7 @@ window.addEventListener('load', () => {
 		{ tooltip: 'select', selected: false, disabled: false, icon: 'ion-ios-crop', shortcut: 'S', onselect: () => { p.setTool(p.tool.SELECT); } },
 		{ tooltip: 'pan', selected: false, disabled: true, icon: 'ion-arrow-move', shortcut: 'P', onselect: () => { p.setTool(p.tool.PAN); } },
 		{ tooltip: 'zoom', selected: false, disabled: true, icon: 'ion-ios-search', shortcut: 'Z', onselect: () => { p.setTool(p.tool.ZOOM); } },
-		{ tooltip: 'grab', selected: false, disabled: true, icon: 'ion-android-hand', shortcut: 'G', onselect: () => { p.setTool(p.tool.GRAB); } }
+		{ tooltip: 'grab', selected: false, disabled: false, icon: 'ion-android-hand', shortcut: 'G', onselect: () => { p.setTool(p.tool.GRAB); } }
 	]);
 	toolBin.addController(tools);
 	p.gui.addBin(toolBin);

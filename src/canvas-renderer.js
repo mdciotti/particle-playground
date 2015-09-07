@@ -31,7 +31,7 @@ export default class CanvasRenderer {
 	}
 
 	render(entities, input, selectedEntities, stats, params, tool) {
-		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, x, y, i, j, len;
+		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, selectTool, x, y, i, j, len;
 
 		this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - this.options.motionBlur})`;
 		this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
@@ -56,26 +56,25 @@ export default class CanvasRenderer {
 			this.ctx.restore();
 
 			// Mouse interaction
-			if (tool._current === tool.SELECT) {
-				m = new Vec2(input.mouse.x, input.mouse.y);
-				inRadius = m.distSq(e.position) < e.radius * e.radius;
-				willSelect = e.inRegion(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dx, input.mouse.dy) && input.mouse.isDown;
-				if (inRadius && this.ctx.canvas.style.cursor !== 'pointer') {
-					this.ctx.canvas.style.cursor = 'pointer';
-				} else if (!inRadius) {
-					this.ctx.canvas.style.cursor = 'default';
-				}
-				if (inRadius || willSelect || selectedEntities.indexOf(e) >= 0) {
-					this.ctx.save();
-					this.ctx.strokeStyle = '#FFFFFF';
-					this.ctx.lineWidth = 2;
-					this.ctx.setLineDash([5]);
-					this.ctx.beginPath();
-					this.ctx.arc(x, y, e.radius + 4, 0, 2 * Math.PI, false);
-					this.ctx.closePath();
-					this.ctx.stroke();
-					this.ctx.restore();
-				}
+			m = new Vec2(input.mouse.x, input.mouse.y);
+			selectTool = tool._current === tool.SELECT;
+			inRadius = m.distSq(e.position) < e.radius * e.radius && selectTool;
+			willSelect = e.inRegion(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dragX, input.mouse.dragY) && input.mouse.isDown && selectTool;
+			if (inRadius && this.ctx.canvas.style.cursor !== 'pointer') {
+				this.ctx.canvas.style.cursor = 'pointer';
+			} else if (!inRadius) {
+				this.ctx.canvas.style.cursor = 'default';
+			}
+			if (inRadius || willSelect || selectedEntities.indexOf(e) >= 0) {
+				this.ctx.save();
+				this.ctx.strokeStyle = '#FFFFFF';
+				this.ctx.lineWidth = 2;
+				this.ctx.setLineDash([5]);
+				this.ctx.beginPath();
+				this.ctx.arc(x, y, e.radius + 4, 0, 2 * Math.PI, false);
+				this.ctx.closePath();
+				this.ctx.stroke();
+				this.ctx.restore();
 			}
 
 			// Trail Vectors
@@ -127,10 +126,10 @@ export default class CanvasRenderer {
 			case tool.SELECT:
 				if (input.mouse.isDown) {
 					let x0 = input.mouse.dragStartX;
-					let x1 = x0 + input.mouse.dx;
+					let x1 = x0 + input.mouse.dragX;
 					[x0, x1] = [Math.min(x0, x1), Math.max(x0, x1)];
 					let y0 = input.mouse.dragStartY;
-					let y1 = y0 + input.mouse.dy;
+					let y1 = y0 + input.mouse.dragY;
 					[y0, y1] = [Math.min(y0, y1), Math.max(y0, y1)];
 
 					// do @ctx.beginPath
@@ -155,15 +154,15 @@ export default class CanvasRenderer {
 					x = input.mouse.dragStartX;
 					y = input.mouse.dragStartY;
 
-					v = new Vec2(input.mouse.dx, input.mouse.dy);
+					v = new Vec2(input.mouse.dragX, input.mouse.dragY);
 					uv = v.normalize();
 					unv = new Vec2(-uv.y, uv.x);
 
 					p1 = v.subtract(uv.subtract(unv).scale(10));
 					p2 = p1.subtract(unv.scale(20));
 
-					Xend = input.mouse.dragStartX + input.mouse.dx;
-					Yend = input.mouse.dragStartY + input.mouse.dy;
+					Xend = input.mouse.dragStartX + input.mouse.dragX;
+					Yend = input.mouse.dragStartY + input.mouse.dragY;
 
 					this.ctx.strokeStyle = 'rgba(255,0,0,1)';
 
