@@ -39,7 +39,7 @@ window.addEventListener('load', () => {
 	let tools = new Gui.GridController('tools', [
 		{ tooltip: 'create', selected: true, disabled: false, icon: 'ion-ios-plus-outline', shortcut: 'C', onselect: () => { p.setTool(p.tool.CREATE); } },
 		{ tooltip: 'select', selected: false, disabled: false, icon: 'ion-ios-crop', shortcut: 'S', onselect: () => { p.setTool(p.tool.SELECT); } },
-		{ tooltip: 'pan', selected: false, disabled: true, icon: 'ion-arrow-move', shortcut: 'P', onselect: () => { p.setTool(p.tool.PAN); } },
+		{ tooltip: 'pan', selected: false, disabled: false, icon: 'ion-arrow-move', shortcut: 'P', onselect: () => { p.setTool(p.tool.PAN); } },
 		{ tooltip: 'zoom', selected: false, disabled: true, icon: 'ion-ios-search', shortcut: 'Z', onselect: () => { p.setTool(p.tool.ZOOM); } },
 		{ tooltip: 'grab', selected: false, disabled: false, icon: 'ion-android-hand', shortcut: 'G', onselect: () => { p.setTool(p.tool.GRAB); } }
 	]);
@@ -102,12 +102,6 @@ window.addEventListener('load', () => {
 		let xpos = new Gui.NumberController('pos.x', e.position.x, { onchange: val => { e.position.x = val; } });
 		let ypos = new Gui.NumberController('pos.y', e.position.y, { onchange: val => { e.position.y = val; } });
 		let color = new Gui.ColorController('color', e.color, { onchange: val => { e.color = val; } });
-		let remove = new Gui.ActionController('delete', { action: () => {
-			e.willDelete = true;
-			propertiesBin.removeAllControllers();
-			entities.splice(0, 1);
-			setEntityControllers(entities);
-		} });
 		propertiesBin.addControllers(name, xpos, ypos, color);
 		if (e instanceof Body) {
 			let mass = new Gui.NumberController('mass', e.mass, { onchange: val => { e.setMass(val); } });
@@ -115,7 +109,14 @@ window.addEventListener('load', () => {
 			let collidable = new Gui.ToggleController('collidable', !e.ignoreCollisions, { onchange: val => { e.ignoreCollisions = !val; } });
 			propertiesBin.addControllers(mass, fixed, collidable);
 		}
-		propertiesBin.addController(remove);
+		let follow = new Gui.ActionController('follow', { action: () => { p.renderer.follow(e); } });
+		let remove = new Gui.ActionController('delete', { action: () => {
+			e.willDelete = true;
+			propertiesBin.removeAllControllers();
+			entities.splice(0, 1);
+			setEntityControllers(entities);
+		} });
+		propertiesBin.addController(follow, remove);
 	}
 
 	// Update properties bin on selection

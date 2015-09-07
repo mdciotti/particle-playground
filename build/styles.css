@@ -3216,5 +3216,37 @@ MIT License: https://github.com/driftyco/ionicons
 .playground {
   display: flex;
 }
+.playground canvas[data-cursor="default"] {
+  cursor: default;
+}
+.playground canvas[data-cursor="crosshair"] {
+  cursor: crosshair;
+}
+.playground canvas[data-cursor="pointer"] {
+  cursor: pointer;
+}
+.playground canvas[data-cursor="move"] {
+  cursor: move;
+}
+.playground canvas[data-cursor="zoom-in"] {
+  cursor: zoom-in;
+  cursor: -webkit-zoom-in;
+  cursor: -moz-zoom-in;
+}
+.playground canvas[data-cursor="zoom-out"] {
+  cursor: zoom-out;
+  cursor: -webkit-zoom-out;
+  cursor: -moz-zoom-out;
+}
+.playground canvas[data-cursor="grab"] {
+  cursor: grab;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+}
+.playground canvas[data-cursor="grabbing"] {
+  cursor: grabbing;
+  cursor: -webkit-grabbing;
+  cursor: -moz-grabbing;
+}
 
 /*# sourceMappingURL=styles.css.map*/

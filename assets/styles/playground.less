@@ -1,3 +1,14 @@
 .playground {
 	display: flex;
+
+	canvas {
+		&[data-cursor="default"] { cursor: default; }
+		&[data-cursor="crosshair"] { cursor: crosshair; }
+		&[data-cursor="pointer"] { cursor: pointer; }
+		&[data-cursor="move"] { cursor: move; }
+		&[data-cursor="zoom-in"] { cursor: zoom-in; cursor: -webkit-zoom-in; cursor: -moz-zoom-in; }
+		&[data-cursor="zoom-out"] { cursor: zoom-out; cursor: -webkit-zoom-out; cursor: -moz-zoom-out; }
+		&[data-cursor="grab"] { cursor: grab; cursor: -webkit-grab; cursor: -moz-grab; }
+		&[data-cursor="grabbing"] { cursor: grabbing; cursor: -webkit-grabbing; cursor: -moz-grabbing; }
+	}
 }

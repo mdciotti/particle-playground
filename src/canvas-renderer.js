@@ -18,6 +18,7 @@ export default class CanvasRenderer {
 		this.ctx = this.el.getContext('2d');
 		this.frame = 0;
 		this.following = null;
+		this.camera = new Vec2(0, 0);
 	}
 
 	follow(entity) {
@@ -30,8 +31,34 @@ export default class CanvasRenderer {
 		this.following = null;
 	}
 
-	render(entities, input, selectedEntities, stats, params, tool) {
-		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, selectTool, x, y, i, j, len;
+	centerView() {
+		let centerX, centerY;
+
+		if (this.following !== null) {
+			centerX = this.following.position.x - this.ctx.canvas.width / 2;
+			centerY = this.following.position.y - this.ctx.canvas.height / 2;
+			this.camera.set(centerX, centerY);
+		}
+	}
+
+	setCursor(tool) {
+		let cursor = tool._currentData.cursor;
+		let currentCursor = this.el.dataset.cursor;
+		if (currentCursor !== cursor) {
+			this.el.dataset.cursor = cursor;
+		}
+	}
+
+	setAltCursor(tool) {
+		let cursor = tool._currentData.altCursor;
+		let currentCursor = this.el.dataset.cursor;
+		if (currentCursor !== cursor) {
+			this.el.dataset.cursor = cursor;
+		}
+	}
+
+	render(entities, input, selectedEntities, stats, params, tool, simOpts) {
+		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, selectTool, x, y, i, j, len, altCursor;
 
 		this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - this.options.motionBlur})`;
 		this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
@@ -40,16 +67,26 @@ export default class CanvasRenderer {
 		// Only increment lineDashOffset once per frame
 		this.ctx.lineDashOffset = (this.ctx.lineDashOffset + 0.5) % 10;
 
-		// this.ctx.fillStyle = '#FFFFFF';
-		// this.ctx.setLineDash([0]);
+		this.centerView();
+
+		if (simOpts.bounded) {
+			this.ctx.save();
+			this.ctx.strokeStyle = '#444444';
+			this.ctx.lineWidth = 8;
+			this.ctx.strokeRect(simOpts.bounds.left - this.camera.x, simOpts.bounds.top - this.camera.y,
+				simOpts.bounds.width, simOpts.bounds.height);
+			this.ctx.restore();
+		}
+
+		altCursor = false;
 
 		for (i = 0, len = entities.length; i < len; ++i) {
 			e = entities[i];
 
 			if (e.willDelete) { continue; }
 
-			x = e.position.x;
-			y = e.position.y;
+			x = e.position.x - this.camera.x;
+			y = e.position.y - this.camera.y;
 			this.ctx.save();
 			this.ctx.fillStyle = e.color;
 			this.ctx.beginPath();
@@ -61,13 +98,15 @@ export default class CanvasRenderer {
 			// Mouse interaction
 			m = new Vec2(input.mouse.x, input.mouse.y);
 			selectTool = tool._current === tool.SELECT;
-			inRadius = m.distSq(e.position) < e.radius * e.radius && selectTool;
-			willSelect = e.inRegion(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dragX, input.mouse.dragY) && input.mouse.isDown && selectTool;
-			if (inRadius && this.ctx.canvas.style.cursor !== 'pointer') {
-				this.ctx.canvas.style.cursor = 'pointer';
-			} else if (!inRadius) {
-				this.ctx.canvas.style.cursor = 'default';
-			}
+			inRadius = m.distSq(e.position.subtract(this.camera)) < e.radius * e.radius && selectTool;
+			willSelect = e.inRegion(
+				input.mouse.dragStartX + this.camera.x,
+				input.mouse.dragStartY + this.camera.y,
+				input.mouse.dragX, input.mouse.dragY
+			) && input.mouse.isDown && selectTool;
+
+			if (inRadius && !input.mouse.isDown) { altCursor = true; }
+
 			if (inRadius || willSelect || selectedEntities.indexOf(e) >= 0) {
 				this.ctx.save();
 				this.ctx.strokeStyle = '#FFFFFF';
@@ -100,8 +139,8 @@ export default class CanvasRenderer {
 					if (this.options.trailFade) {
 						this.ctx.globalAlpha = j / e.trailX.length;
 					}
-					this.ctx.moveTo(e.trailX[j - 1], e.trailY[j - 1]);
-					this.ctx.lineTo(e.trailX[j], e.trailY[j]);
+					this.ctx.moveTo(e.trailX[j - 1] - e.camera.x, e.trailY[j - 1] - e.camera.y);
+					this.ctx.lineTo(e.trailX[j] - e.camera.x, e.trailY[j] - e.camera.y);
 					this.ctx.stroke();
 				}
 				this.ctx.restore();
@@ -184,6 +223,9 @@ export default class CanvasRenderer {
 				this.ctx.arc(x, y, Math.sqrt(params.createMass), 0, 2 * Math.PI, false);
 				this.ctx.stroke();
 		}
+
+		if (altCursor) { this.setAltCursor(tool); }
+		else if (tool._current === tool.SELECT) { this.setCursor(tool); }
 
 		++this.frame;
 	}

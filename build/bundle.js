@@ -99,7 +99,7 @@
 				p.setTool(p.tool.CREATE);
 			} }, { tooltip: 'select', selected: false, disabled: false, icon: 'ion-ios-crop', shortcut: 'S', onselect: function onselect() {
 				p.setTool(p.tool.SELECT);
-			} }, { tooltip: 'pan', selected: false, disabled: true, icon: 'ion-arrow-move', shortcut: 'P', onselect: function onselect() {
+			} }, { tooltip: 'pan', selected: false, disabled: false, icon: 'ion-arrow-move', shortcut: 'P', onselect: function onselect() {
 				p.setTool(p.tool.PAN);
 			} }, { tooltip: 'zoom', selected: false, disabled: true, icon: 'ion-ios-search', shortcut: 'Z', onselect: function onselect() {
 				p.setTool(p.tool.ZOOM);
@@ -193,12 +193,6 @@
 			var color = new Gui.ColorController('color', e.color, { onchange: function onchange(val) {
 					e.color = val;
 				} });
-			var remove = new Gui.ActionController('delete', { action: function action() {
-					e.willDelete = true;
-					propertiesBin.removeAllControllers();
-					entities.splice(0, 1);
-					setEntityControllers(entities);
-				} });
 			propertiesBin.addControllers(name, xpos, ypos, color);
 			if (e instanceof _srcEntityJs.Body) {
 				var mass = new Gui.NumberController('mass', e.mass, { onchange: function onchange(val) {
@@ -212,7 +206,16 @@
 					} });
 				propertiesBin.addControllers(mass, fixed, collidable);
 			}
-			propertiesBin.addController(remove);
+			var follow = new Gui.ActionController('follow', { action: function action() {
+					p.renderer.follow(e);
+				} });
+			var remove = new Gui.ActionController('delete', { action: function action() {
+					e.willDelete = true;
+					propertiesBin.removeAllControllers();
+					entities.splice(0, 1);
+					setEntityControllers(entities);
+				} });
+			propertiesBin.addController(follow, remove);
 		}
 	
 		// Update properties bin on selection
@@ -3086,11 +3089,11 @@
 			// Define tools (enum-like)
 			// this.TOOL = new Enum('SELECT', 'CREATE', 'MOVE', 'ZOOM');
 			this.tool = new _enumJs.TaggedUnion({
-				SELECT: { cursor: 'default' },
+				SELECT: { cursor: 'default', altCursor: 'pointer' },
 				CREATE: { cursor: 'crosshair' },
 				PAN: { cursor: 'move' },
-				ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-in' },
-				GRAB: { cursor: 'grab', activeCursor: 'grabbing' }
+				ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-out' },
+				GRAB: { cursor: 'grab', altCursor: 'grabbing' }
 			});
 	
 			// Input State
@@ -3123,10 +3126,25 @@
 				this.input.mouse.dragY = 0;
 				this.input.mouse.dx = 0;
 				this.input.mouse.dy = 0;
+	
+				switch (this.tool._current) {
+					case this.tool.PAN:
+						if (this.renderer.following !== null) {
+							this.renderer.unfollow();
+						}
+						break;
+	
+					case this.tool.GRAB:
+						this.renderer.setAltCursor(this.tool);
+						this.selectedEntities.forEach(function (entity) {
+							entity._fixed = entity.fixed;
+							entity.fixed = true;
+						});
+						break;
+				}
 			};
 			this.events.mousemove = function (e) {
-				var _this = this;
-	
+				var delta = undefined;
 				this.input.mouse.dx = e.layerX - this.input.mouse.x;
 				this.input.mouse.dy = e.layerY - this.input.mouse.y;
 				this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
@@ -3135,15 +3153,20 @@
 				this.input.mouse.y = e.layerY;
 	
 				switch (this.tool._current) {
+					case this.tool.PAN:
+						if (this.input.mouse.isDown) {
+							delta = new _vec2Js2['default'](this.input.mouse.dx, this.input.mouse.dy);
+							this.renderer.camera.subtractSelf(delta);
+						}
+						break;
+	
 					case this.tool.GRAB:
 						if (this.input.mouse.isDown) {
-							(function () {
-								// console.log(e);
-								var delta = new _vec2Js2['default'](_this.input.mouse.dx, _this.input.mouse.dy);
-								_this.selectedEntities.forEach(function (entity) {
-									entity.position.addSelf(delta);
-								});
-							})();
+							delta = new _vec2Js2['default'](this.input.mouse.dx, this.input.mouse.dy);
+							this.selectedEntities.forEach(function (entity) {
+								entity.position.addSelf(delta);
+								entity.velocity.set(delta.x, delta.y);
+							});
 						}
 						break;
 				}
@@ -3160,18 +3183,21 @@
 	
 				switch (this.tool._current) {
 					case this.tool.CREATE:
-						particle = new _entityJs.Body(this.input.mouse.dragStartX, this.input.mouse.dragStartY, this.simulator.parameters.createMass, this.input.mouse.dragX / 50, this.input.mouse.dragY / 50);
+						particle = new _entityJs.Body(this.input.mouse.dragStartX + this.renderer.camera.x, this.input.mouse.dragStartY + this.renderer.camera.y, this.simulator.parameters.createMass, this.input.mouse.dragX / 50, this.input.mouse.dragY / 50);
 						this.simulator.entities.push(particle);
 						this.selectedEntities = [particle];
 						this.events.selection(this.selectedEntities);
 						break;
 	
 					case this.tool.SELECT:
-						this.selectRegion(this.input.mouse.dragStartX, this.input.mouse.dragStartY, this.input.mouse.dragX, this.input.mouse.dragY);
+						this.selectRegion(this.input.mouse.dragStartX + this.renderer.camera.x, this.input.mouse.dragStartY + this.renderer.camera.y, this.input.mouse.dragX, this.input.mouse.dragY);
 						break;
 	
 					case this.tool.GRAB:
-						// Apply velocity to selected entities
+						this.renderer.setCursor(this.tool);
+						this.selectedEntities.forEach(function (entity) {
+							entity.fixed = entity._fixed;
+						});
 						break;
 				}
 			};
@@ -3208,9 +3234,9 @@
 			key: 'setTool',
 			value: function setTool(tool) {
 				if (tool !== this.tool._current) {
-					// this.input.mouse.lastTool = this.input.mouse.tool;
 					this.tool.setCurrent(tool);
-					this.renderer.el.style.cursor = this.tool._currentData.cursor;
+					// this.renderer.el.style.cursor = this.tool._currentData.cursor;
+					this.renderer.setCursor(this.tool);
 				}
 				return this;
 			}
@@ -3238,7 +3264,7 @@
 				if (!this.paused) {
 					this.simulator.update(dt);
 				}
-				this.renderer.render(this.simulator.entities, this.input, this.selectedEntities, this.simulator.stats, this.simulator.parameters, this.tool);
+				this.renderer.render(this.simulator.entities, this.input, this.selectedEntities, this.simulator.stats, this.simulator.parameters, this.tool, this.simulator.options);
 				// this.clock.tick();
 			}
 		}]);
@@ -4201,6 +4227,7 @@
 			this.ctx = this.el.getContext('2d');
 			this.frame = 0;
 			this.following = null;
+			this.camera = new _vec2Js2['default'](0, 0);
 		}
 	
 		_createClass(CanvasRenderer, [{
@@ -4216,8 +4243,38 @@
 				this.following = null;
 			}
 		}, {
+			key: 'centerView',
+			value: function centerView() {
+				var centerX = undefined,
+				    centerY = undefined;
+	
+				if (this.following !== null) {
+					centerX = this.following.position.x - this.ctx.canvas.width / 2;
+					centerY = this.following.position.y - this.ctx.canvas.height / 2;
+					this.camera.set(centerX, centerY);
+				}
+			}
+		}, {
+			key: 'setCursor',
+			value: function setCursor(tool) {
+				var cursor = tool._currentData.cursor;
+				var currentCursor = this.el.dataset.cursor;
+				if (currentCursor !== cursor) {
+					this.el.dataset.cursor = cursor;
+				}
+			}
+		}, {
+			key: 'setAltCursor',
+			value: function setAltCursor(tool) {
+				var cursor = tool._currentData.altCursor;
+				var currentCursor = this.el.dataset.cursor;
+				if (currentCursor !== cursor) {
+					this.el.dataset.cursor = cursor;
+				}
+			}
+		}, {
 			key: 'render',
-			value: function render(entities, input, selectedEntities, stats, params, tool) {
+			value: function render(entities, input, selectedEntities, stats, params, tool, simOpts) {
 				var KE = undefined,
 				    PE = undefined,
 				    TE = undefined,
@@ -4238,7 +4295,8 @@
 				    y = undefined,
 				    i = undefined,
 				    j = undefined,
-				    len = undefined;
+				    len = undefined,
+				    altCursor = undefined;
 	
 				this.ctx.fillStyle = 'rgba(0, 0, 0, ' + (1 - this.options.motionBlur) + ')';
 				this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
@@ -4247,8 +4305,17 @@
 				// Only increment lineDashOffset once per frame
 				this.ctx.lineDashOffset = (this.ctx.lineDashOffset + 0.5) % 10;
 	
-				// this.ctx.fillStyle = '#FFFFFF';
-				// this.ctx.setLineDash([0]);
+				this.centerView();
+	
+				if (simOpts.bounded) {
+					this.ctx.save();
+					this.ctx.strokeStyle = '#444444';
+					this.ctx.lineWidth = 8;
+					this.ctx.strokeRect(simOpts.bounds.left - this.camera.x, simOpts.bounds.top - this.camera.y, simOpts.bounds.width, simOpts.bounds.height);
+					this.ctx.restore();
+				}
+	
+				altCursor = false;
 	
 				for (i = 0, len = entities.length; i < len; ++i) {
 					e = entities[i];
@@ -4257,8 +4324,8 @@
 						continue;
 					}
 	
-					x = e.position.x;
-					y = e.position.y;
+					x = e.position.x - this.camera.x;
+					y = e.position.y - this.camera.y;
 					this.ctx.save();
 					this.ctx.fillStyle = e.color;
 					this.ctx.beginPath();
@@ -4270,13 +4337,13 @@
 					// Mouse interaction
 					m = new _vec2Js2['default'](input.mouse.x, input.mouse.y);
 					selectTool = tool._current === tool.SELECT;
-					inRadius = m.distSq(e.position) < e.radius * e.radius && selectTool;
-					willSelect = e.inRegion(input.mouse.dragStartX, input.mouse.dragStartY, input.mouse.dragX, input.mouse.dragY) && input.mouse.isDown && selectTool;
-					if (inRadius && this.ctx.canvas.style.cursor !== 'pointer') {
-						this.ctx.canvas.style.cursor = 'pointer';
-					} else if (!inRadius) {
-						this.ctx.canvas.style.cursor = 'default';
+					inRadius = m.distSq(e.position.subtract(this.camera)) < e.radius * e.radius && selectTool;
+					willSelect = e.inRegion(input.mouse.dragStartX + this.camera.x, input.mouse.dragStartY + this.camera.y, input.mouse.dragX, input.mouse.dragY) && input.mouse.isDown && selectTool;
+	
+					if (inRadius && !input.mouse.isDown) {
+						altCursor = true;
 					}
+	
 					if (inRadius || willSelect || selectedEntities.indexOf(e) >= 0) {
 						this.ctx.save();
 						this.ctx.strokeStyle = '#FFFFFF';
@@ -4313,8 +4380,8 @@
 							if (this.options.trailFade) {
 								this.ctx.globalAlpha = j / e.trailX.length;
 							}
-							this.ctx.moveTo(e.trailX[j - 1], e.trailY[j - 1]);
-							this.ctx.lineTo(e.trailX[j], e.trailY[j]);
+							this.ctx.moveTo(e.trailX[j - 1] - e.camera.x, e.trailY[j - 1] - e.camera.y);
+							this.ctx.lineTo(e.trailX[j] - e.camera.x, e.trailY[j] - e.camera.y);
 							this.ctx.stroke();
 						}
 						this.ctx.restore();
@@ -4401,6 +4468,12 @@
 						this.ctx.beginPath();
 						this.ctx.arc(x, y, Math.sqrt(params.createMass), 0, 2 * Math.PI, false);
 						this.ctx.stroke();
+				}
+	
+				if (altCursor) {
+					this.setAltCursor(tool);
+				} else if (tool._current === tool.SELECT) {
+					this.setCursor(tool);
 				}
 	
 				++this.frame;

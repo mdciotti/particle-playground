@@ -15,7 +15,7 @@ View the [live example](https://mdciotti.github.io/particle-playground/).
 * [ ] Improve Gui binding
 * [ ] Simulation pause/play/speed
 * [ ] Multiple integrators
-* [ ] Pan, zoom, grab(?) tools
+* [x] Pan, zoom, grab(?) tools
 * [ ] Color controller UI
 * [ ] Vector controller UI
 

@@ -52,11 +52,11 @@ export default class Playground {
 		// Define tools (enum-like)
 		// this.TOOL = new Enum('SELECT', 'CREATE', 'MOVE', 'ZOOM');
 		this.tool = new TaggedUnion({
-			SELECT: { cursor: 'default' },
+			SELECT: { cursor: 'default', altCursor: 'pointer' },
 			CREATE: { cursor: 'crosshair' },
 			PAN: { cursor: 'move' },
-			ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-in' },
-			GRAB: { cursor: 'grab', activeCursor: 'grabbing' }
+			ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-out' },
+			GRAB: { cursor: 'grab', altCursor: 'grabbing' }
 		});
 
 		// Input State
@@ -89,8 +89,23 @@ export default class Playground {
 			this.input.mouse.dragY = 0;
 			this.input.mouse.dx = 0;
 			this.input.mouse.dy = 0;
+
+			switch (this.tool._current) {
+			case this.tool.PAN:
+				if (this.renderer.following !== null) { this.renderer.unfollow(); }
+				break;
+
+			case this.tool.GRAB:
+				this.renderer.setAltCursor(this.tool);
+				this.selectedEntities.forEach(entity => {
+					entity._fixed = entity.fixed;
+					entity.fixed = true;
+				});
+				break;
+			}
 		};
 		this.events.mousemove = function(e) {
+			let delta;
 			this.input.mouse.dx = e.layerX - this.input.mouse.x;
 			this.input.mouse.dy = e.layerY - this.input.mouse.y;
 			this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
@@ -99,12 +114,19 @@ export default class Playground {
 			this.input.mouse.y = e.layerY;
 
 			switch (this.tool._current) {
+				case this.tool.PAN:
+					if (this.input.mouse.isDown) {
+						delta = new Vec2(this.input.mouse.dx, this.input.mouse.dy);
+						this.renderer.camera.subtractSelf(delta);
+					}
+					break;
+
 				case this.tool.GRAB:
 					if (this.input.mouse.isDown) {
-						// console.log(e);
-						let delta = new Vec2(this.input.mouse.dx, this.input.mouse.dy);
+						delta = new Vec2(this.input.mouse.dx, this.input.mouse.dy);
 						this.selectedEntities.forEach(entity => {
 							entity.position.addSelf(delta);
+							entity.velocity.set(delta.x, delta.y);
 						});
 					}
 					break;
@@ -123,8 +145,8 @@ export default class Playground {
 			switch (this.tool._current) {
 				case this.tool.CREATE:
 					particle = new Body(
-						this.input.mouse.dragStartX,
-						this.input.mouse.dragStartY,
+						this.input.mouse.dragStartX + this.renderer.camera.x,
+						this.input.mouse.dragStartY + this.renderer.camera.y,
 						this.simulator.parameters.createMass,
 						this.input.mouse.dragX / 50,
 						this.input.mouse.dragY / 50
@@ -135,13 +157,18 @@ export default class Playground {
 					break;
 
 				case this.tool.SELECT:
-					this.selectRegion(this.input.mouse.dragStartX, this.input.mouse.dragStartY,
+					this.selectRegion(
+						this.input.mouse.dragStartX + this.renderer.camera.x,
+						this.input.mouse.dragStartY + this.renderer.camera.y,
 						this.input.mouse.dragX, this.input.mouse.dragY
 					);
 					break;
 
 				case this.tool.GRAB:
-					// Apply velocity to selected entities
+					this.renderer.setCursor(this.tool);
+					this.selectedEntities.forEach(entity => {
+						entity.fixed = entity._fixed;
+					});
 					break;
 			}
 		};
@@ -174,9 +201,9 @@ export default class Playground {
 
 	setTool(tool) {
 		if (tool !== this.tool._current) {
-			// this.input.mouse.lastTool = this.input.mouse.tool;
 			this.tool.setCurrent(tool);
-			this.renderer.el.style.cursor = this.tool._currentData.cursor;
+			// this.renderer.el.style.cursor = this.tool._currentData.cursor;
+			this.renderer.setCursor(this.tool);
 		}
 		return this;
 	}
@@ -204,7 +231,8 @@ export default class Playground {
 			this.selectedEntities,
 			this.simulator.stats,
 			this.simulator.parameters,
-			this.tool
+			this.tool,
+			this.simulator.options
 		);
 		// this.clock.tick();
 	}
