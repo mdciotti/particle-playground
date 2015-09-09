@@ -1,12 +1,12 @@
 import Simulator from './simulator.js';
-import * as Gui from './gui.js';
+import * as GUI from './gui/index.js';
 import Clock from './clock.js';
 import { Body } from './entity.js';
 import CanvasRenderer from './canvas-renderer.js';
 import { TaggedUnion } from './enum.js';
 import Vec2 from './vec2.js';
 import ModalOverlay from './modal-overlay.js';
-import defaults from '../node_modules/defaults';
+import defaults from 'defaults';
 
 // Webpack: load stylesheet
 require('../assets/styles/playground.less');
@@ -23,6 +23,7 @@ export default class Playground {
 		});
 		this.animator = null;
 		this.runtime = 0;
+		this.running = false;
 
 		// Create DOM node
 		this.el = document.createElement('div');
@@ -36,7 +37,7 @@ export default class Playground {
 
 		// Initialize submodules
 		this.clock = new Clock();
-		this.gui = new Gui.Pane(this.el);
+		this.gui = new GUI.Pane(this.el);
 		this.simulator = new Simulator({
 			bounds: { left: 0, top: 0, width: this.options.width - this.gui.width, height: this.options.height }
 		});
@@ -83,6 +84,7 @@ export default class Playground {
 			this.simulator.options.bounds.height = this.renderer.ctx.canvas.height = window.innerHeight;
 		};
 		this.events.mousedown = function(e) {
+			if (!this.running) { return; }
 			// console.log(e.layerX, e.layerY);
 			this.input.mouse.isDown = true;
 			this.input.mouse.dragStartX = e.layerX;
@@ -107,6 +109,7 @@ export default class Playground {
 			}
 		};
 		this.events.mousemove = function(e) {
+			if (!this.running) { return; }
 			let delta;
 			this.input.mouse.dx = e.layerX - this.input.mouse.x;
 			this.input.mouse.dy = e.layerY - this.input.mouse.y;
@@ -135,10 +138,12 @@ export default class Playground {
 			}
 		};
 		this.events.mousewheel = function(e) {
+			if (!this.running) { return; }
 			this.input.mouse.wheel = e.wheelDelta;
 			this.simulator.parameters.createMass = Math.max(10, this.simulator.parameters.createMass + e.wheelDelta / 10);
 		};
 		this.events.mouseup = function(e) {
+			if (!this.running) { return; }
 			let particle;
 			this.input.mouse.isDown = false;
 			this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
@@ -187,8 +192,14 @@ export default class Playground {
 		this.renderer.el.addEventListener('mousewheel', this.events.mousewheel.bind(this));
 	}
 
-	listen(eventName, handler) {
+	on(eventName, handler) {
 		this.events[eventName] = handler;
+	}
+
+	off(eventName) {
+		if (this.events.hasOwnProperty(eventName)) {
+			this.events[eventName] = function () {};
+		}
 	}
 
 	selectRegion(x, y, w, h) {
@@ -217,7 +228,10 @@ export default class Playground {
 	}
 
 	start() {
-		this.loop(1 / 60);
+		if (!this.running) {
+			this.running = true;
+			this.loop(1 / 60);
+		}
 	}
 
 	pause() {
@@ -227,6 +241,8 @@ export default class Playground {
 	}
 
 	stop() {
+		this.gui.disableAll();
+		this.running = false;
 		cancelAnimationFrame(this.animator);
 		this.setTool(this.tool.NONE);
 		this.deselect();

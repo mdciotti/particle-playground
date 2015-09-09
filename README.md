@@ -18,6 +18,9 @@ View the [live example](https://mdciotti.github.io/particle-playground/).
 * [x] Pan, zoom, grab(?) tools
 * [ ] Color controller UI
 * [ ] Vector controller UI
+* [ ] Preserve selection/following on merge
+* [ ] Inelastic collisions (sticky)
+* [ ] Keyboard shortcuts
 
 ## Build Instructions
 

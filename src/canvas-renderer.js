@@ -11,7 +11,7 @@ export default class CanvasRenderer {
 			trailFade: false,
 			trailSpace: 5,
 			motionBlur: 0,
-			debug: true
+			debug: false
 		});
 		this.el = document.createElement('canvas');
 		this.el.style.display = 'block';
