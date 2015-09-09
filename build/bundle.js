@@ -53,15 +53,15 @@
 	
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 	
-	var _srcGuiJs = __webpack_require__(/*! ./src/gui.js */ 5);
+	var _srcGuiIndexJs = __webpack_require__(/*! ./src/gui/index.js */ 32);
 	
-	var Gui = _interopRequireWildcard(_srcGuiJs);
+	var GUI = _interopRequireWildcard(_srcGuiIndexJs);
 	
 	var _srcPlaygroundJs = __webpack_require__(/*! ./src/playground.js */ 18);
 	
 	var _srcPlaygroundJs2 = _interopRequireDefault(_srcPlaygroundJs);
 	
-	var _srcPlotJs = __webpack_require__(/*! ./src/plot.js */ 29);
+	var _srcPlotJs = __webpack_require__(/*! ./src/plot.js */ 30);
 	
 	var _srcPlotJs2 = _interopRequireDefault(_srcPlotJs);
 	
@@ -80,9 +80,15 @@
 		var infoBin = undefined,
 		    info = undefined,
 		    player = undefined,
-		    playerActions = undefined,
+		    playButton = undefined,
+		    startButton = undefined,
+		    resetButton = undefined,
 		    toolBin = undefined,
-		    tools = undefined,
+		    createTool = undefined,
+		    selectTool = undefined,
+		    panTool = undefined,
+		    zoomTool = undefined,
+		    grabTool = undefined,
 		    propertiesBin = undefined,
 		    physicsBin = undefined,
 		    gravity = undefined,
@@ -100,81 +106,100 @@
 		    pe = undefined,
 		    te = undefined,
 		    momentum = undefined,
-		    canvas = undefined;
+		    statPlot = undefined;
 	
-		infoBin = new Gui.Bin('Information', 'html');
+		infoBin = new GUI.Bin('Information');
 		infoBin.height = 16;
-		info = new Gui.HTMLController('Introduction', null);
-		info.setHTML('<h1>Particle Playground</h1>' + '<p>This is a sandbox for simulating 2D particle physics. Play around to see what you can do!</p>' + '<hr>' + '<small>Created by <a href="https://twitter.com/mdciotti" target="_blank">@mdciotti</a> // ' + '<a href="https://github.com/mdciotti/particle-playground" target="_blank">v0.1.0-alpha</a></small>');
+		info = new GUI.HTMLController('Introduction', {});
+		info.setHTML('<h1>Particle Playground</h1>' + '<p>This is a sandbox for simulating 2D particle physics. Play around to see what you can do!</p>' +
+		// '<p><a class="button">View instructions</a></p>' +
+		'<hr>' + '<small>Created by <a href="https://twitter.com/mdciotti" target="_blank">@mdciotti</a> // ' + '<a href="https://github.com/mdciotti/particle-playground" target="_blank">v0.1.0-alpha</a></small>');
 		infoBin.addController(info);
 		p.gui.addBin(infoBin);
 	
-		player = new Gui.Bin('Simulation', 'grid');
-		playerActions = new Gui.GridController('playerActions', [{ tooltip: 'pause', disabled: false, icon: 'ion-ios-pause-outline', shortcut: 'P',
-			tooltip_alt: 'resume', icon_alt: 'ion-ios-play-outline', type: 'toggle',
-			onchange: function onchange() {
+		player = new GUI.GridBin('Simulation');
+		playButton = new GUI.GridController('play state', {
+			shortcut: 'P', type: 'toggle', disabled: true, state: 1, states: [{ tooltip: 'play', icon: 'ion-ios-play-outline' }, { tooltip: 'pause', icon: 'ion-ios-pause-outline' }], onclick: function onclick() {
 				p.pause();
 			}
-		}, { tooltip: 'stop', disabled: false, icon: 'ion-ios-close-outline', shortcut: '[ESC]', type: 'action',
-			action: function action() {
-				this.toggle(0);
-				p.gui.disableAll();
-				p.stop();
-			}
-		}, { tooltip: 'reset', disabled: false, icon: 'ion-ios-reload', shortcut: 'R', type: 'action', action: function action() {
-				p.reset();
-			} }], { type: 'mixed' });
-		player.addController(playerActions);
+		});
+		startButton = new GUI.GridController('start', {
+			shortcut: 'Q', type: 'toggle', disabled: false, state: 0, states: [{ tooltip: 'start', icon: 'ion-ios-play-outline', onclick: function onclick() {
+					p.start();playButton.enable();resetButton.enable();
+				} }, { tooltip: 'stop', icon: 'ion-ios-close-outline', onclick: function onclick() {
+					p.stop();playButton.disable();resetButton.disable();
+				} }], onclick: function onclick() {/*this.toggle(0);*/}
+		});
+		resetButton = new GUI.GridController('reset', {
+			shortcut: 'R', type: 'action', disabled: true, state: 0, states: [{ tooltip: 'reset', icon: 'ion-ios-reload', onclick: function onclick() {
+					p.reset();
+				} }]
+		});
+		player.addControllers(playButton, startButton, resetButton);
 		p.gui.addBin(player);
 	
-		toolBin = new Gui.Bin('Tools', 'grid');
-		tools = new Gui.GridController('tools', [{ tooltip: 'create', selected: true, disabled: false, icon: 'ion-ios-plus-outline', shortcut: 'C', onselect: function onselect() {
+		toolBin = new GUI.GridBin('Tools', { selectable: true });
+		createTool = new GUI.GridController('create', {
+			shortcut: 'C', type: 'toggle', disabled: false, selected: true, state: 0, states: [{ tooltip: 'create', icon: 'ion-ios-plus-outline' }], onclick: function onclick() {
 				p.setTool(p.tool.CREATE);
-			} }, { tooltip: 'select', selected: false, disabled: false, icon: 'ion-ios-crop', shortcut: 'S', onselect: function onselect() {
+			}
+		});
+		selectTool = new GUI.GridController('select', {
+			shortcut: 'S', type: 'toggle', disabled: false, state: 0, states: [{ tooltip: 'select', icon: 'ion-ios-crop' }], onclick: function onclick() {
 				p.setTool(p.tool.SELECT);
-			} }, { tooltip: 'pan', selected: false, disabled: false, icon: 'ion-arrow-move', shortcut: 'P', onselect: function onselect() {
+			}
+		});
+		panTool = new GUI.GridController('pan', {
+			shortcut: 'P', type: 'toggle', disabled: false, state: 0, states: [{ tooltip: 'pan', icon: 'ion-arrow-move' }], onclick: function onclick() {
 				p.setTool(p.tool.PAN);
-			} }, { tooltip: 'zoom', selected: false, disabled: true, icon: 'ion-ios-search', shortcut: 'Z', onselect: function onselect() {
+			}
+		});
+		zoomTool = new GUI.GridController('zoom', {
+			shortcut: 'Z', type: 'toggle', disabled: true, state: 0, states: [{ tooltip: 'zoom', icon: 'ion-ios-search' }], onclick: function onclick() {
 				p.setTool(p.tool.ZOOM);
-			} }, { tooltip: 'grab', selected: false, disabled: false, icon: 'ion-android-hand', shortcut: 'G', onselect: function onselect() {
+			}
+		});
+		grabTool = new GUI.GridController('select', {
+			shortcut: 'G', type: 'toggle', disabled: false, state: 0, states: [{ tooltip: 'grab', icon: 'ion-android-hand' }], onclick: function onclick() {
 				p.setTool(p.tool.GRAB);
-			} }]);
-		toolBin.addController(tools);
+			}
+		});
+		toolBin.addControllers(createTool, selectTool, panTool, zoomTool, grabTool);
 		p.gui.addBin(toolBin);
 	
-		propertiesBin = new Gui.Bin('Properties', 'list');
+		propertiesBin = new GUI.Bin('Properties');
 		p.gui.addBin(propertiesBin);
 	
-		physicsBin = new Gui.Bin('Physics', 'list');
-		gravity = new Gui.ToggleController('gravity', p.simulator.options.gravity, { onchange: function onchange(val) {
+		physicsBin = new GUI.Bin('Physics');
+		gravity = new GUI.ToggleController('gravity', p.simulator.options.gravity, { onchange: function onchange(val) {
 				p.simulator.options.gravity = val;
 			} });
-		friction = new Gui.NumberController('friction', p.simulator.options.friction, { min: 0, onchange: function onchange(val) {
+		friction = new GUI.NumberController('friction', p.simulator.options.friction, { min: 0, onchange: function onchange(val) {
 				p.simulator.options.friction = val;
 			} });
-		bounded = new Gui.ToggleController('bounded', p.simulator.options.bounded, { onchange: function onchange(val) {
+		bounded = new GUI.ToggleController('bounded', p.simulator.options.bounded, { onchange: function onchange(val) {
 				p.simulator.options.bounded = val;
 			} });
-		collisions = new Gui.DropdownController('collisions', [{ value: 'none', selected: false, disabled: false }, { value: 'elastic', selected: true, disabled: false }, { value: 'merge', selected: false, disabled: false }, { value: 'pass', selected: false, disabled: true, name: 'pass through' }, { value: 'absorb', selected: false, disabled: false }, { value: 'shatter', selected: false, disabled: false }, { value: 'explode', selected: false, disabled: false }], { onselect: function onselect(val) {
+		collisions = new GUI.DropdownController('collisions', [{ name: 'none', selected: false, disabled: false }, { name: 'elastic', selected: true, disabled: false }, { name: 'merge', selected: false, disabled: false }, { name: 'pass through', selected: false, disabled: true, value: 'pass' }, { name: 'absorb', selected: false, disabled: false }, { name: 'shatter', selected: false, disabled: false }, { name: 'explode', selected: false, disabled: false }], { onchange: function onchange(val) {
 				p.simulator.options.collisions = val;
 			} });
 		physicsBin.addControllers(gravity, friction, bounded, collisions);
 		p.gui.addBin(physicsBin);
 	
-		appearance = new Gui.Bin('Appearance', 'list', false);
-		trails = new Gui.ToggleController('trails', p.renderer.options.trails, { onchange: function onchange(val) {
+		appearance = new GUI.Bin('Appearance', { open: false });
+		trails = new GUI.ToggleController('trails', p.renderer.options.trails, { onchange: function onchange(val) {
 				p.renderer.options.trails = val;
 			} });
-		trailLength = new Gui.NumberController('trail length', p.renderer.options.trailLength, { min: 0, max: 100, step: 5, onchange: function onchange(val) {
+		trailLength = new GUI.NumberController('trail length', p.renderer.options.trailLength, { min: 0, max: 100, step: 5, onchange: function onchange(val) {
 				p.renderer.options.trailLength = val;
 			} });
-		trailFade = new Gui.ToggleController('trail fade', p.renderer.options.trailFade, { onchange: function onchange(val) {
+		trailFade = new GUI.ToggleController('trail fade', p.renderer.options.trailFade, { onchange: function onchange(val) {
 				p.renderer.options.trailFade = val;
 			} });
-		motionBlur = new Gui.NumberController('motion blur', p.renderer.options.motionBlur, { min: 0, max: 1, step: 0.1, onchange: function onchange(val) {
+		motionBlur = new GUI.NumberController('motion blur', p.renderer.options.motionBlur, { min: 0, max: 1, step: 0.1, onchange: function onchange(val) {
 				p.renderer.options.motionBlur = val;
 			} });
-		vectors = new Gui.ToggleController('vectors', p.renderer.options.debug, { onchange: function onchange(val) {
+		vectors = new GUI.ToggleController('vectors', p.renderer.options.debug, { onchange: function onchange(val) {
 				p.renderer.options.debug = val;
 			} });
 		appearance.addControllers(trails, trailLength, trailFade, motionBlur, vectors);
@@ -193,16 +218,17 @@
 			return p.simulator.stats.totalMomentum;
 		}
 	
-		statsBin = new Gui.Bin('Stats', 'list', false);
-		ke = new Gui.InfoController('Kinetic Energy', getKE, { interval: 100, format: 'number' });
-		pe = new Gui.InfoController('Potential Energy', getPE, { interval: 100, format: 'number' });
-		te = new Gui.InfoController('Total Energy', getTE, { interval: 100, format: 'number' });
-		momentum = new Gui.InfoController('Momentum', getMomentum, { interval: 100 });
-		canvas = new Gui.CanvasController();
-		statsBin.addControllers(ke, pe, te, momentum, canvas);
+		statsBin = new GUI.Bin('Stats', { open: false });
+		ke = new GUI.InfoController('Kinetic Energy', getKE, { interval: 100, format: 'number' });
+		pe = new GUI.InfoController('Potential Energy', getPE, { interval: 100, format: 'number' });
+		te = new GUI.InfoController('Total Energy', getTE, { interval: 100, format: 'number' });
+		momentum = new GUI.InfoController('Momentum', getMomentum, { interval: 100 });
+		statPlot = new GUI.CanvasController();
+		statsBin.addControllers(ke, pe, te, momentum, statPlot);
+		statsBin.disable();
 		p.gui.addBin(statsBin);
 	
-		var plot1 = new _srcPlotJs2['default'](canvas.ctx);
+		var plot1 = new _srcPlotJs2['default'](statPlot.ctx);
 		plot1.addSeries('KE', '#00aced', 1000, getKE);
 		plot1.addSeries('PE', '#ed00ac', 1000, getPE);
 		plot1.addSeries('TE', '#ededed', 1000, getTE);
@@ -210,6 +236,8 @@
 		function setEntityControllers(entities) {
 			propertiesBin.removeAllControllers();
 			if (entities.length === 0) {
+				p.off('pause');
+				p.off('resume');
 				return;
 			}
 			var e = undefined,
@@ -224,54 +252,68 @@
 			    remove = undefined;
 	
 			e = entities[0];
-			name = new Gui.TextController('name', e.name, { onchange: function onchange(val) {
+			name = new GUI.TextController('name', e.name, { onchange: function onchange(val) {
 					e.name = val;
 				} });
-			xpos = new Gui.NumberController('pos.x', e.position.x, { decimals: 1, onchange: function onchange(val) {
+			xpos = new GUI.NumberController('pos.x', e.position.x, { decimals: 1, onchange: function onchange(val) {
 					e.position.x = val;
-				} }).watch(function () {
+				} });
+			xpos.watch(function () {
 				return e.position.x;
 			});
-			ypos = new Gui.NumberController('pos.y', e.position.y, { decimals: 1, onchange: function onchange(val) {
+			ypos = new GUI.NumberController('pos.y', e.position.y, { decimals: 1, onchange: function onchange(val) {
 					e.position.y = val;
-				} }).watch(function () {
+				} });
+			ypos.watch(function () {
 				return e.position.y;
 			});
-			color = new Gui.ColorController('color', e.color, { onchange: function onchange(val) {
+			color = new GUI.ColorController('color', e.color, { onchange: function onchange(val) {
 					e.color = val;
 				} });
 			propertiesBin.addControllers(name, xpos, ypos, color);
+	
 			if (e instanceof _srcEntityJs.Body) {
-				mass = new Gui.NumberController('mass', e.mass, { decimals: 0, onchange: function onchange(val) {
+				mass = new GUI.NumberController('mass', e.mass, { decimals: 0, onchange: function onchange(val) {
 						e.setMass(val);
-					} }).watch(function () {
+					} });
+				mass.watch(function () {
 					return e.mass;
 				});
-				fixed = new Gui.ToggleController('fixed', e.fixed, { onchange: function onchange(val) {
+				fixed = new GUI.ToggleController('fixed', e.fixed, { onchange: function onchange(val) {
 						e.fixed = val;
 					} });
-				collidable = new Gui.ToggleController('collidable', !e.ignoreCollisions, { onchange: function onchange(val) {
+				collidable = new GUI.ToggleController('collidable', !e.ignoreCollisions, { onchange: function onchange(val) {
 						e.ignoreCollisions = !val;
 					} });
 				propertiesBin.addControllers(mass, fixed, collidable);
 			}
-			follow = new Gui.ActionController('follow', { action: function action() {
+	
+			follow = new GUI.ActionController('follow', { action: function action() {
 					p.renderer.follow(e);
 				} });
-			remove = new Gui.ActionController('delete', { action: function action() {
+			remove = new GUI.ActionController('delete', { action: function action() {
 					e.willDelete = true;
 					propertiesBin.removeAllControllers();
 					entities.splice(0, 1);
 					setEntityControllers(entities);
+					xpos = null;
+					ypos = null;
+					color = null;
+					mass = null;
+					fixed = null;
+					collidable = null;
+					follow = null;
+					remove = null;
+					// TODO: check that properties controllers are being properly destroyed
 				} });
 			propertiesBin.addControllers(follow, remove);
 	
-			p.listen('pause', function () {
+			p.on('pause', function () {
 				xpos.unwatch();
 				ypos.unwatch();
 				mass.unwatch();
 			});
-			p.listen('resume', function () {
+			p.on('resume', function () {
 				xpos.rewatch();
 				ypos.rewatch();
 				mass.rewatch();
@@ -279,14 +321,24 @@
 		}
 	
 		// Update properties bin on selection
-		p.listen('selection', setEntityControllers);
+		p.on('selection', setEntityControllers);
 	
 		p.setTool(p.tool.CREATE);
 		// p.start();
 	
-		var startInfo = new _srcModalOverlayJs2['default']('Particle Playground', 'This is a sandbox for simulating 2D particle physics. Play around to see what you can do!', [{ text: 'Hide', soft: true, onclick: function onclick(e) {/* TODO: set localstorage setings */} }, { text: 'Start', onclick: function onclick(e) {
-				startInfo.destroy();p.start();
-			} }], 'ion-ionic');
+		var startInfo = new _srcModalOverlayJs2['default']({
+			title: 'Particle Playground',
+			titleSize: 'x-large',
+			message: '<p>This is a sandbox for simulating two-dimensional particle physics. It is not intended to be physically accurate to any standard, instead it is best used for interactive entertainment.</p>' + '<p>It is written almost entirely from scratch in JavaScript, and is the culmination of about two years of on and off work. The <a href="https://github.com/mdciotti/particle-playground" target="_blank">source code</a> is available on Github.</p>' + '<p>You should check out <a href="http://mdc.io" target="_blank">my website</a> for more awesome stuff like this, or <a href="https://twitter.com/mdciotti" target="_blank">follow me on twitter</a>.</p>' + '<p>Feel free to share with friends or let me know what you think! If you run into any issues, or have any great ideas, don\'t hesitate to let me know.</p>',
+			scrollable: true,
+			icon: './assets/icons/noun_186392_cc.svg',
+			iconType: 'external',
+			actions: [{ text: 'Hide', soft: true, onclick: function onclick(e) {/* TODO: set localstorage setings */} }, { text: 'Instructions', onclick: function onclick(e) {
+					startInfo.destroy();p.tour();
+				} }, { text: 'Start', key: '<enter>', 'default': true, onclick: function onclick(e) {
+					startInfo.destroy();p.start();playButton.enable();resetButton.enable();startButton.setCurrent(1);
+				} }]
+		});
 		startInfo.appendTo(p.el);
 	});
 
@@ -295,950 +347,7 @@
 /* 2 */,
 /* 3 */,
 /* 4 */,
-/* 5 */
-/*!********************!*\
-  !*** ./src/gui.js ***!
-  \********************/
-/***/ function(module, exports, __webpack_require__) {
-
-	// GRAPHICAL USER INTERFACE CONTROLLER
-	
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _get = function get(_x2, _x3, _x4) { var _again = true; _function: while (_again) { var object = _x2, property = _x3, receiver = _x4; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x2 = parent; _x3 = property; _x4 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 6);
-	
-	var _node_modulesDefaults2 = _interopRequireDefault(_node_modulesDefaults);
-	
-	// import defaults from '~defaults/index.js';
-	
-	// Webpack: load stylesheet
-	__webpack_require__(/*! ../assets/styles/gui.less */ 12);
-	
-	var Bin = (function () {
-		function Bin(title, type) {
-			var _this = this;
-	
-			var open = arguments.length <= 2 || arguments[2] === undefined ? true : arguments[2];
-	
-			_classCallCheck(this, Bin);
-	
-			this.title = title;
-			this.type = type;
-			this.height = 0;
-			this.container = null;
-			this.controllers = [];
-			this.node = null;
-			this.node = document.createElement('div');
-			this.node.classList.add('bin');
-	
-			var titlebar = document.createElement('div');
-			titlebar.classList.add('bin-title-bar');
-			titlebar.addEventListener('click', function (e) {
-				_this.toggle();
-			});
-	
-			var icon = document.createElement('i');
-			icon.classList.add('ion-ios-arrow-right');
-			titlebar.appendChild(icon);
-	
-			var label = document.createElement('span');
-			label.classList.add('bin-title');
-			label.innerText = this.title;
-			titlebar.appendChild(label);
-	
-			this.node.appendChild(titlebar);
-	
-			this.container = document.createElement('div');
-			this.container.classList.add('bin-container');
-			this.container.classList.add('bin-' + this.type);
-			this.node.appendChild(this.container);
-	
-			this.setHeight(this.height);
-	
-			if (open) {
-				this.open();
-			}
-		}
-	
-		_createClass(Bin, [{
-			key: 'isOpen',
-			value: function isOpen() {
-				return this.node.classList.contains('open');
-			}
-		}, {
-			key: 'open',
-			value: function open() {
-				this.node.classList.add('open');
-				this.setHeight(this.height);
-			}
-		}, {
-			key: 'close',
-			value: function close() {
-				this.node.classList.remove('open');
-				this.setHeight(0);
-			}
-		}, {
-			key: 'toggle',
-			value: function toggle() {
-				if (this.isOpen()) {
-					this.close();
-				} else {
-					this.open();
-				}
-			}
-		}, {
-			key: 'setHeight',
-			value: function setHeight(h) {
-				this.container.style.height = h + 'px';
-			}
-		}, {
-			key: 'addController',
-			value: function addController(controller) {
-				this.controllers.push(controller);
-				this.container.appendChild(controller.node);
-				controller.parent = this;
-				this.height += controller.height;
-				if (this.isOpen()) {
-					this.setHeight(this.height);
-				}
-			}
-		}, {
-			key: 'addControllers',
-			value: function addControllers() {
-				for (var _len = arguments.length, controllers = Array(_len), _key = 0; _key < _len; _key++) {
-					controllers[_key] = arguments[_key];
-				}
-	
-				controllers.forEach(this.addController.bind(this));
-			}
-		}, {
-			key: 'removeController',
-			value: function removeController(controller) {
-				this.height -= controller.height;
-				controller.destroy();
-				this.setHeight(this.height);
-				var i = this.controllers.indexOf(controller);
-				delete this.controllers[i];
-				// this.controllers.splice(i, 1);
-			}
-		}, {
-			key: 'removeAllControllers',
-			value: function removeAllControllers() {
-				this.controllers.forEach(this.removeController.bind(this));
-				this.controllers.length = 0;
-			}
-		}, {
-			key: 'disable',
-			value: function disable() {
-				this.controllers.forEach(function (controller) {
-					controller.disable();
-				});
-			}
-		}]);
-	
-		return Bin;
-	})();
-	
-	exports.Bin = Bin;
-	
-	var Controller = (function () {
-		function Controller(type, title) {
-			_classCallCheck(this, Controller);
-	
-			this.title = title;
-			this.type = type;
-			this.node = document.createElement('div');
-			this.node.classList.add('bin-item', 'controller', type);
-			this.parent = null;
-			this.height = null;
-			this.updater = null;
-			this.enabled = false;
-			// this.node.appendChild();
-		}
-	
-		_createClass(Controller, [{
-			key: 'setState',
-			value: function setState(s) {
-				this.enabled = s;
-				if (this.enabled) {
-					this.node.classList.remove('disabled');
-				} else {
-					this.node.classList.add('disabled');
-				}
-			}
-		}, {
-			key: 'setValue',
-			value: function setValue(val) {
-				this.value = val;
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				this.setValue(e.target.value);
-				// console.log(`Setting ${this.title}: ${this.value}`);
-				// this.options.onchange(this.value);
-			}
-		}, {
-			key: 'watch',
-			value: function watch(getter) {
-				this.getter = getter;
-				this.setState(false);
-				this.update();
-				return this;
-			}
-		}, {
-			key: 'update',
-			value: function update() {
-				this.updater = requestAnimationFrame(this.update.bind(this));
-				this.setValue(this.getter());
-			}
-		}, {
-			key: 'unwatch',
-			value: function unwatch() {
-				cancelAnimationFrame(this.updater);
-				this.setState(true);
-			}
-		}, {
-			key: 'rewatch',
-			value: function rewatch() {
-				this.setState(false);
-				this.update();
-			}
-		}, {
-			key: 'disable',
-			value: function disable() {
-				this.setState(false);
-			}
-		}, {
-			key: 'enable',
-			value: function enable() {
-				this.setState(true);
-			}
-		}, {
-			key: 'destroy',
-			value: function destroy() {
-				// TODO: ensure properly destruction
-				this.node.parentNode.removeChild(this.node);
-				this.unwatch();
-				this.node = null;
-				this.parent = null;
-				this.getter = null;
-			}
-		}]);
-	
-		return Controller;
-	})();
-	
-	var TextController = (function (_Controller) {
-		_inherits(TextController, _Controller);
-	
-		function TextController(title, value, opts) {
-			_classCallCheck(this, TextController);
-	
-			_get(Object.getPrototypeOf(TextController.prototype), 'constructor', this).call(this, 'text', title);
-			this.value = value;
-			this.height = 48;
-	
-			// Set default options
-			this.options = (0, _node_modulesDefaults2['default'])(opts, {
-				size: Number.MAX_VALUE,
-				onchange: function onchange(e) {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('input');
-			this.input.classList.add('bin-item-value');
-			this.input.type = 'text';
-			this.input.value = this.value;
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('change', this.listener.bind(this));
-		}
-	
-		_createClass(TextController, [{
-			key: 'setState',
-			value: function setState(s) {
-				this.enabled = s;
-				this.input.disabled = !s;
-				if (this.enabled) {
-					this.node.classList.remove('disabled');
-				} else {
-					this.node.classList.add('disabled');
-				}
-			}
-		}, {
-			key: 'setValue',
-			value: function setValue(val) {
-				this.value = val;
-				this.input.value = this.value;
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				this.value = e.target.value;
-				// console.log(`Setting ${this.title}: ${this.value}`);
-				this.options.onchange(this.value);
-			}
-		}]);
-	
-		return TextController;
-	})(Controller);
-	
-	exports.TextController = TextController;
-	
-	var NumberController = (function (_Controller2) {
-		_inherits(NumberController, _Controller2);
-	
-		function NumberController(title, value, opts) {
-			_classCallCheck(this, NumberController);
-	
-			_get(Object.getPrototypeOf(NumberController.prototype), 'constructor', this).call(this, 'number', title);
-			this.value = value;
-			this.height = 48;
-	
-			// Set default options
-			this.options = (0, _node_modulesDefaults2['default'])(opts, {
-				min: null,
-				max: null,
-				step: null,
-				decimals: 3,
-				onchange: function onchange(val) {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('input');
-			this.input.classList.add('bin-item-value');
-			this.input.type = 'number';
-			this.input.value = this.value;
-			if (this.options.min !== null) this.input.min = this.options.min;
-			if (this.options.max !== null) this.input.max = this.options.max;
-			if (this.options.step !== null) this.input.step = this.options.step;
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('change', this.listener.bind(this));
-		}
-	
-		_createClass(NumberController, [{
-			key: 'setValue',
-			value: function setValue(val) {
-				this.value = val;
-				this.input.value = this.value.toFixed(this.options.decimals);
-			}
-		}, {
-			key: 'setState',
-			value: function setState(s) {
-				this.enabled = s;
-				this.input.disabled = !s;
-				if (this.enabled) {
-					this.node.classList.remove('disabled');
-				} else {
-					this.node.classList.add('disabled');
-				}
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				this.value = e.target.value;
-				// console.log(`Setting ${this.title}: ${this.value}`);
-				this.options.onchange(parseFloat(this.value));
-			}
-		}]);
-	
-		return NumberController;
-	})(Controller);
-	
-	exports.NumberController = NumberController;
-	
-	var ToggleController = (function (_Controller3) {
-		_inherits(ToggleController, _Controller3);
-	
-		function ToggleController(title, value, opts) {
-			_classCallCheck(this, ToggleController);
-	
-			_get(Object.getPrototypeOf(ToggleController.prototype), 'constructor', this).call(this, 'toggle', title);
-			this.value = value;
-			this.height = 48;
-	
-			// Set default options
-			this.options = (0, _node_modulesDefaults2['default'])(opts, {
-				onchange: function onchange() {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('input');
-			this.input.classList.add('bin-item-value', 'icon');
-			this.input.type = 'checkbox';
-			this.input.checked = this.value;
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('change', this.listener.bind(this));
-		}
-	
-		_createClass(ToggleController, [{
-			key: 'setValue',
-			value: function setValue(val) {
-				this.value = val;
-				this.input.value = this.value;
-			}
-		}, {
-			key: 'setState',
-			value: function setState(s) {
-				this.enabled = s;
-				this.input.disabled = !s;
-				if (this.enabled) {
-					this.node.classList.remove('disabled');
-				} else {
-					this.node.classList.add('disabled');
-				}
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				this.value = e.target.checked;
-				// console.log(`Toggling ${this.title}: ${this.value ? 'on' : 'off'}`);
-				this.options.onchange(this.value);
-			}
-		}]);
-	
-		return ToggleController;
-	})(Controller);
-	
-	exports.ToggleController = ToggleController;
-	
-	var ActionController = (function (_Controller4) {
-		_inherits(ActionController, _Controller4);
-	
-		function ActionController(title, opts) {
-			_classCallCheck(this, ActionController);
-	
-			_get(Object.getPrototypeOf(ActionController.prototype), 'constructor', this).call(this, 'action', title);
-			this.height = 48;
-	
-			// Set default options
-			this.options = (0, _node_modulesDefaults2['default'])(opts, {
-				action: function action(e) {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('button');
-			this.input.classList.add('bin-item-value', 'icon');
-			// this.input.type = 'button';
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('click', this.listener.bind(this));
-		}
-	
-		_createClass(ActionController, [{
-			key: 'setValue',
-			value: function setValue(val) {
-				this.value = val;
-				this.input.value = this.value;
-			}
-		}, {
-			key: 'setState',
-			value: function setState(s) {
-				this.enabled = s;
-				this.input.disabled = !s;
-				if (this.enabled) {
-					this.node.classList.remove('disabled');
-				} else {
-					this.node.classList.add('disabled');
-				}
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				// console.log(`Running ${this.title}`);
-				this.options.action(e);
-			}
-		}]);
-	
-		return ActionController;
-	})(Controller);
-	
-	exports.ActionController = ActionController;
-	
-	var DropdownController = (function (_Controller5) {
-		_inherits(DropdownController, _Controller5);
-	
-		function DropdownController(title, items, opts) {
-			_classCallCheck(this, DropdownController);
-	
-			_get(Object.getPrototypeOf(DropdownController.prototype), 'constructor', this).call(this, 'dropdown', title);
-			// this.value = value;
-			this.height = 48;
-	
-			// Set default options
-			this.options = (0, _node_modulesDefaults2['default'])(opts, {
-				onselect: function onselect() {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('select');
-			this.input.classList.add('bin-item-value');
-			this.createItems(items);
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('change', this.listener.bind(this));
-		}
-	
-		_createClass(DropdownController, [{
-			key: 'createItems',
-			value: function createItems(list) {
-				var _this2 = this;
-	
-				this.items = list;
-				this.items.forEach(function (item) {
-					var itemNode = document.createElement('option');
-					itemNode.value = item.value;
-					itemNode.innerText = item.hasOwnProperty('name') ? item.name : item.value;
-					if (item.selected) {
-						itemNode.selected = true;
-						// this.value = item.value;
-					}
-					if (item.disabled) {
-						itemNode.disabled = true;
-					}
-					_this2.input.appendChild(itemNode);
-				});
-			}
-		}, {
-			key: 'setValue',
-			value: function setValue(val) {
-				this.value = val;
-				this.input.value = this.value;
-			}
-		}, {
-			key: 'setState',
-			value: function setState(s) {
-				this.enabled = s;
-				this.input.disabled = !s;
-				if (this.enabled) {
-					this.node.classList.remove('disabled');
-				} else {
-					this.node.classList.add('disabled');
-				}
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				this.value = this.input.value;
-				// console.log(`Setting ${this.title}: ${this.value}`);
-				this.options.onselect(this.value);
-			}
-		}]);
-	
-		return DropdownController;
-	})(Controller);
-	
-	exports.DropdownController = DropdownController;
-	
-	var HTMLController = (function (_Controller6) {
-		_inherits(HTMLController, _Controller6);
-	
-		function HTMLController(title, opts) {
-			_classCallCheck(this, HTMLController);
-	
-			_get(Object.getPrototypeOf(HTMLController.prototype), 'constructor', this).call(this, 'html', title);
-			this.height = 160;
-		}
-	
-		_createClass(HTMLController, [{
-			key: 'getHTML',
-			value: function getHTML() {
-				return this.node.innerHTML;
-			}
-		}, {
-			key: 'setHTML',
-			value: function setHTML(content) {
-				this.node.innerHTML = content;
-			}
-	
-			// append(text) {}
-		}]);
-	
-		return HTMLController;
-	})(Controller);
-	
-	exports.HTMLController = HTMLController;
-	
-	var GridController = (function (_Controller7) {
-		_inherits(GridController, _Controller7);
-	
-		function GridController(title, items, opts) {
-			_classCallCheck(this, GridController);
-	
-			_get(Object.getPrototypeOf(GridController.prototype), 'constructor', this).call(this, 'grid', title);
-			this.height = 0;
-	
-			// Set default options
-			this.options = (0, _node_modulesDefaults2['default'])(opts, {
-				size: 'medium',
-				type: 'select'
-			});
-	
-			this.node = document.createDocumentFragment();
-			this.createItems(items);
-			this.selectedIndex = 0;
-			this.multiSelection = [];
-		}
-	
-		_createClass(GridController, [{
-			key: 'createItems',
-			value: function createItems(list) {
-				var _this3 = this;
-	
-				this.height = 48 * Math.ceil(list.length / Math.floor(256 / 48));
-	
-				var i = 0;
-				this.items = list;
-				this.items.forEach(function (item) {
-					item.node = document.createElement('div');
-					item.node.classList.add('bin-item');
-					item.node.dataset.index = i++;
-					item.node.title = item.tooltip;
-					if (item.selected) {
-						item.node.classList.add('selected');
-					}
-					if (item.disabled) {
-						item.node.classList.add('disabled');
-					}
-					if (_this3.options.type === 'toggle' || item.type === 'toggle') {
-						item.alt = false;
-					}
-					item.node.addEventListener('click', function (e) {
-						_this3.listener(e);
-					});
-					// item.node.addEventListener('click', item.onclick);
-					item.iconNode = document.createElement('i');
-					if (item.hasOwnProperty('icon') && item.icon.length > 0) {
-						item.iconNode.classList.add(item.icon);
-					} else if (item.hasOwnProperty('shortcut') && item.shortcut.length > 0) {
-						item.iconNode.innerText = item.shortcut.toUpperCase().charAt(0);
-					}
-					item.node.appendChild(item.iconNode);
-					_this3.node.appendChild(item.node);
-				});
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				var el = e.target,
-				    i = undefined,
-				    type = undefined;
-				while (el.parentElement !== null && typeof el.dataset.index === 'undefined') {
-					el = el.parentElement;
-				}
-				if (typeof el.dataset.index !== 'undefined') {
-					i = parseInt(el.dataset.index);
-					type = this.options.type === 'mixed' ? this.items[i].type : this.options.type;
-					// console.log(type);
-					if (type === 'select') {
-						this.select(i);
-					} else if (type === 'toggle') {
-						this.toggle(i);
-					} else if (type === 'action') {
-						if (!this.items[i].disabled) {
-							this.items[i].action.call(this, el);
-						}
-					}
-				}
-			}
-		}, {
-			key: 'select',
-			value: function select(i) {
-				var children = Array.prototype.slice.call(this.parent.container.childNodes, 0);
-				if (this.items[i].disabled) {
-					return;
-				}
-	
-				this.multiSelection.length = 0;
-				// Deselect all
-				this.selectedIndex = i;
-				children.forEach(function (el) {
-					el.classList.remove('selected');
-				});
-				// el = this.parent.container.querySelector(`.bin-item[data-index=${i}]`);
-				children[i].classList.add('selected');
-				this.items[i].onselect(children[i]);
-			}
-		}, {
-			key: 'toggle',
-			value: function toggle(i) {
-				var item = this.items[i];
-				if (item.disabled) {
-					return;
-				}
-	
-				item.alt = !item.alt;
-				item.node.classList.toggle('alt');
-				// console.log(item);
-				item.node.title = item.alt ? item.tooltip_alt : item.tooltip;
-				item.iconNode.className = item.alt ? item.icon_alt : item.icon;
-				item.onchange(item.node);
-			}
-		}, {
-			key: 'multiSelect',
-			value: function multiSelect(i) {}
-		}, {
-			key: 'disable',
-			value: function disable() {
-				this.items.forEach(function (item) {
-					item.disabled = true;
-					item.node.classList.add('disabled');
-				});
-			}
-		}]);
-	
-		return GridController;
-	})(Controller);
-	
-	exports.GridController = GridController;
-	
-	var CanvasController = (function (_Controller8) {
-		_inherits(CanvasController, _Controller8);
-	
-		function CanvasController(opts) {
-			_classCallCheck(this, CanvasController);
-	
-			_get(Object.getPrototypeOf(CanvasController.prototype), 'constructor', this).call(this, 'canvas', 'canvas');
-			this.height = 160;
-			this.node = document.createElement('canvas');
-			this.ctx = this.node.getContext('2d');
-			this.node.height = this.height;
-			this.node.width = 256;
-		}
-	
-		return CanvasController;
-	})(Controller);
-	
-	exports.CanvasController = CanvasController;
-	
-	var InfoController = (function (_Controller9) {
-		_inherits(InfoController, _Controller9);
-	
-		function InfoController(title, getter, opts) {
-			_classCallCheck(this, InfoController);
-	
-			_get(Object.getPrototypeOf(InfoController.prototype), 'constructor', this).call(this, 'info', title);
-			this.height = 48;
-			this.getter = getter;
-	
-			// Set default options
-			this.options = (0, _node_modulesDefaults2['default'])(opts, {
-				interval: 100,
-				decimals: 2,
-				format: 'auto'
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('input');
-			this.input.classList.add('bin-item-value');
-			this.input.type = 'text';
-			this.input.value = getter();
-			this.input.disabled = true;
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.watch();
-		}
-	
-		_createClass(InfoController, [{
-			key: 'watch',
-			value: function watch() {
-				setTimeout(this.watch.bind(this), this.options.interval);
-				this.setInfo(this.getter());
-			}
-		}, {
-			key: 'setInfo',
-			value: function setInfo(value) {
-				var infoString = undefined,
-				    vx = undefined,
-				    vy = undefined;
-	
-				switch (this.options.format) {
-					case 'text':
-						infoString = value;break;
-					case 'boolean':
-						infoString = value ? 'True' : 'False';break;
-					case 'number':
-						infoString = value.toFixed(this.options.decimals);break;
-					case 'vector':
-						vx = value.x.toFixed(this.options.decimals);
-						vy = value.y.toFixed(this.options.decimals);
-						infoString = '(' + vx + ', ' + vy + ')';
-						break;
-					default:
-						infoString = value.toString();
-				}
-				this.input.value = infoString;
-			}
-		}]);
-	
-		return InfoController;
-	})(Controller);
-	
-	exports.InfoController = InfoController;
-	
-	var ColorController = (function (_Controller10) {
-		_inherits(ColorController, _Controller10);
-	
-		function ColorController(title, value, opts) {
-			_classCallCheck(this, ColorController);
-	
-			_get(Object.getPrototypeOf(ColorController.prototype), 'constructor', this).call(this, 'color', title);
-			// this.value = value;
-			this.height = 48;
-	
-			// Set default options
-			this.options = (0, _node_modulesDefaults2['default'])(opts, {
-				onchange: function onchange() {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('input');
-			this.input.type = 'color';
-			this.input.classList.add('bin-item-value');
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('change', this.listener.bind(this));
-		}
-	
-		_createClass(ColorController, [{
-			key: 'setState',
-			value: function setState(s) {
-				this.enabled = s;
-				this.input.disabled = !s;
-				if (this.enabled) {
-					this.node.classList.remove('disabled');
-				} else {
-					this.node.classList.add('disabled');
-				}
-			}
-		}, {
-			key: 'setValue',
-			value: function setValue(val) {
-				this.value = val;
-				this.input.value = this.value;
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				this.value = this.input.value;
-				// console.log(`Setting ${this.title}: ${this.value}`);
-				this.options.onchange(this.value);
-			}
-		}]);
-	
-		return ColorController;
-	})(Controller);
-	
-	exports.ColorController = ColorController;
-	
-	var Pane = (function () {
-		function Pane(container, opts) {
-			_classCallCheck(this, Pane);
-	
-			// Set default options
-			this.options = (0, _node_modulesDefaults2['default'])(opts, {});
-			this.bins = [];
-			this.width = 256;
-			this.node = document.createElement('div');
-			this.node.classList.add('gui-pane');
-	
-			container.appendChild(this.node);
-		}
-	
-		_createClass(Pane, [{
-			key: 'addBin',
-			value: function addBin(bin) {
-				this.bins.push(bin);
-				this.node.appendChild(bin.node);
-			}
-		}, {
-			key: 'disableAll',
-			value: function disableAll() {
-				this.bins.forEach(function (bin) {
-					bin.disable();
-				});
-			}
-		}]);
-	
-		return Pane;
-	})();
-
-	exports.Pane = Pane;
-
-/***/ },
+/* 5 */,
 /* 6 */
 /*!*****************************!*\
   !*** ./~/defaults/index.js ***!
@@ -3225,15 +2334,7 @@
 
 
 /***/ },
-/* 12 */
-/*!********************************!*\
-  !*** ./assets/styles/gui.less ***!
-  \********************************/
-/***/ function(module, exports) {
-
-	// removed by extract-text-webpack-plugin
-
-/***/ },
+/* 12 */,
 /* 13 */,
 /* 14 */,
 /* 15 */,
@@ -3263,9 +2364,9 @@
 	
 	var _simulatorJs2 = _interopRequireDefault(_simulatorJs);
 	
-	var _guiJs = __webpack_require__(/*! ./gui.js */ 5);
+	var _guiIndexJs = __webpack_require__(/*! ./gui/index.js */ 32);
 	
-	var Gui = _interopRequireWildcard(_guiJs);
+	var GUI = _interopRequireWildcard(_guiIndexJs);
 	
 	var _clockJs = __webpack_require__(/*! ./clock.js */ 23);
 	
@@ -3287,12 +2388,12 @@
 	
 	var _modalOverlayJs2 = _interopRequireDefault(_modalOverlayJs);
 	
-	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 6);
+	var _defaults = __webpack_require__(/*! defaults */ 6);
 	
-	var _node_modulesDefaults2 = _interopRequireDefault(_node_modulesDefaults);
+	var _defaults2 = _interopRequireDefault(_defaults);
 	
 	// Webpack: load stylesheet
-	__webpack_require__(/*! ../assets/styles/playground.less */ 28);
+	__webpack_require__(/*! ../assets/styles/playground.less */ 29);
 	
 	var counter = 0;
 	
@@ -3301,13 +2402,14 @@
 			_classCallCheck(this, Playground);
 	
 			// Set default options
-			this.options = (0, _node_modulesDefaults2['default'])(opts, {
+			this.options = (0, _defaults2['default'])(opts, {
 				container: document.body,
 				width: window.innerWidth,
 				height: window.innerHeight
 			});
 			this.animator = null;
 			this.runtime = 0;
+			this.running = false;
 	
 			// Create DOM node
 			this.el = document.createElement('div');
@@ -3321,7 +2423,7 @@
 	
 			// Initialize submodules
 			this.clock = new _clockJs2['default']();
-			this.gui = new Gui.Pane(this.el);
+			this.gui = new GUI.Pane(this.el);
 			this.simulator = new _simulatorJs2['default']({
 				bounds: { left: 0, top: 0, width: this.options.width - this.gui.width, height: this.options.height }
 			});
@@ -3368,6 +2470,9 @@
 				this.simulator.options.bounds.height = this.renderer.ctx.canvas.height = window.innerHeight;
 			};
 			this.events.mousedown = function (e) {
+				if (!this.running) {
+					return;
+				}
 				// console.log(e.layerX, e.layerY);
 				this.input.mouse.isDown = true;
 				this.input.mouse.dragStartX = e.layerX;
@@ -3394,6 +2499,9 @@
 				}
 			};
 			this.events.mousemove = function (e) {
+				if (!this.running) {
+					return;
+				}
 				var delta = undefined;
 				this.input.mouse.dx = e.layerX - this.input.mouse.x;
 				this.input.mouse.dy = e.layerY - this.input.mouse.y;
@@ -3422,10 +2530,16 @@
 				}
 			};
 			this.events.mousewheel = function (e) {
+				if (!this.running) {
+					return;
+				}
 				this.input.mouse.wheel = e.wheelDelta;
 				this.simulator.parameters.createMass = Math.max(10, this.simulator.parameters.createMass + e.wheelDelta / 10);
 			};
 			this.events.mouseup = function (e) {
+				if (!this.running) {
+					return;
+				}
 				var particle = undefined;
 				this.input.mouse.isDown = false;
 				this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
@@ -3465,9 +2579,16 @@
 		}
 	
 		_createClass(Playground, [{
-			key: 'listen',
-			value: function listen(eventName, handler) {
+			key: 'on',
+			value: function on(eventName, handler) {
 				this.events[eventName] = handler;
+			}
+		}, {
+			key: 'off',
+			value: function off(eventName) {
+				if (this.events.hasOwnProperty(eventName)) {
+					this.events[eventName] = function () {};
+				}
 			}
 		}, {
 			key: 'selectRegion',
@@ -3500,7 +2621,10 @@
 		}, {
 			key: 'start',
 			value: function start() {
-				this.loop(1 / 60);
+				if (!this.running) {
+					this.running = true;
+					this.loop(1 / 60);
+				}
 			}
 		}, {
 			key: 'pause',
@@ -3515,15 +2639,22 @@
 		}, {
 			key: 'stop',
 			value: function stop() {
+				this.gui.disableAll();
+				this.running = false;
 				cancelAnimationFrame(this.animator);
 				this.setTool(this.tool.NONE);
 				this.deselect();
 	
-				var refreshMessage = new _modalOverlayJs2['default']('Simulation stopped', 'Reload the page to restart the simulation.', [{ text: 'Cancel', soft: true, onclick: function onclick(e) {
-						refreshMessage.destroy();
-					} }, { text: 'Reload', onclick: function onclick(e) {
-						document.location.reload();
-					} }], 'ion-ios-refresh-outline');
+				var refreshMessage = new _modalOverlayJs2['default']({
+					// title: 'Simulation stopped',
+					message: '<p>Reload the page to restart the simulation.</p>',
+					icon: 'none',
+					actions: [{ text: 'Cancel', soft: true, onclick: function onclick(e) {
+							refreshMessage.destroy();
+						} }, { text: 'Reload', key: '<enter>', 'default': true, onclick: function onclick(e) {
+							document.location.reload();
+						} }]
+				});
 				refreshMessage.appendTo(this.el);
 	
 				// Blur background
@@ -4500,7 +3631,7 @@
 				trailFade: false,
 				trailSpace: 5,
 				motionBlur: 0,
-				debug: true
+				debug: false
 			});
 			this.el = document.createElement('canvas');
 			this.el.style.display = 'block';
@@ -4841,8 +3972,6 @@
   \******************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	
-	// Webpack: load stylesheet
 	'use strict';
 	
 	Object.defineProperty(exports, '__esModule', {
@@ -4851,20 +3980,61 @@
 	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	__webpack_require__(/*! ../assets/styles/modal-overlay.less */ 27);
+	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 6);
+	
+	var _node_modulesDefaults2 = _interopRequireDefault(_node_modulesDefaults);
+	
+	var _node_modulesVkey = __webpack_require__(/*! ../~/vkey */ 27);
+	
+	var _node_modulesVkey2 = _interopRequireDefault(_node_modulesVkey);
+	
+	// Webpack: load stylesheet
+	__webpack_require__(/*! ../assets/styles/modal-overlay.less */ 28);
 	
 	var ModalOverlay = (function () {
-		function ModalOverlay(title, message, actions) {
-			var type = arguments.length <= 3 || arguments[3] === undefined ? 'info' : arguments[3];
+		function ModalOverlay(opts) {
+			var _this = this;
 	
 			_classCallCheck(this, ModalOverlay);
 	
+			this.options = (0, _node_modulesDefaults2['default'])(opts, {
+				title: '',
+				titleSize: 'medium',
+				message: '',
+				icon: 'none',
+				iconType: 'font',
+				actions: [{ text: 'Cancel', onclick: function onclick(e) {
+						this.destroy();
+					} }, { text: 'OK', 'key': '<return>', onclick: function onclick(e) {
+						this.destroy();
+					} }],
+				scrollable: false,
+				dismissable: true
+			});
+	
 			this.el = document.createElement('div');
 			this.el.classList.add('modal-overlay');
+	
+			this.keyListeners = {};
+			window.addEventListener('keyup', this.keyListener.bind(this));
+	
+			if (this.options.dismissable) {
+				this.el.addEventListener('click', function (e) {
+					if (e.target === _this.el) {
+						_this.destroy();
+					}
+				});
+				// this.keyListeners['<escape>'].push(this.destroy);
+				this.addKeyListener('<escape>', this.destroy);
+			}
+	
 			var $container = undefined,
 			    $content = undefined,
+			    $scrollView = undefined,
 			    $icon = undefined,
 			    $title = undefined,
 			    $message = undefined,
@@ -4877,42 +4047,68 @@
 			$content = document.createElement('div');
 			$content.classList.add('content');
 	
-			$icon = document.createElement('i');
-			switch (type) {
-				case 'success':
-					$icon.classList.add('ion-ios-checkmark-outline');break;
-				case 'warning':
-					$icon.classList.add('ion-ios-minus-outline');break;
-				case 'error':
-					$icon.classList.add('ion-ios-minus-outline');break;
-				case 'help':
-					$icon.classList.add('ion-ios-help-outline');break;
-				case 'info':
-					$icon.classList.add('ion-ios-information-outline');break;
-				default:
-					$icon.classList.add(type);
+			if (this.options.icon !== 'none') {
+				if (this.options.iconType === 'font') {
+					$icon = document.createElement('i');
+					switch (this.options.icon) {
+						case 'success':
+							$icon.classList.add('ion-ios-checkmark-outline');break;
+						case 'warning':
+							$icon.classList.add('ion-ios-minus-outline');break;
+						case 'error':
+							$icon.classList.add('ion-ios-minus-outline');break;
+						case 'help':
+							$icon.classList.add('ion-ios-help-outline');break;
+						case 'info':
+							$icon.classList.add('ion-ios-information-outline');break;
+						default:
+							$icon.classList.add(this.options.icon);
+					}
+				} else if (this.options.iconType === 'external') {
+					$icon = document.createElement('img');
+					$icon.src = this.options.icon;
+				}
+				$icon.classList.add('icon');
+				$content.appendChild($icon);
+			} else {
+				$content.classList.add('no-icon');
 			}
-			$content.appendChild($icon);
 	
-			$title = document.createElement('h1');
-			$title.innerText = title;
-			$content.appendChild($title);
+			if (this.options.title.length > 0) {
+				$title = document.createElement('h1');
+				$title.classList.add(this.options.titleSize);
+				$title.innerText = this.options.title;
+				$content.appendChild($title);
+			}
 	
-			$message = document.createElement('p');
-			$message.innerHTML = message;
-			$content.appendChild($message);
+			if (this.options.message.length > 0) {
+				$message = document.createElement('div');
+				$message.classList.add('content-view');
+				if (this.options.scrollable) {
+					$message.classList.add('scrollable');
+				}
+				$message.innerHTML = this.options.message;
+				$content.appendChild($message);
+			}
 	
-			if (actions.length >= 0) {
+			if (this.options.actions.length >= 0) {
 				$actions = document.createElement('div');
 				$actions.classList.add('actions');
-				actions.forEach(function (action) {
+				this.options.actions.forEach(function (action) {
 					$action = document.createElement('a');
 					if (action.soft) {
 						$action.classList.add('soft');
 					}
+					if (action['default']) {
+						$action.classList.add('default');
+					}
 					$action.innerText = action.text;
 					$action.addEventListener('click', action.onclick);
 					$actions.appendChild($action);
+					// Attach event listener
+					if (action.hasOwnProperty('key')) {
+						_this.addKeyListener(action.key, action.onclick);
+					}
 				});
 				$content.appendChild($actions);
 			}
@@ -4927,14 +4123,34 @@
 				container.appendChild(this.el);
 			}
 		}, {
+			key: 'addKeyListener',
+			value: function addKeyListener(key, fn) {
+				if (!this.keyListeners.hasOwnProperty(key)) {
+					this.keyListeners[key] = [];
+				}
+				this.keyListeners[key].push(fn);
+			}
+		}, {
+			key: 'keyListener',
+			value: function keyListener(e) {
+				var key = _node_modulesVkey2['default'][e.keyCode];
+				if (this.keyListeners.hasOwnProperty(key)) {
+					this.keyListeners[key].forEach(function (fn) {
+						fn(e);
+					});
+				}
+			}
+		}, {
 			key: 'destroy',
 			value: function destroy() {
-				var _this = this;
+				var _this2 = this;
 	
 				this.el.classList.add('hidden');
+				// TODO: properly remove event listener (this isn't working...)
+				window.removeEventListener('keyup', this.keyListener);
 	
 				setTimeout(function () {
-					_this.el.parentNode.removeChild(_this.el);
+					_this2.el.parentNode.removeChild(_this2.el);
 				}, 1000);
 			}
 		}]);
@@ -4947,6 +4163,151 @@
 
 /***/ },
 /* 27 */
+/*!*************************!*\
+  !*** ./~/vkey/index.js ***!
+  \*************************/
+/***/ function(module, exports) {
+
+	var ua = typeof window !== 'undefined' ? window.navigator.userAgent : ''
+	  , isOSX = /OS X/.test(ua)
+	  , isOpera = /Opera/.test(ua)
+	  , maybeFirefox = !/like Gecko/.test(ua) && !isOpera
+	
+	var i, output = module.exports = {
+	  0:  isOSX ? '<menu>' : '<UNK>'
+	, 1:  '<mouse 1>'
+	, 2:  '<mouse 2>'
+	, 3:  '<break>'
+	, 4:  '<mouse 3>'
+	, 5:  '<mouse 4>'
+	, 6:  '<mouse 5>'
+	, 8:  '<backspace>'
+	, 9:  '<tab>'
+	, 12: '<clear>'
+	, 13: '<enter>'
+	, 16: '<shift>'
+	, 17: '<control>'
+	, 18: '<alt>'
+	, 19: '<pause>'
+	, 20: '<caps-lock>'
+	, 21: '<ime-hangul>'
+	, 23: '<ime-junja>'
+	, 24: '<ime-final>'
+	, 25: '<ime-kanji>'
+	, 27: '<escape>'
+	, 28: '<ime-convert>'
+	, 29: '<ime-nonconvert>'
+	, 30: '<ime-accept>'
+	, 31: '<ime-mode-change>'
+	, 27: '<escape>'
+	, 32: '<space>'
+	, 33: '<page-up>'
+	, 34: '<page-down>'
+	, 35: '<end>'
+	, 36: '<home>'
+	, 37: '<left>'
+	, 38: '<up>'
+	, 39: '<right>'
+	, 40: '<down>'
+	, 41: '<select>'
+	, 42: '<print>'
+	, 43: '<execute>'
+	, 44: '<snapshot>'
+	, 45: '<insert>'
+	, 46: '<delete>'
+	, 47: '<help>'
+	, 91: '<meta>'  // meta-left -- no one handles left and right properly, so we coerce into one.
+	, 92: '<meta>'  // meta-right
+	, 93: isOSX ? '<meta>' : '<menu>'      // chrome,opera,safari all report this for meta-right (osx mbp).
+	, 95: '<sleep>'
+	, 106: '<num-*>'
+	, 107: '<num-+>'
+	, 108: '<num-enter>'
+	, 109: '<num-->'
+	, 110: '<num-.>'
+	, 111: '<num-/>'
+	, 144: '<num-lock>'
+	, 145: '<scroll-lock>'
+	, 160: '<shift-left>'
+	, 161: '<shift-right>'
+	, 162: '<control-left>'
+	, 163: '<control-right>'
+	, 164: '<alt-left>'
+	, 165: '<alt-right>'
+	, 166: '<browser-back>'
+	, 167: '<browser-forward>'
+	, 168: '<browser-refresh>'
+	, 169: '<browser-stop>'
+	, 170: '<browser-search>'
+	, 171: '<browser-favorites>'
+	, 172: '<browser-home>'
+	
+	  // ff/osx reports '<volume-mute>' for '-'
+	, 173: isOSX && maybeFirefox ? '-' : '<volume-mute>'
+	, 174: '<volume-down>'
+	, 175: '<volume-up>'
+	, 176: '<next-track>'
+	, 177: '<prev-track>'
+	, 178: '<stop>'
+	, 179: '<play-pause>'
+	, 180: '<launch-mail>'
+	, 181: '<launch-media-select>'
+	, 182: '<launch-app 1>'
+	, 183: '<launch-app 2>'
+	, 186: ';'
+	, 187: '='
+	, 188: ','
+	, 189: '-'
+	, 190: '.'
+	, 191: '/'
+	, 192: '`'
+	, 219: '['
+	, 220: '\\'
+	, 221: ']'
+	, 222: "'"
+	, 223: '<meta>'
+	, 224: '<meta>'       // firefox reports meta here.
+	, 226: '<alt-gr>'
+	, 229: '<ime-process>'
+	, 231: isOpera ? '`' : '<unicode>'
+	, 246: '<attention>'
+	, 247: '<crsel>'
+	, 248: '<exsel>'
+	, 249: '<erase-eof>'
+	, 250: '<play>'
+	, 251: '<zoom>'
+	, 252: '<no-name>'
+	, 253: '<pa-1>'
+	, 254: '<clear>'
+	}
+	
+	for(i = 58; i < 65; ++i) {
+	  output[i] = String.fromCharCode(i)
+	}
+	
+	// 0-9
+	for(i = 48; i < 58; ++i) {
+	  output[i] = (i - 48)+''
+	}
+	
+	// A-Z
+	for(i = 65; i < 91; ++i) {
+	  output[i] = String.fromCharCode(i)
+	}
+	
+	// num0-9
+	for(i = 96; i < 106; ++i) {
+	  output[i] = '<num-'+(i - 96)+'>'
+	}
+	
+	// F1-F24
+	for(i = 112; i < 136; ++i) {
+	  output[i] = 'F'+(i-111)
+	}
+
+
+/***/ },
+/* 28 */
 /*!******************************************!*\
   !*** ./assets/styles/modal-overlay.less ***!
   \******************************************/
@@ -4955,7 +4316,7 @@
 	// removed by extract-text-webpack-plugin
 
 /***/ },
-/* 28 */
+/* 29 */
 /*!***************************************!*\
   !*** ./assets/styles/playground.less ***!
   \***************************************/
@@ -4964,7 +4325,7 @@
 	// removed by extract-text-webpack-plugin
 
 /***/ },
-/* 29 */
+/* 30 */
 /*!*********************!*\
   !*** ./src/plot.js ***!
   \*********************/
@@ -4980,7 +4341,7 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _utilJs = __webpack_require__(/*! ./util.js */ 30);
+	var _utilJs = __webpack_require__(/*! ./util.js */ 31);
 	
 	var Plot = (function () {
 		function Plot(ctx) {
@@ -5064,7 +4425,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 30 */
+/* 31 */
 /*!*********************!*\
   !*** ./src/util.js ***!
   \*********************/
@@ -5090,6 +4451,1533 @@
 	function mapRange(val, min, max, newMin, newMax) {
 		return (val - min) / (max - min) * (newMax - newMin) + newMin;
 	}
+
+/***/ },
+/* 32 */
+/*!**************************!*\
+  !*** ./src/gui/index.js ***!
+  \**************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	// GRAPHICAL USER INTERFACE CONTROLLER
+	
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _srcPaneJs = __webpack_require__(/*! ./src/pane.js */ 48);
+	
+	var _srcPaneJs2 = _interopRequireDefault(_srcPaneJs);
+	
+	var _srcBinIndexJs = __webpack_require__(/*! ./src/bin/index.js */ 49);
+	
+	var _srcControllerIndexJs = __webpack_require__(/*! ./src/controller/index.js */ 51);
+	
+	exports['default'] = {
+		Pane: _srcPaneJs2['default'],
+		Bin: _srcBinIndexJs.Bin,
+		GridBin: _srcBinIndexJs.GridBin,
+		ListBin: _srcBinIndexJs.ListBin,
+		ActionController: _srcControllerIndexJs.ActionController,
+		CanvasController: _srcControllerIndexJs.CanvasController,
+		ColorController: _srcControllerIndexJs.ColorController,
+		DropdownController: _srcControllerIndexJs.DropdownController,
+		GridController: _srcControllerIndexJs.GridController,
+		HTMLController: _srcControllerIndexJs.HTMLController,
+		InfoController: _srcControllerIndexJs.InfoController,
+		NumberController: _srcControllerIndexJs.NumberController,
+		TextController: _srcControllerIndexJs.TextController,
+		ToggleController: _srcControllerIndexJs.ToggleController
+	};
+	
+	// Webpack: load stylesheet
+	__webpack_require__(/*! ./styles/main.less */ 64);
+	module.exports = exports['default'];
+
+/***/ },
+/* 33 */,
+/* 34 */,
+/* 35 */,
+/* 36 */,
+/* 37 */,
+/* 38 */,
+/* 39 */,
+/* 40 */,
+/* 41 */,
+/* 42 */,
+/* 43 */,
+/* 44 */,
+/* 45 */,
+/* 46 */,
+/* 47 */,
+/* 48 */
+/*!*****************************!*\
+  !*** ./src/gui/src/pane.js ***!
+  \*****************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var Pane = (function () {
+		function Pane(container, opts) {
+			_classCallCheck(this, Pane);
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {});
+			this.bins = [];
+			this.width = 288;
+			this.node = document.createElement('div');
+			this.node.classList.add('gui-pane');
+			this.setStyleWidth();
+	
+			container.appendChild(this.node);
+		}
+	
+		_createClass(Pane, [{
+			key: 'setStyleWidth',
+			value: function setStyleWidth() {
+				this.node.style.width = this.width + 'px';
+			}
+		}, {
+			key: 'addBin',
+			value: function addBin(bin) {
+				this.bins.push(bin);
+				this.node.appendChild(bin.node);
+				bin.pane = this;
+				bin.init();
+			}
+		}, {
+			key: 'addBins',
+			value: function addBins() {
+				for (var _len = arguments.length, bins = Array(_len), _key = 0; _key < _len; _key++) {
+					bins[_key] = arguments[_key];
+				}
+	
+				bins.forEach(this.addBin);
+			}
+		}, {
+			key: 'disableAll',
+			value: function disableAll() {
+				this.bins.forEach(function (bin) {
+					bin.disable();
+				});
+			}
+		}]);
+	
+		return Pane;
+	})();
+	
+	exports['default'] = Pane;
+	module.exports = exports['default'];
+
+/***/ },
+/* 49 */
+/*!**********************************!*\
+  !*** ./src/gui/src/bin/index.js ***!
+  \**********************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	var _binJs = __webpack_require__(/*! ./bin.js */ 50);
+	
+	exports['default'] = { Bin: _binJs.Bin, ListBin: _binJs.ListBin, GridBin: _binJs.GridBin };
+	module.exports = exports['default'];
+
+/***/ },
+/* 50 */
+/*!********************************!*\
+  !*** ./src/gui/src/bin/bin.js ***!
+  \********************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var Bin = (function () {
+		function Bin(title, opts) {
+			var _this = this;
+	
+			_classCallCheck(this, Bin);
+	
+			this.title = title;
+			this.type = 'generic';
+			this.height = 0;
+			this.container = null;
+			this.controllers = [];
+			this.node = null;
+			this.node = document.createElement('div');
+			this.node.classList.add('bin');
+			this.pane = null;
+			this.options = (0, _defaults2['default'])(opts, {
+				open: true
+			});
+			this.isOpen = this.options.open;
+	
+			var titlebar = document.createElement('div');
+			titlebar.classList.add('bin-title-bar');
+			titlebar.addEventListener('click', function (e) {
+				_this.toggle();
+			});
+	
+			var icon = document.createElement('i');
+			icon.classList.add('ion-ios-arrow-right');
+			titlebar.appendChild(icon);
+	
+			var label = document.createElement('span');
+			label.classList.add('bin-title');
+			label.innerText = this.title;
+			titlebar.appendChild(label);
+	
+			this.node.appendChild(titlebar);
+	
+			this.container = document.createElement('div');
+			this.container.classList.add('bin-container');
+			this.node.appendChild(this.container);
+	
+			if (this.isOpen) {
+				this.open();
+			} else {
+				this.close();
+			}
+		}
+	
+		_createClass(Bin, [{
+			key: 'init',
+			value: function init() {
+				this.controllers.forEach(function (c) {
+					c.init();
+				});
+				this.calculateHeight();
+				this.setStyleHeight();
+				this.container.classList.add('bin-' + this.type);
+			}
+		}, {
+			key: 'open',
+			value: function open() {
+				this.node.classList.add('open');
+				// this.setStyleHeight(this.height);
+				this.isOpen = true;
+			}
+		}, {
+			key: 'close',
+			value: function close() {
+				this.node.classList.remove('open');
+				// this.setStyleHeight(0);
+				this.isOpen = false;
+			}
+		}, {
+			key: 'toggle',
+			value: function toggle() {
+				if (this.isOpen) {
+					this.close();
+				} else {
+					this.open();
+				}
+			}
+		}, {
+			key: 'setStyleHeight',
+			value: function setStyleHeight() {
+				this.container.style.height = this.height + 'px';
+			}
+		}, {
+			key: 'calculateHeight',
+			value: function calculateHeight() {
+				this.height = this.controllers.reduce(function (sum, c) {
+					return sum + c.height;
+				}, 0);
+			}
+		}, {
+			key: 'addController',
+			value: function addController(controller) {
+				this.controllers.push(controller);
+				this.container.appendChild(controller.node);
+				controller.parent = this;
+				// this.height += controller.height;
+				this.calculateHeight();
+				this.setStyleHeight();
+			}
+		}, {
+			key: 'addControllers',
+			value: function addControllers() {
+				for (var _len = arguments.length, controllers = Array(_len), _key = 0; _key < _len; _key++) {
+					controllers[_key] = arguments[_key];
+				}
+	
+				controllers.forEach(this.addController.bind(this));
+			}
+		}, {
+			key: 'removeController',
+			value: function removeController(controller) {
+				this.height -= controller.height;
+				controller.destroy();
+				this.setStyleHeight();
+				var i = this.controllers.indexOf(controller);
+				delete this.controllers[i];
+				// this.controllers.splice(i, 1);
+			}
+		}, {
+			key: 'removeAllControllers',
+			value: function removeAllControllers() {
+				this.controllers.forEach(this.removeController.bind(this));
+				this.controllers.length = 0;
+			}
+		}, {
+			key: 'disable',
+			value: function disable() {
+				this.controllers.forEach(function (controller) {
+					controller.disable();
+				});
+			}
+		}]);
+	
+		return Bin;
+	})();
+	
+	exports.Bin = Bin;
+	
+	var GridBin = (function (_Bin) {
+		_inherits(GridBin, _Bin);
+	
+		function GridBin(title, opts) {
+			_classCallCheck(this, GridBin);
+	
+			_get(Object.getPrototypeOf(GridBin.prototype), 'constructor', this).call(this, title, opts);
+			this.type = 'grid';
+			this.options = (0, _defaults2['default'])(opts, {
+				selectable: false,
+				minSelect: 1,
+				maxSelect: 1,
+				size: 48,
+				onclick: function onclick(e) {}
+			});
+	
+			this.selectedItems = [];
+			this.itemSize = this.options.size;
+		}
+	
+		_createClass(GridBin, [{
+			key: 'calculateHeight',
+			value: function calculateHeight() {
+				this.pane.x;
+				if (this.pane === null) {
+					return;
+				}
+				var n = this.controllers.length;
+				var cols = Math.floor(this.pane.width / this.itemSize);
+				this.height = this.itemSize * Math.ceil(n / cols);
+			}
+		}, {
+			key: 'addController',
+			value: function addController(controller) {
+				this.controllers.push(controller);
+				this.container.appendChild(controller.node);
+				controller.parent = this;
+			}
+	
+			// Listener is called from a child listener
+		}, {
+			key: 'listener',
+			value: function listener(e) {
+				this.options.onclick(e);
+			}
+		}, {
+			key: 'deselectAll',
+			value: function deselectAll() {
+				this.controllers.forEach(function (c) {
+					c.deselect();
+				});
+			}
+	
+			// Attempt to select the item
+		}, {
+			key: 'selectItem',
+			value: function selectItem(controller) {
+				// If controller is not already in selectedItems
+				if (this.selectedItems.indexOf(controller) < 0) {
+					// Add controller to selection and select it
+					this.selectedItems.push(controller);
+					controller.select();
+				}
+				// Deselect last controller if new selection count is greater than maximum
+				if (this.selectedItems.length > this.options.maxSelect) {
+					// Attempt to deselect first item
+					this.deselectItem(this.selectedItems[0]);
+				}
+			}
+	
+			// Attempt to deselect the item
+		}, {
+			key: 'deselectItem',
+			value: function deselectItem(controller) {
+				// Only deselect if current selection count is greater than minimum
+				if (this.selectedItems.length > this.options.minSelect) {
+					// Remove controller from selectedItems
+					var index = this.selectedItems.indexOf(controller);
+					this.selectedItems.splice(index, 1);
+					// Deselect controller
+					controller.deselect();
+				}
+			}
+		}]);
+	
+		return GridBin;
+	})(Bin);
+	
+	exports.GridBin = GridBin;
+	
+	var ListBin = (function (_Bin2) {
+		_inherits(ListBin, _Bin2);
+	
+		function ListBin(title, opts) {
+			_classCallCheck(this, ListBin);
+	
+			_get(Object.getPrototypeOf(ListBin.prototype), 'constructor', this).call(this, title, opts);
+			this.type = 'list';
+			this.itemSize = 48;
+			this.options = (0, _defaults2['default'])(opts, {
+				open: true
+			});
+		}
+	
+		_createClass(ListBin, [{
+			key: 'calculateHeight',
+			value: function calculateHeight() {
+				this.height = this.itemSize * this.controllers.length;
+			}
+		}]);
+	
+		return ListBin;
+	})(Bin);
+	
+	exports.ListBin = ListBin;
+
+/***/ },
+/* 51 */
+/*!*****************************************!*\
+  !*** ./src/gui/src/controller/index.js ***!
+  \*****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _actionJs = __webpack_require__(/*! ./action.js */ 52);
+	
+	var _actionJs2 = _interopRequireDefault(_actionJs);
+	
+	var _canvasJs = __webpack_require__(/*! ./canvas.js */ 54);
+	
+	var _canvasJs2 = _interopRequireDefault(_canvasJs);
+	
+	var _colorJs = __webpack_require__(/*! ./color.js */ 55);
+	
+	var _colorJs2 = _interopRequireDefault(_colorJs);
+	
+	var _dropdownJs = __webpack_require__(/*! ./dropdown.js */ 56);
+	
+	var _dropdownJs2 = _interopRequireDefault(_dropdownJs);
+	
+	var _gridJs = __webpack_require__(/*! ./grid.js */ 57);
+	
+	var _gridJs2 = _interopRequireDefault(_gridJs);
+	
+	var _htmlJs = __webpack_require__(/*! ./html.js */ 58);
+	
+	var _htmlJs2 = _interopRequireDefault(_htmlJs);
+	
+	var _infoJs = __webpack_require__(/*! ./info.js */ 59);
+	
+	var _infoJs2 = _interopRequireDefault(_infoJs);
+	
+	var _numberJs = __webpack_require__(/*! ./number.js */ 60);
+	
+	var _numberJs2 = _interopRequireDefault(_numberJs);
+	
+	var _textJs = __webpack_require__(/*! ./text.js */ 61);
+	
+	var _textJs2 = _interopRequireDefault(_textJs);
+	
+	var _toggleJs = __webpack_require__(/*! ./toggle.js */ 62);
+	
+	var _toggleJs2 = _interopRequireDefault(_toggleJs);
+	
+	exports['default'] = {
+		ActionController: _actionJs2['default'],
+		CanvasController: _canvasJs2['default'],
+		ColorController: _colorJs2['default'],
+		DropdownController: _dropdownJs2['default'],
+		GridController: _gridJs2['default'],
+		HTMLController: _htmlJs2['default'],
+		InfoController: _infoJs2['default'],
+		NumberController: _numberJs2['default'],
+		TextController: _textJs2['default'],
+		ToggleController: _toggleJs2['default']
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 52 */
+/*!******************************************!*\
+  !*** ./src/gui/src/controller/action.js ***!
+  \******************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var ActionController = (function (_Controller) {
+		_inherits(ActionController, _Controller);
+	
+		function ActionController(title, opts) {
+			_classCallCheck(this, ActionController);
+	
+			_get(Object.getPrototypeOf(ActionController.prototype), 'constructor', this).call(this, 'action', title);
+			this.height = 48;
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				action: function action(e) {}
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.innerText = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('button');
+			this.input.classList.add('bin-item-value', 'icon');
+			// this.input.type = 'button';
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.input.addEventListener('click', this.listener.bind(this));
+		}
+	
+		_createClass(ActionController, [{
+			key: 'listener',
+			value: function listener(e) {
+				// console.log(`Running ${this.title}`);
+				this.options.action(e);
+			}
+		}]);
+	
+		return ActionController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = ActionController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 53 */
+/*!**********************************************!*\
+  !*** ./src/gui/src/controller/controller.js ***!
+  \**********************************************/
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	var Controller = (function () {
+		function Controller(type, title) {
+			_classCallCheck(this, Controller);
+	
+			this.title = title;
+			this.type = type;
+			this.node = document.createElement('div');
+			this.node.classList.add('bin-item', 'controller', type);
+			this.parent = null;
+			this.height = 0;
+			this.animator = null;
+			this.enabled = false;
+			// this.node.appendChild();
+		}
+	
+		_createClass(Controller, [{
+			key: 'init',
+			value: function init() {}
+		}, {
+			key: 'setValue',
+			value: function setValue(val) {
+				this.value = val;
+				if (this.hasOwnProperty('input')) {
+					this.input.value = val;
+				}
+			}
+		}, {
+			key: 'listener',
+			value: function listener(e) {
+				this.setValue(e.target.value);
+				// console.log(`Setting ${this.title}: ${this.value}`);
+				// this.options.onchange(this.value);
+			}
+		}, {
+			key: 'watch',
+			value: function watch(getter) {
+				this.getter = getter;
+				this.disable();
+				this.update();
+				return this;
+			}
+		}, {
+			key: 'update',
+			value: function update() {
+				this.animator = requestAnimationFrame(this.update.bind(this));
+				this.setValue(this.getter());
+			}
+		}, {
+			key: 'unwatch',
+			value: function unwatch() {
+				cancelAnimationFrame(this.animator);
+				this.enable();
+			}
+		}, {
+			key: 'rewatch',
+			value: function rewatch() {
+				this.disable();
+				this.update();
+			}
+		}, {
+			key: 'disable',
+			value: function disable() {
+				this.enabled = false;
+				this.node.classList.add('disabled');
+				if (this.hasOwnProperty('input')) {
+					this.input.disabled = true;
+				}
+			}
+		}, {
+			key: 'enable',
+			value: function enable() {
+				this.enabled = true;
+				this.node.classList.remove('disabled');
+				if (this.hasOwnProperty('input')) {
+					this.input.disabled = false;
+				}
+			}
+		}, {
+			key: 'destroy',
+			value: function destroy() {
+				// TODO: ensure proper destruction
+				this.unwatch();
+				this.node.parentNode.removeChild(this.node);
+				this.node = null;
+				this.parent = null;
+				this.getter = null;
+			}
+		}]);
+	
+		return Controller;
+	})();
+	
+	exports['default'] = Controller;
+	module.exports = exports['default'];
+
+/***/ },
+/* 54 */
+/*!******************************************!*\
+  !*** ./src/gui/src/controller/canvas.js ***!
+  \******************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var CanvasController = (function (_Controller) {
+		_inherits(CanvasController, _Controller);
+	
+		function CanvasController(title, opts) {
+			_classCallCheck(this, CanvasController);
+	
+			_get(Object.getPrototypeOf(CanvasController.prototype), 'constructor', this).call(this, 'canvas', title);
+			this.height = 48;
+			this.canvas = document.createElement('canvas');
+			this.node.appendChild(this.canvas);
+			this.ctx = null;
+			this.disable();
+		}
+	
+		_createClass(CanvasController, [{
+			key: 'init',
+			value: function init() {
+				this.canvas.height = this.height;
+				this.canvas.width = this.parent.pane.width;
+				this.ctx = this.canvas.getContext('2d');
+			}
+		}]);
+	
+		return CanvasController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = CanvasController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 55 */
+/*!*****************************************!*\
+  !*** ./src/gui/src/controller/color.js ***!
+  \*****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var ColorController = (function (_Controller) {
+		_inherits(ColorController, _Controller);
+	
+		function ColorController(title, value, opts) {
+			_classCallCheck(this, ColorController);
+	
+			_get(Object.getPrototypeOf(ColorController.prototype), 'constructor', this).call(this, 'color', title);
+			// this.value = value;
+			this.height = 48;
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				onchange: function onchange() {}
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.innerText = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('input');
+			this.input.type = 'color';
+			this.input.classList.add('bin-item-value');
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.input.addEventListener('change', this.listener.bind(this));
+		}
+	
+		_createClass(ColorController, [{
+			key: 'listener',
+			value: function listener(e) {
+				this.value = this.input.value;
+				// console.log(`Setting ${this.title}: ${this.value}`);
+				this.options.onchange(this.value);
+			}
+		}]);
+	
+		return ColorController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = ColorController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 56 */
+/*!********************************************!*\
+  !*** ./src/gui/src/controller/dropdown.js ***!
+  \********************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var DropdownController = (function (_Controller) {
+		_inherits(DropdownController, _Controller);
+	
+		function DropdownController(title, items, opts) {
+			_classCallCheck(this, DropdownController);
+	
+			_get(Object.getPrototypeOf(DropdownController.prototype), 'constructor', this).call(this, 'dropdown', title);
+			// this.value = value;
+			this.height = 48;
+			this.items = [];
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				onchange: function onchange() {}
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.innerText = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('select');
+			this.input.classList.add('bin-item-value');
+			this.createItems(items);
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.input.addEventListener('change', this.listener.bind(this));
+		}
+	
+		_createClass(DropdownController, [{
+			key: 'createItems',
+			value: function createItems(list) {
+				var _this = this;
+	
+				list.forEach(function (item) {
+					if (!item.hasOwnProperty('name')) {
+						item.name = '(unnamed)';
+					}
+					item = (0, _defaults2['default'])(item, {
+						value: item.name,
+						selected: false,
+						disabled: false
+					});
+					_this.items.push(item);
+	
+					if (item.hasOwnProperty('children')) {
+						// TODO: handle grouped options
+					}
+	
+					var option = document.createElement('option');
+					option.value = item.value;
+					option.text = item.name;
+					if (item.selected) {
+						option.selected = true;
+						// this.value = item.value;
+					}
+					if (item.disabled) {
+						option.disabled = true;
+					}
+					_this.input.add(option);
+				});
+			}
+		}, {
+			key: 'listener',
+			value: function listener(e) {
+				// this.value = this.input.value;
+				this.options.onchange(this.input.value);
+			}
+		}]);
+	
+		return DropdownController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = DropdownController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 57 */
+/*!****************************************!*\
+  !*** ./src/gui/src/controller/grid.js ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var GridController = (function (_Controller) {
+		_inherits(GridController, _Controller);
+	
+		function GridController(title, opts) {
+			_classCallCheck(this, GridController);
+	
+			_get(Object.getPrototypeOf(GridController.prototype), 'constructor', this).call(this, 'grid', title);
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				type: 'select',
+				disabled: false,
+				selected: false,
+				state: 0,
+				states: [],
+				onclick: function onclick(e) {}
+			});
+	
+			this.iconNode = document.createElement('i');
+	
+			this.state = this.options.state;
+			this.enabled = !this.options.disabled;
+			this.setCurrent(this.options.state);
+	
+			this.node.appendChild(this.iconNode);
+			this.node.addEventListener('click', this.listener.bind(this));
+	
+			// this.selectedIndex = 0;
+			// this.multiSelection = [];
+		}
+	
+		_createClass(GridController, [{
+			key: 'init',
+			value: function init() {
+				if (this.options.selected) {
+					this.parent.selectItem(this);
+				}
+			}
+		}, {
+			key: 'setCurrent',
+			value: function setCurrent(state) {
+				this.state = state;
+				this.current = (0, _defaults2['default'])(this.options.states[state], {
+					tooltip: '',
+					icon: '',
+					onclick: function onclick(e) {}
+				});
+	
+				this.node.title = this.current.tooltip;
+				if (!this.enabled) {
+					this.node.classList.add('disabled');
+				}
+				if (this.current.icon.length > 0) {
+					this.iconNode.className = this.current.icon;
+					this.iconNode.innerText = '';
+				} else if (this.options.shortcut.length > 0) {
+					this.iconNode.innerText = this.options.shortcut.toUpperCase().charAt(0);
+					this.iconNode.className = '';
+				}
+			}
+		}, {
+			key: 'listener',
+			value: function listener(e) {
+				if (!this.enabled) {
+					return;
+				}
+				this.current.onclick(e);
+				this.options.onclick(e);
+	
+				// Move to next state
+				var index = (this.state + 1) % this.options.states.length;
+				this.setCurrent(index);
+	
+				// Handle selection
+				if (this.parent.options.selectable) {
+					this.toggle();
+				}
+	
+				// Send event to parent
+				this.parent.listener(e);
+			}
+		}, {
+			key: 'select',
+			value: function select() {
+				this.selected = true;
+				this.node.classList.add('selected');
+			}
+		}, {
+			key: 'deselect',
+			value: function deselect() {
+				this.selected = false;
+				this.node.classList.remove('selected');
+			}
+		}, {
+			key: 'toggle',
+			value: function toggle() {
+				if (!this.selected) {
+					this.parent.selectItem(this);
+				} else {
+					this.parent.deselectItem(this);
+				}
+			}
+		}]);
+	
+		return GridController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = GridController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 58 */
+/*!****************************************!*\
+  !*** ./src/gui/src/controller/html.js ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var HTMLController = (function (_Controller) {
+		_inherits(HTMLController, _Controller);
+	
+		function HTMLController(title, opts) {
+			_classCallCheck(this, HTMLController);
+	
+			_get(Object.getPrototypeOf(HTMLController.prototype), 'constructor', this).call(this, 'html', title);
+			this.options = (0, _defaults2['default'])(opts, {
+				editable: false
+			});
+	
+			// TODO: how to determine the height dynamically?
+			this.height = 176;
+			if (!this.options.editable) {
+				this.disable();
+			} else {
+				this.node.contentEditable = true;
+			}
+		}
+	
+		// init() {
+		// 	this.disable();
+		// }
+	
+		_createClass(HTMLController, [{
+			key: 'getHTML',
+			value: function getHTML() {
+				return this.node.innerHTML;
+			}
+		}, {
+			key: 'setHTML',
+			value: function setHTML(content) {
+				this.node.innerHTML = content;
+			}
+	
+			// append(text) {}
+		}]);
+	
+		return HTMLController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = HTMLController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 59 */
+/*!****************************************!*\
+  !*** ./src/gui/src/controller/info.js ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var InfoController = (function (_Controller) {
+		_inherits(InfoController, _Controller);
+	
+		function InfoController(title, getter, opts) {
+			_classCallCheck(this, InfoController);
+	
+			_get(Object.getPrototypeOf(InfoController.prototype), 'constructor', this).call(this, 'info', title);
+			this.height = 48;
+			this.getter = getter;
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				interval: 100,
+				decimals: 2,
+				format: 'auto'
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.innerText = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('input');
+			this.input.classList.add('bin-item-value');
+			this.input.type = 'text';
+			this.input.value = getter();
+			this.input.disabled = true;
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.watch();
+		}
+	
+		_createClass(InfoController, [{
+			key: 'watch',
+			value: function watch() {
+				setTimeout(this.watch.bind(this), this.options.interval);
+				this.setInfo(this.getter());
+			}
+		}, {
+			key: 'setInfo',
+			value: function setInfo(value) {
+				var infoString = undefined,
+				    vx = undefined,
+				    vy = undefined;
+	
+				switch (this.options.format) {
+					case 'text':
+						infoString = value;break;
+					case 'boolean':
+						infoString = value ? 'True' : 'False';break;
+					case 'number':
+						infoString = value.toFixed(this.options.decimals);break;
+					case 'vector':
+						vx = value.x.toFixed(this.options.decimals);
+						vy = value.y.toFixed(this.options.decimals);
+						infoString = '(' + vx + ', ' + vy + ')';
+						break;
+					default:
+						infoString = value.toString();
+				}
+				this.input.value = infoString;
+			}
+		}]);
+	
+		return InfoController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = InfoController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 60 */
+/*!******************************************!*\
+  !*** ./src/gui/src/controller/number.js ***!
+  \******************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var NumberController = (function (_Controller) {
+		_inherits(NumberController, _Controller);
+	
+		function NumberController(title, value, opts) {
+			_classCallCheck(this, NumberController);
+	
+			_get(Object.getPrototypeOf(NumberController.prototype), 'constructor', this).call(this, 'number', title);
+			this.value = value;
+			this.height = 48;
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				min: null,
+				max: null,
+				step: null,
+				decimals: 3,
+				onchange: function onchange(val) {}
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.innerText = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('input');
+			this.input.classList.add('bin-item-value');
+			this.input.type = 'number';
+			this.input.value = this.value;
+			if (this.options.min !== null) this.input.min = this.options.min;
+			if (this.options.max !== null) this.input.max = this.options.max;
+			if (this.options.step !== null) this.input.step = this.options.step;
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.input.addEventListener('change', this.listener.bind(this));
+		}
+	
+		_createClass(NumberController, [{
+			key: 'setValue',
+			value: function setValue(val) {
+				this.value = val;
+				this.input.value = this.value.toFixed(this.options.decimals);
+			}
+		}, {
+			key: 'listener',
+			value: function listener(e) {
+				this.value = e.target.value;
+				// console.log(`Setting ${this.title}: ${this.value}`);
+				this.options.onchange(parseFloat(this.value));
+			}
+		}]);
+	
+		return NumberController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = NumberController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 61 */
+/*!****************************************!*\
+  !*** ./src/gui/src/controller/text.js ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var TextController = (function (_Controller) {
+		_inherits(TextController, _Controller);
+	
+		function TextController(title, value, opts) {
+			_classCallCheck(this, TextController);
+	
+			_get(Object.getPrototypeOf(TextController.prototype), 'constructor', this).call(this, 'text', title);
+			this.value = value;
+			this.height = 48;
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				size: Number.MAX_VALUE,
+				onchange: function onchange(e) {}
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.innerText = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('input');
+			this.input.classList.add('bin-item-value');
+			this.input.type = 'text';
+			this.input.value = this.value;
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.input.addEventListener('change', this.listener.bind(this));
+		}
+	
+		_createClass(TextController, [{
+			key: 'listener',
+			value: function listener(e) {
+				this.value = e.target.value;
+				// console.log(`Setting ${this.title}: ${this.value}`);
+				this.options.onchange(this.value);
+			}
+		}]);
+	
+		return TextController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = TextController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 62 */
+/*!******************************************!*\
+  !*** ./src/gui/src/controller/toggle.js ***!
+  \******************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 6);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var ToggleController = (function (_Controller) {
+		_inherits(ToggleController, _Controller);
+	
+		function ToggleController(title, value, opts) {
+			_classCallCheck(this, ToggleController);
+	
+			_get(Object.getPrototypeOf(ToggleController.prototype), 'constructor', this).call(this, 'toggle', title);
+			this.value = value;
+			this.height = 48;
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				onchange: function onchange() {}
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.innerText = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('input');
+			this.input.classList.add('bin-item-value', 'icon');
+			this.input.type = 'checkbox';
+			this.input.checked = this.value;
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.input.addEventListener('change', this.listener.bind(this));
+		}
+	
+		_createClass(ToggleController, [{
+			key: 'listener',
+			value: function listener(e) {
+				this.value = e.target.checked;
+				// console.log(`Toggling ${this.title}: ${this.value ? 'on' : 'off'}`);
+				this.options.onchange(this.value);
+			}
+		}]);
+	
+		return ToggleController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = ToggleController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 63 */,
+/* 64 */
+/*!**********************************!*\
+  !*** ./src/gui/styles/main.less ***!
+  \**********************************/
+/***/ function(module, exports) {
+
+	// removed by extract-text-webpack-plugin
 
 /***/ }
 /******/ ]);

@@ -1,15 +1,16 @@
 @background: #00ACED;
 @foreground: #FFFFFF;
 
-@snappy: cubic-bezier(0.2, 0.8, 0.2, 1.0);
+@ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+@ease-in-expo: cubic-bezier(0.95, 0.05, 0.795, 0.035);
 
 .fadeupin(@duration: 1s, @delay: 0s) {
-	animation: slideupin @duration 1 @snappy @delay,
+	animation: slideupin @duration 1 @ease-out-expo @delay,
 		fadein (@duration + @delay) 1 linear 0s;
 }
 
 .fadeupout(@duration: 1s, @delay: 0s) {
-	animation: slideupout @duration 1 @snappy @delay,
+	animation: slideupout @duration 1 @ease-out-expo @delay,
 		fadeout (@duration + @delay) 1 linear 0s;
 }
 
@@ -20,14 +21,14 @@
 	width: 100%;
 	height: 100%;
 	display: flex;
-	font-size: 24px;
+	font-size: 20px;
 	color: @foreground;
 	align-items: center;
 	font-family: 'Segoe UI', 'Source Sans Pro', 'Helvetica Neue', sans-serif;
 	font-weight: 300;
 	cursor: default;
 	// background-color: rgba(0, 0, 0, 0.2);
-	background-color: fade(darken(@background, 20%), 25%);
+	background-color: fade(darken(@background, 20%), 50%);
 	user-select: none;
 	-webkit-user-select: none;
 	-moz-user-select: none;
@@ -36,7 +37,7 @@
 
 	.container {
 		width: 100%;
-		height: 60%;
+		// max-height: 75%;
 		background-color: fade(@background, 90%);
 		// opacity: 0;
 		.fadeupin(1s, 0s);
@@ -45,14 +46,33 @@
 		.content {
 			margin: 0 auto;
 			width: 60%;
-			height: 100%;
-			padding: 32px 32px 32px 160px;
+			max-height: 75vh;
+			padding: 32px 32px 32px 192px;
 			position: relative;
 			box-sizing: border-box;
+			display: flex;
+			flex-direction: column;
 
-			i {
-				width: 64px;
-				height: 64px;
+			.content-view {
+				flex: 1 1 auto;
+				.fadeupin(1s, 0.1s);
+
+				&.scrollable {
+					// height: calc(100% - 128px);
+					overflow-y: auto;
+					border: 2px solid mix(@foreground, @background, 20%);
+					padding: 16px;
+					margin-top: 16px;
+				}
+			}
+
+			&.no-icon {
+				padding: 32px;
+			}
+
+			.icon {
+				width: 128px;
+				height: 128px;
 				display: block;
 				line-height: 1;
 				position: absolute;
@@ -63,39 +83,59 @@
 			}
 
 			h1 {
-				font-size: 300%;
 				font-weight: 100;
-				text-transform: lowercase;
+				// text-transform: lowercase;
 				line-height: 1;
 				margin: 0 0 16px 0;
-				// opacity: 0;
 				.fadeupin(1s, 0.05s);
+				flex: 0 0 auto;
+
+				&.x-large { font-size: 300%; }
+				&.large { font-size: 250%; }
+				&.medium { font-size: 200%; }
+				&.small { font-size: 150%; }
+				&.x-small { font-size: 100%; }
 			}
 
 			p {
 				line-height: 1.5;
-				margin: 0;
-				color: mix(@foreground, @background, 60%);
-				// opacity: 0;
-				.fadeupin(1s, 0.1s);
+				margin-top: 0;
+				color: @foreground;
+				// color: mix(@foreground, @background, 90%);
+
+				&:last-child {
+					margin-bottom: 0;
+				}
+			}
+
+			a:link, a:visited {
+				color: mix(@foreground, @background, 50%);
+				text-decoration: none;
+				transition: all 0.1s @ease-out-expo;
+
+				&:hover {
+					color: @foreground;
+				}
 			}
 
 			.actions {
-				position: absolute;
-				bottom: 32px;
-				right: 32px;
-				// opacity: 0;
 				.fadeupin(1s, 0.2s);
+				margin-top: 16px;
+				align-self: flex-end;
+				flex: 0 0 auto;
 
 				a {
 					display: inline-block;
 					cursor: default;
 					padding: 8px 32px;
+					text-align: center;
+					min-width: 64px;
 					border: 2px solid mix(@foreground, @background, 60%);
-					margin-left: 32px;
-					color: mix(@foreground, @background, 60%);
+					margin-left: 16px;
+					color: mix(@foreground, @background, 80%);
+					// background: @background;
 					text-decoration: none;
-					transition: all 0.1s @snappy;
+					transition: all 0.1s @ease-out-expo;
 
 					&:hover, &:focus {
 						background: mix(@foreground, @background, 20%);
@@ -108,10 +148,28 @@
 						color: @background;
 						// border-color: mix(@background, @foreground, 20%);
 					}
+				}
 
-					&.soft {
-						border: none;
-						background: none;
+				a.soft {
+					border: none;
+					background: none;
+
+					&:active {
+						color: mix(@foreground, @background, 40%);
+					}
+				}
+
+				a.default {
+					color: @foreground;
+					// border-color: @foreground;
+					background: mix(@foreground, @background, 20%);
+
+					&:hover {
+						background: mix(@foreground, @background, 40%);
+					}
+					&:active {
+						background: @foreground;
+						color: @background;
 					}
 				}
 			}

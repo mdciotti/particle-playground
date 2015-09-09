@@ -191,14 +191,21 @@ window.addEventListener('load', () => {
 	p.setTool(p.tool.CREATE);
 	// p.start();
 
-	let startInfo = new ModalOverlay(
-		'Particle Playground',
-		'This is a sandbox for simulating 2D particle physics. Play around to see what you can do!',
-		[
+	let startInfo = new ModalOverlay({
+		title: 'Particle Playground',
+		titleSize: 'x-large',
+		message: '<p>This is a sandbox for simulating two-dimensional particle physics. It is not intended to be physically accurate to any standard, instead it is best used for interactive entertainment.</p>' +
+			'<p>It is written almost entirely from scratch in JavaScript, and is the culmination of about two years of on and off work. The <a href="https://github.com/mdciotti/particle-playground" target="_blank">source code</a> is available on Github.</p>' +
+			'<p>You should check out <a href="http://mdc.io" target="_blank">my website</a> for more awesome stuff like this, or <a href="https://twitter.com/mdciotti" target="_blank">follow me on twitter</a>.</p>' +
+			'<p>Feel free to share with friends or let me know what you think! If you run into any issues, or have any great ideas, don\'t hesitate to let me know.</p>',
+		scrollable: true,
+		icon: './assets/icons/noun_186392_cc.svg',
+		iconType: 'external',
+		actions: [
 			{ text: 'Hide', soft: true, onclick: (e) => { /* TODO: set localstorage setings */ } },
-			{ text: 'Start', onclick: (e) => { startInfo.destroy(); p.start(); } }
-		],
-		'ion-ionic'
-	);
+			{ text: 'Instructions', onclick: (e) => { startInfo.destroy(); p.tour(); } },
+			{ text: 'Start', key: '<enter>', default: true, onclick: (e) => { startInfo.destroy(); p.start(); playButton.enable(); resetButton.enable(); startButton.setCurrent(1); } }
+		]
+	});
 	startInfo.appendTo(p.el);
 });

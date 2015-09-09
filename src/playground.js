@@ -247,15 +247,15 @@ export default class Playground {
 		this.setTool(this.tool.NONE);
 		this.deselect();
 
-		let refreshMessage = new ModalOverlay(
-			'Simulation stopped',
-			'Reload the page to restart the simulation.',
-			[
+		let refreshMessage = new ModalOverlay({
+			// title: 'Simulation stopped',
+			message: '<p>Reload the page to restart the simulation.</p>',
+			icon: 'none',
+			actions: [
 				{ text: 'Cancel', soft: true, onclick: (e) => { refreshMessage.destroy(); } },
-				{ text: 'Reload', onclick: (e) => { document.location.reload(); } }
-			],
-			'ion-ios-refresh-outline'
-		);
+				{ text: 'Reload', key: '<enter>', default: true, onclick: (e) => { document.location.reload(); } }
+			]
+		});
 		refreshMessage.appendTo(this.el);
 
 		// Blur background
