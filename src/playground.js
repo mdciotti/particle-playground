@@ -24,6 +24,7 @@ export default class Playground {
 		this.animator = null;
 		this.runtime = 0;
 		this.running = false;
+		this.paused = false;
 
 		// Create DOM node
 		this.el = document.createElement('div');
@@ -73,6 +74,8 @@ export default class Playground {
 			}
 		};
 
+		let wasPaused = this.paused;
+
 		// Define Event Handlers
 		this.events = {};
 		this.events.contextmenu = function(e) {
@@ -82,6 +85,13 @@ export default class Playground {
 		this.events.resize = function() {
 			this.simulator.options.bounds.width = this.renderer.ctx.canvas.width = window.innerWidth - this.gui.width;
 			this.simulator.options.bounds.height = this.renderer.ctx.canvas.height = window.innerHeight;
+		};
+		this.events.blur = function() {
+			wasPaused = this.paused;
+			this.pause(true);
+		};
+		this.events.focus = function() {
+			if (!wasPaused) { this.pause(false); }
 		};
 		this.events.mousedown = function(e) {
 			if (!this.running) { return; }
@@ -185,6 +195,8 @@ export default class Playground {
 
 		// Attach event handlers
 		window.addEventListener('resize', this.events.resize.bind(this));
+		window.addEventListener('focus', this.events.focus.bind(this));
+		window.addEventListener('blur', this.events.blur.bind(this));
 		document.body.addEventListener('contextmenu', this.events.contextmenu.bind(this));
 		this.renderer.el.addEventListener('mousedown', this.events.mousedown.bind(this));
 		this.renderer.el.addEventListener('mousemove', this.events.mousemove.bind(this));
@@ -234,8 +246,12 @@ export default class Playground {
 		}
 	}
 
-	pause() {
-		this.paused = !this.paused;
+	pause(state) {
+		if (state !== null && typeof state === 'boolean') {
+			this.paused = state;
+		} else {
+			this.paused = !this.paused;
+		}
 		if (this.paused) { this.events.pause(); }
 		else { this.events.resume(); }
 	}
