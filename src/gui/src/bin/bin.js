@@ -26,7 +26,7 @@ export class Bin {
 
 		let label = document.createElement('span');
 		label.classList.add('bin-title');
-		label.innerText = this.title;
+		label.textContent = this.title;
 		titlebar.appendChild(label);
 
 		this.node.appendChild(titlebar);

@@ -20,16 +20,16 @@ export default class NumberController extends Controller {
 
 		let name = document.createElement('span');
 		name.classList.add('bin-item-name');
-		name.innerText = title;
+		name.textContent = title;
 		label.appendChild(name);
 
 		this.input = document.createElement('input');
 		this.input.classList.add('bin-item-value');
 		this.input.type = 'number';
 		this.input.value = this.value;
-		if (this.options.min !== null) this.input.min = this.options.min;
-		if (this.options.max !== null) this.input.max = this.options.max;
-		if (this.options.step !== null) this.input.step = this.options.step;
+		if (this.options.min !== null) { this.input.min = this.options.min; }
+		if (this.options.max !== null) { this.input.max = this.options.max; }
+		if (this.options.step !== null) { this.input.step = this.options.step; }
 		label.appendChild(this.input);
 
 		this.node.appendChild(label);

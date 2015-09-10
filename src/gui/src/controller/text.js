@@ -17,7 +17,7 @@ export default class TextController extends Controller {
 
 		let name = document.createElement('span');
 		name.classList.add('bin-item-name');
-		name.innerText = title;
+		name.textContent = title;
 		label.appendChild(name);
 
 		this.input = document.createElement('input');

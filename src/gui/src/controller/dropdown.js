@@ -17,7 +17,7 @@ export default class DropdownController extends Controller {
 
 		let name = document.createElement('span');
 		name.classList.add('bin-item-name');
-		name.innerText = title;
+		name.textContent = title;
 		label.appendChild(name);
 
 		this.input = document.createElement('select');
@@ -46,7 +46,7 @@ export default class DropdownController extends Controller {
 
 			let option = document.createElement('option');
 			option.value = item.value;
-			option.text = item.name;
+			option.textContent = item.name;
 			if (item.selected) {
 				option.selected = true;
 				// this.value = item.value;

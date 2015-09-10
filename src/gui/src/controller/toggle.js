@@ -9,6 +9,8 @@ export default class ToggleController extends Controller {
 
 		// Set default options
 		this.options = defaults(opts, {
+			icon_checked: 'ion-ios-checkmark-outline',
+			icon_unchecked: 'ion-ios-circle-outline',
 			onchange: function () {}
 		});
 
@@ -16,14 +18,22 @@ export default class ToggleController extends Controller {
 
 		let name = document.createElement('span');
 		name.classList.add('bin-item-name');
-		name.innerText = title;
+		name.textContent = title;
 		label.appendChild(name);
 
 		this.input = document.createElement('input');
-		this.input.classList.add('bin-item-value', 'icon');
+		this.input.classList.add('bin-item-value');
 		this.input.type = 'checkbox';
 		this.input.checked = this.value;
 		label.appendChild(this.input);
+
+		let icon_unchecked = document.createElement('i');
+		icon_unchecked.classList.add(this.options.icon_unchecked, 'unchecked');
+		label.appendChild(icon_unchecked);
+
+		let icon_checked = document.createElement('i');
+		icon_checked.classList.add(this.options.icon_checked, 'checked');
+		label.appendChild(icon_checked);
 
 		this.node.appendChild(label);
 

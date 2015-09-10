@@ -44,9 +44,9 @@ export default class GridController extends Controller {
 		if (!this.enabled) { this.node.classList.add('disabled'); }
 		if (this.current.icon.length > 0) {
 			this.iconNode.className = this.current.icon;
-			this.iconNode.innerText = '';
+			this.iconNode.textContent = '';
 		} else if (this.options.shortcut.length > 0) {
-			this.iconNode.innerText = this.options.shortcut.toUpperCase().charAt(0);
+			this.iconNode.textContent = this.options.shortcut.toUpperCase().charAt(0);
 			this.iconNode.className = '';
 		}
 	}
