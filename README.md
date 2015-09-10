@@ -21,6 +21,7 @@ View the [live example](https://mdciotti.github.io/particle-playground/).
 * [ ] Preserve selection/following on merge
 * [ ] Inelastic collisions (sticky)
 * [ ] Keyboard shortcuts
+* [ ] Store user settings in LocalStorage
 
 ## Build Instructions
 
