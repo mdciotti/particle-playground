@@ -11,6 +11,7 @@ View the [live example](https://mdciotti.github.io/particle-playground/).
 
 * [ ] Add bin menu
 * [ ] Add physics and appearance settings presets
+* [ ] Add simulation presets
 * [x] Fix selections
 * [ ] Improve Gui binding
 * [ ] Simulation pause/play/speed

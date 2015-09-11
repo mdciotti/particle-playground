@@ -1,4 +1,4 @@
-/*!
+@import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400,600,700,900);/*!
 Ionicons, v2.0.0
 Created by Ben Sperry for the Ionic Framework, http://ionicons.com/
 https://twitter.com/benjsperry  https://twitter.com/ionicframework
@@ -2964,7 +2964,7 @@ MIT License: https://github.com/driftyco/ionicons
   display: flex;
   order: 2;
   flex-direction: column;
-  font-family: 'Segoe UI', 'Source Sans Pro', 'Helvetica Neue', sans-serif;
+  font-family: 'Source Sans Pro', 'Segoe UI', 'Helvetica Neue', sans-serif;
   font-weight: 300;
   font-size: 16px;
   cursor: default;
@@ -3075,6 +3075,47 @@ MIT License: https://github.com/driftyco/ionicons
   flex: 1 1 auto;
   padding: 8px;
 }
+.gui-pane .bin-container.bin-generic .bin-item label .bin-item-value {
+  border: none;
+  background: inherit;
+  display: block;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  outline: none;
+}
+.gui-pane .bin-container.bin-generic .bin-item label .bin-item-value[type="text"],
+.gui-pane .bin-container.bin-generic .bin-item label .bin-item-value[type="number"] {
+  flex: 1 1 20%;
+  text-align: right;
+}
+.gui-pane .bin-container.bin-generic .bin-item label .bin-item-value ~ i {
+  flex: 0 0 32px;
+  font-size: 32px;
+  text-align: center;
+  height: 32px;
+  width: 32px;
+}
+.gui-pane .bin-container.bin-generic .bin-item label button {
+  display: none;
+}
+.gui-pane .bin-container.bin-generic .bin-item label input[type="checkbox"],
+.gui-pane .bin-container.bin-generic .bin-item label input[type="radio"] {
+  display: none;
+}
+.gui-pane .bin-container.bin-generic .bin-item label input[type="checkbox"]:not(:checked) ~ i.checked,
+.gui-pane .bin-container.bin-generic .bin-item label input[type="radio"]:not(:checked) ~ i.checked {
+  display: none;
+}
+.gui-pane .bin-container.bin-generic .bin-item label input[type="checkbox"]:checked ~ i.unchecked,
+.gui-pane .bin-container.bin-generic .bin-item label input[type="radio"]:checked ~ i.unchecked {
+  display: none;
+}
 .gui-pane .bin-container.bin-generic .bin-item:not(.disabled):hover {
   background-color: #193952;
 }
@@ -3119,33 +3160,6 @@ MIT License: https://github.com/driftyco/ionicons
 .gui-pane .bin-container.bin-generic .bin-item.html a:visited:hover {
   color: #ffffff;
 }
-.gui-pane .bin-container input,
-.gui-pane .bin-container select,
-.gui-pane .bin-container button {
-  -webkit-appearance: none;
-  appearance: none;
-  border: none;
-  background: inherit;
-  display: block;
-  color: inherit;
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: inherit;
-  line-height: 1;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  outline: none;
-}
-.gui-pane .bin-container input[type="text"],
-.gui-pane .bin-container select[type="text"],
-.gui-pane .bin-container button[type="text"],
-.gui-pane .bin-container input[type="number"],
-.gui-pane .bin-container select[type="number"],
-.gui-pane .bin-container button[type="number"] {
-  flex: 1 1 20%;
-  text-align: right;
-}
 .gui-pane .bin-container .bin-item:not(.canvas).disabled .bin-item-value {
   opacity: 0.25;
 }
@@ -3170,43 +3184,6 @@ MIT License: https://github.com/driftyco/ionicons
   top: 16px;
   font-size: 100%;
 }
-.gui-pane .bin-container input.icon,
-.gui-pane .bin-container button.icon {
-  flex: 0 0 32px;
-  font-size: 32px;
-  text-align: center;
-  display: inline-block;
-  font-family: "Ionicons";
-  speak: none;
-  font-style: normal;
-  font-weight: normal;
-  font-variant: normal;
-  text-transform: none;
-  text-rendering: auto;
-  line-height: 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-.gui-pane .bin-container input.icon:before,
-.gui-pane .bin-container button.icon:before {
-  content: "\F3D6";
-}
-.gui-pane .bin-container input.icon[type="checkbox"]:before,
-.gui-pane .bin-container button.icon[type="checkbox"]:before {
-  content: "\F401";
-}
-.gui-pane .bin-container input.icon[type="checkbox"]:checked:before,
-.gui-pane .bin-container button.icon[type="checkbox"]:checked:before {
-  content: "\F3FE";
-}
-.gui-pane .bin-container input.icon[type="radio"]:before,
-.gui-pane .bin-container button.icon[type="radio"]:before {
-  content: "\F401";
-}
-.gui-pane .bin-container input.icon[type="radio"]:checked:before,
-.gui-pane .bin-container button.icon[type="radio"]:checked:before {
-  content: "\F400";
-}
 .modal-overlay {
   position: fixed;
   left: 0;
@@ -3217,7 +3194,7 @@ MIT License: https://github.com/driftyco/ionicons
   font-size: 20px;
   color: #ffffff;
   align-items: center;
-  font-family: 'Segoe UI', 'Source Sans Pro', 'Helvetica Neue', sans-serif;
+  font-family: 'Source Sans Pro', 'Segoe UI', 'Helvetica Neue', sans-serif;
   font-weight: 300;
   cursor: default;
   background-color: rgba(0, 98, 135, 0.5);
@@ -3229,7 +3206,7 @@ MIT License: https://github.com/driftyco/ionicons
 }
 .modal-overlay .container {
   width: 100%;
-  background-color: rgba(0, 172, 237, 0.9);
+  background-color: rgba(0, 172, 237, 0.6);
   animation: slideupin 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0s, fadein 1s 1 linear 0s;
   overflow: hidden;
 }
@@ -3319,7 +3296,7 @@ MIT License: https://github.com/driftyco/ionicons
   padding: 8px 32px;
   text-align: center;
   min-width: 64px;
-  border: 2px solid #99def8;
+  border: 2px solid #33bdf1;
   margin-left: 16px;
   color: #cceefb;
   text-decoration: none;
@@ -3327,13 +3304,13 @@ MIT License: https://github.com/driftyco/ionicons
 }
 .modal-overlay .container .content .actions a:hover,
 .modal-overlay .container .content .actions a:focus {
-  background: #33bdf1;
   color: #ffffff;
-  border-color: #ffffff;
+  border: 2px solid #99def8;
 }
 .modal-overlay .container .content .actions a:active {
   background: #ffffff;
   color: #00aced;
+  border-color: #ffffff;
 }
 .modal-overlay .container .content .actions a.soft {
   border: none;
@@ -3344,10 +3321,11 @@ MIT License: https://github.com/driftyco/ionicons
 }
 .modal-overlay .container .content .actions a.default {
   color: #ffffff;
+  border-color: transparent;
   background: #33bdf1;
 }
 .modal-overlay .container .content .actions a.default:hover {
-  background: #66cdf4;
+  border-color: #ffffff;
 }
 .modal-overlay .container .content .actions a.default:active {
   background: #ffffff;
@@ -3358,6 +3336,16 @@ MIT License: https://github.com/driftyco/ionicons
 }
 .modal-overlay.hidden .container {
   animation: slideupout 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0s, fadeout 1s 1 linear 0s;
+}
+.modal-overlay.hidden .container h1,
+.modal-overlay.hidden .container .icon {
+  animation: slideupout 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0.05s, fadeout 1.05s 1 linear 0s;
+}
+.modal-overlay.hidden .container .content-view {
+  animation: slideupout 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0.1s, fadeout 1.1s 1 linear 0s;
+}
+.modal-overlay.hidden .container .actions {
+  animation: slideupout 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0.2s, fadeout 1.2s 1 linear 0s;
 }
 @keyframes fadein {
   0% {
@@ -3397,9 +3385,15 @@ MIT License: https://github.com/driftyco/ionicons
     transform: translate3D(0, -64px, 0);
   }
 }
+body {
+  background: #000000;
+  margin: 0;
+}
 .playground {
   display: flex;
   background: #000000;
+  transition: filter 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  transition: -webkit-filter 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
 .playground canvas[data-cursor="default"] {
   cursor: default;
@@ -3437,7 +3431,8 @@ MIT License: https://github.com/driftyco/ionicons
   cursor: not-allowed;
 }
 .playground.defocus {
-  filter: blur(32px);
+  filter: blur(8px);
+  -webkit-filter: blur(8px);
 }
 
 /*# sourceMappingURL=styles.css.map*/

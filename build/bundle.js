@@ -53,21 +53,21 @@
 	
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 	
-	var _srcGuiIndexJs = __webpack_require__(/*! ./src/gui/index.js */ 32);
+	var _srcGuiIndexJs = __webpack_require__(/*! ./src/gui/index.js */ 6);
 	
 	var GUI = _interopRequireWildcard(_srcGuiIndexJs);
 	
-	var _srcPlaygroundJs = __webpack_require__(/*! ./src/playground.js */ 18);
+	var _srcPlaygroundJs = __webpack_require__(/*! ./src/playground.js */ 34);
 	
 	var _srcPlaygroundJs2 = _interopRequireDefault(_srcPlaygroundJs);
 	
-	var _srcPlotJs = __webpack_require__(/*! ./src/plot.js */ 30);
+	var _srcPlotJs = __webpack_require__(/*! ./src/plot.js */ 46);
 	
 	var _srcPlotJs2 = _interopRequireDefault(_srcPlotJs);
 	
-	var _srcEntityJs = __webpack_require__(/*! ./src/entity.js */ 22);
+	var _srcEntityJs = __webpack_require__(/*! ./src/entity.js */ 38);
 	
-	var _srcModalOverlayJs = __webpack_require__(/*! ./src/modal-overlay.js */ 26);
+	var _srcModalOverlayJs = __webpack_require__(/*! ./src/modal-overlay.js */ 42);
 	
 	var _srcModalOverlayJs2 = _interopRequireDefault(_srcModalOverlayJs);
 	
@@ -233,91 +233,106 @@
 		plot1.addSeries('PE', '#ed00ac', 1000, getPE);
 		plot1.addSeries('TE', '#ededed', 1000, getTE);
 	
+		// Container for entity property controllers
+		var entityProp = {
+			onPauseHandle: null, onResumeHandle: null,
+			name: null, xpos: null, ypos: null, color: null, mass: null,
+			fixed: null, collidable: null, follow: null, remove: null,
+			entity: null
+		};
+	
+		// this refers to the entityProp removed (defined above)
+		function removeEntity() {
+			console.log(this);
+			this.entity.willDelete = true;
+			propertiesBin.removeAllControllers();
+			p.off('pause', this.onPauseHandle);
+			p.off('resume', this.onResumeHandle);
+			var index = p.selectedEntities.indexOf(this.entity);
+			p.selectedEntities.splice(index, 1);
+			setEntityControllers(p.selectedEntities);
+			// delete this.name;
+			// delete this.xpos;
+			// delete this.ypos;
+			// delete this.color;
+			// delete this.mass;
+			// delete this.fixed;
+			// delete this.collidable;
+			// delete this.follow;
+			// delete this.remove;
+			// delete this.entity;
+			// delete this.onPauseHandle;
+			// delete this.onResumeHandle;
+			// TODO: check that properties controllers are being properly destroyed
+		}
+	
+		function onPause() {
+			// console.log(this, entityProp, this === entityProp);
+			entityProp.xpos.unwatch();
+			entityProp.ypos.unwatch();
+			entityProp.mass.unwatch();
+		}
+	
+		function onResume() {
+			entityProp.xpos.rewatch();
+			entityProp.ypos.rewatch();
+			entityProp.mass.rewatch();
+		}
+	
 		function setEntityControllers(entities) {
 			propertiesBin.removeAllControllers();
 			if (entities.length === 0) {
-				p.off('pause');
-				p.off('resume');
+				p.off('pause', entityProp.onPauseHandle);
+				p.off('resume', entityProp.onResumeHandle);
 				return;
 			}
-			var e = undefined,
-			    name = undefined,
-			    xpos = undefined,
-			    ypos = undefined,
-			    color = undefined,
-			    mass = undefined,
-			    fixed = undefined,
-			    collidable = undefined,
-			    follow = undefined,
-			    remove = undefined;
 	
-			e = entities[0];
-			name = new GUI.TextController('name', e.name, { onchange: function onchange(val) {
+			var e = entities[0];
+			entityProp.entity = e;
+			entityProp.name = new GUI.TextController('name', e.name, { onchange: function onchange(val) {
 					e.name = val;
 				} });
-			xpos = new GUI.NumberController('pos.x', e.position.x, { decimals: 1, onchange: function onchange(val) {
+			entityProp.xpos = new GUI.NumberController('pos.x', e.position.x, { decimals: 1, onchange: function onchange(val) {
 					e.position.x = val;
 				} });
-			xpos.watch(function () {
+			entityProp.xpos.watch(function () {
 				return e.position.x;
 			});
-			ypos = new GUI.NumberController('pos.y', e.position.y, { decimals: 1, onchange: function onchange(val) {
+			entityProp.ypos = new GUI.NumberController('pos.y', e.position.y, { decimals: 1, onchange: function onchange(val) {
 					e.position.y = val;
 				} });
-			ypos.watch(function () {
+			entityProp.ypos.watch(function () {
 				return e.position.y;
 			});
-			color = new GUI.ColorController('color', e.color, { onchange: function onchange(val) {
+			entityProp.color = new GUI.ColorController('color', e.color, { onchange: function onchange(val) {
 					e.color = val;
 				} });
-			propertiesBin.addControllers(name, xpos, ypos, color);
+			propertiesBin.addControllers(entityProp.name, entityProp.xpos, entityProp.ypos, entityProp.color);
 	
 			if (e instanceof _srcEntityJs.Body) {
-				mass = new GUI.NumberController('mass', e.mass, { decimals: 0, onchange: function onchange(val) {
+				entityProp.mass = new GUI.NumberController('mass', e.mass, { decimals: 0, onchange: function onchange(val) {
 						e.setMass(val);
 					} });
-				mass.watch(function () {
+				entityProp.mass.watch(function () {
 					return e.mass;
 				});
-				fixed = new GUI.ToggleController('fixed', e.fixed, { onchange: function onchange(val) {
+				entityProp.fixed = new GUI.ToggleController('fixed', e.fixed, { onchange: function onchange(val) {
 						e.fixed = val;
 					} });
-				collidable = new GUI.ToggleController('collidable', !e.ignoreCollisions, { onchange: function onchange(val) {
+				entityProp.collidable = new GUI.ToggleController('collidable', !e.ignoreCollisions, { onchange: function onchange(val) {
 						e.ignoreCollisions = !val;
 					} });
-				propertiesBin.addControllers(mass, fixed, collidable);
+				propertiesBin.addControllers(entityProp.mass, entityProp.fixed, entityProp.collidable);
 			}
 	
-			follow = new GUI.ActionController('follow', { action: function action() {
+			entityProp.follow = new GUI.ActionController('follow', { action: function action() {
 					p.renderer.follow(e);
 				} });
-			remove = new GUI.ActionController('delete', { action: function action() {
-					e.willDelete = true;
-					propertiesBin.removeAllControllers();
-					entities.splice(0, 1);
-					setEntityControllers(entities);
-					xpos = null;
-					ypos = null;
-					color = null;
-					mass = null;
-					fixed = null;
-					collidable = null;
-					follow = null;
-					remove = null;
-					// TODO: check that properties controllers are being properly destroyed
-				} });
-			propertiesBin.addControllers(follow, remove);
+			entityProp.remove = new GUI.ActionController('delete', { action: removeEntity.bind(entityProp) });
+			propertiesBin.addControllers(entityProp.follow, entityProp.remove);
 	
-			p.on('pause', function () {
-				xpos.unwatch();
-				ypos.unwatch();
-				mass.unwatch();
-			});
-			p.on('resume', function () {
-				xpos.rewatch();
-				ypos.rewatch();
-				mass.rewatch();
-			});
+			entityProp.onPauseHandle = p.on('pause', onPause.bind(entityProp));
+			entityProp.onResumeHandle = p.on('resume', onResume.bind(entityProp));
 		}
 	
 		// Update properties bin on selection
@@ -337,9 +352,15 @@
 					startInfo.destroy();p.tour();
 				} }, { text: 'Start', key: '<enter>', 'default': true, onclick: function onclick(e) {
 					startInfo.destroy();p.start();playButton.enable();resetButton.enable();startButton.setCurrent(1);
-				} }]
+				} }],
+			onopen: function onopen() {
+				p.el.classList.add('defocus');
+			},
+			onclose: function onclose() {
+				p.el.classList.remove('defocus');
+			}
 		});
-		startInfo.appendTo(p.el);
+		startInfo.appendTo(document.body);
 	});
 
 /***/ },
@@ -349,12 +370,133 @@
 /* 4 */,
 /* 5 */,
 /* 6 */
+/*!**************************!*\
+  !*** ./src/gui/index.js ***!
+  \**************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	// GRAPHICAL USER INTERFACE CONTROLLER
+	
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _srcPaneJs = __webpack_require__(/*! ./src/pane.js */ 7);
+	
+	var _srcPaneJs2 = _interopRequireDefault(_srcPaneJs);
+	
+	var _srcBinIndexJs = __webpack_require__(/*! ./src/bin/index.js */ 14);
+	
+	var _srcControllerIndexJs = __webpack_require__(/*! ./src/controller/index.js */ 16);
+	
+	exports['default'] = {
+		Pane: _srcPaneJs2['default'],
+		Bin: _srcBinIndexJs.Bin,
+		GridBin: _srcBinIndexJs.GridBin,
+		ListBin: _srcBinIndexJs.ListBin,
+		ActionController: _srcControllerIndexJs.ActionController,
+		CanvasController: _srcControllerIndexJs.CanvasController,
+		ColorController: _srcControllerIndexJs.ColorController,
+		DropdownController: _srcControllerIndexJs.DropdownController,
+		GridController: _srcControllerIndexJs.GridController,
+		HTMLController: _srcControllerIndexJs.HTMLController,
+		InfoController: _srcControllerIndexJs.InfoController,
+		NumberController: _srcControllerIndexJs.NumberController,
+		TextController: _srcControllerIndexJs.TextController,
+		ToggleController: _srcControllerIndexJs.ToggleController
+	};
+	
+	// Webpack: load stylesheet
+	__webpack_require__(/*! ./styles/main.less */ 28);
+	module.exports = exports['default'];
+
+/***/ },
+/* 7 */
+/*!*****************************!*\
+  !*** ./src/gui/src/pane.js ***!
+  \*****************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var Pane = (function () {
+		function Pane(container, opts) {
+			_classCallCheck(this, Pane);
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {});
+			this.bins = [];
+			this.width = 288;
+			this.node = document.createElement('div');
+			this.node.classList.add('gui-pane');
+			this.setStyleWidth();
+	
+			container.appendChild(this.node);
+		}
+	
+		_createClass(Pane, [{
+			key: 'setStyleWidth',
+			value: function setStyleWidth() {
+				this.node.style.width = this.width + 'px';
+			}
+		}, {
+			key: 'addBin',
+			value: function addBin(bin) {
+				this.bins.push(bin);
+				this.node.appendChild(bin.node);
+				bin.pane = this;
+				bin.init();
+			}
+		}, {
+			key: 'addBins',
+			value: function addBins() {
+				for (var _len = arguments.length, bins = Array(_len), _key = 0; _key < _len; _key++) {
+					bins[_key] = arguments[_key];
+				}
+	
+				bins.forEach(this.addBin);
+			}
+		}, {
+			key: 'disableAll',
+			value: function disableAll() {
+				this.bins.forEach(function (bin) {
+					bin.disable();
+				});
+			}
+		}]);
+	
+		return Pane;
+	})();
+	
+	exports['default'] = Pane;
+	module.exports = exports['default'];
+
+/***/ },
+/* 8 */
 /*!*****************************!*\
   !*** ./~/defaults/index.js ***!
   \*****************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var clone = __webpack_require__(/*! clone */ 7);
+	var clone = __webpack_require__(/*! clone */ 9);
 	
 	module.exports = function(options, defaults) {
 	  options = options || {};
@@ -369,7 +511,7 @@
 	};
 
 /***/ },
-/* 7 */
+/* 9 */
 /*!*************************************!*\
   !*** ./~/defaults/~/clone/clone.js ***!
   \*************************************/
@@ -520,10 +662,10 @@
 	  return new c();
 	};
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! (webpack)/~/node-libs-browser/~/buffer/index.js */ 8).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! (webpack)/~/node-libs-browser/~/buffer/index.js */ 10).Buffer))
 
 /***/ },
-/* 8 */
+/* 10 */
 /*!*******************************************************!*\
   !*** (webpack)/~/node-libs-browser/~/buffer/index.js ***!
   \*******************************************************/
@@ -536,9 +678,9 @@
 	 * @license  MIT
 	 */
 	
-	var base64 = __webpack_require__(/*! base64-js */ 9)
-	var ieee754 = __webpack_require__(/*! ieee754 */ 10)
-	var isArray = __webpack_require__(/*! is-array */ 11)
+	var base64 = __webpack_require__(/*! base64-js */ 11)
+	var ieee754 = __webpack_require__(/*! ieee754 */ 12)
+	var isArray = __webpack_require__(/*! is-array */ 13)
 	
 	exports.Buffer = Buffer
 	exports.SlowBuffer = SlowBuffer
@@ -2063,10 +2205,10 @@
 	  return i
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! (webpack)/~/node-libs-browser/~/buffer/index.js */ 8).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! (webpack)/~/node-libs-browser/~/buffer/index.js */ 10).Buffer))
 
 /***/ },
-/* 9 */
+/* 11 */
 /*!*********************************************************************!*\
   !*** (webpack)/~/node-libs-browser/~/buffer/~/base64-js/lib/b64.js ***!
   \*********************************************************************/
@@ -2199,7 +2341,7 @@
 
 
 /***/ },
-/* 10 */
+/* 12 */
 /*!*****************************************************************!*\
   !*** (webpack)/~/node-libs-browser/~/buffer/~/ieee754/index.js ***!
   \*****************************************************************/
@@ -2292,7 +2434,7 @@
 
 
 /***/ },
-/* 11 */
+/* 13 */
 /*!******************************************************************!*\
   !*** (webpack)/~/node-libs-browser/~/buffer/~/is-array/index.js ***!
   \******************************************************************/
@@ -2334,13 +2476,1423 @@
 
 
 /***/ },
-/* 12 */,
-/* 13 */,
-/* 14 */,
-/* 15 */,
-/* 16 */,
-/* 17 */,
+/* 14 */
+/*!**********************************!*\
+  !*** ./src/gui/src/bin/index.js ***!
+  \**********************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	var _binJs = __webpack_require__(/*! ./bin.js */ 15);
+	
+	exports['default'] = { Bin: _binJs.Bin, ListBin: _binJs.ListBin, GridBin: _binJs.GridBin };
+	module.exports = exports['default'];
+
+/***/ },
+/* 15 */
+/*!********************************!*\
+  !*** ./src/gui/src/bin/bin.js ***!
+  \********************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var Bin = (function () {
+		function Bin(title, opts) {
+			var _this = this;
+	
+			_classCallCheck(this, Bin);
+	
+			this.title = title;
+			this.type = 'generic';
+			this.height = 0;
+			this.container = null;
+			this.controllers = [];
+			this.node = null;
+			this.node = document.createElement('div');
+			this.node.classList.add('bin');
+			this.pane = null;
+			this.options = (0, _defaults2['default'])(opts, {
+				open: true
+			});
+			this.isOpen = this.options.open;
+	
+			var titlebar = document.createElement('div');
+			titlebar.classList.add('bin-title-bar');
+			titlebar.addEventListener('click', function (e) {
+				_this.toggle();
+			});
+	
+			var icon = document.createElement('i');
+			icon.classList.add('ion-ios-arrow-right');
+			titlebar.appendChild(icon);
+	
+			var label = document.createElement('span');
+			label.classList.add('bin-title');
+			label.textContent = this.title;
+			titlebar.appendChild(label);
+	
+			this.node.appendChild(titlebar);
+	
+			this.container = document.createElement('div');
+			this.container.classList.add('bin-container');
+			this.node.appendChild(this.container);
+	
+			if (this.isOpen) {
+				this.open();
+			} else {
+				this.close();
+			}
+		}
+	
+		_createClass(Bin, [{
+			key: 'init',
+			value: function init() {
+				this.controllers.forEach(function (c) {
+					c.init();
+				});
+				this.calculateHeight();
+				this.setStyleHeight();
+				this.container.classList.add('bin-' + this.type);
+			}
+		}, {
+			key: 'open',
+			value: function open() {
+				this.node.classList.add('open');
+				// this.setStyleHeight(this.height);
+				this.isOpen = true;
+			}
+		}, {
+			key: 'close',
+			value: function close() {
+				this.node.classList.remove('open');
+				// this.setStyleHeight(0);
+				this.isOpen = false;
+			}
+		}, {
+			key: 'toggle',
+			value: function toggle() {
+				if (this.isOpen) {
+					this.close();
+				} else {
+					this.open();
+				}
+			}
+		}, {
+			key: 'setStyleHeight',
+			value: function setStyleHeight() {
+				this.container.style.height = this.height + 'px';
+			}
+		}, {
+			key: 'calculateHeight',
+			value: function calculateHeight() {
+				this.height = this.controllers.reduce(function (sum, c) {
+					return sum + c.height;
+				}, 0);
+			}
+		}, {
+			key: 'addController',
+			value: function addController(controller) {
+				this.controllers.push(controller);
+				this.container.appendChild(controller.node);
+				controller.parent = this;
+				// this.height += controller.height;
+				this.calculateHeight();
+				this.setStyleHeight();
+			}
+		}, {
+			key: 'addControllers',
+			value: function addControllers() {
+				for (var _len = arguments.length, controllers = Array(_len), _key = 0; _key < _len; _key++) {
+					controllers[_key] = arguments[_key];
+				}
+	
+				controllers.forEach(this.addController.bind(this));
+			}
+		}, {
+			key: 'removeController',
+			value: function removeController(controller) {
+				this.height -= controller.height;
+				controller.destroy();
+				this.setStyleHeight();
+				var i = this.controllers.indexOf(controller);
+				delete this.controllers[i];
+				// this.controllers.splice(i, 1);
+			}
+		}, {
+			key: 'removeAllControllers',
+			value: function removeAllControllers() {
+				this.controllers.forEach(this.removeController.bind(this));
+				this.controllers.length = 0;
+			}
+		}, {
+			key: 'disable',
+			value: function disable() {
+				this.controllers.forEach(function (controller) {
+					controller.disable();
+				});
+			}
+		}]);
+	
+		return Bin;
+	})();
+	
+	exports.Bin = Bin;
+	
+	var GridBin = (function (_Bin) {
+		_inherits(GridBin, _Bin);
+	
+		function GridBin(title, opts) {
+			_classCallCheck(this, GridBin);
+	
+			_get(Object.getPrototypeOf(GridBin.prototype), 'constructor', this).call(this, title, opts);
+			this.type = 'grid';
+			this.options = (0, _defaults2['default'])(opts, {
+				selectable: false,
+				minSelect: 1,
+				maxSelect: 1,
+				size: 48,
+				onclick: function onclick(e) {}
+			});
+	
+			this.selectedItems = [];
+			this.itemSize = this.options.size;
+		}
+	
+		_createClass(GridBin, [{
+			key: 'calculateHeight',
+			value: function calculateHeight() {
+				this.pane.x;
+				if (this.pane === null) {
+					return;
+				}
+				var n = this.controllers.length;
+				var cols = Math.floor(this.pane.width / this.itemSize);
+				this.height = this.itemSize * Math.ceil(n / cols);
+			}
+		}, {
+			key: 'addController',
+			value: function addController(controller) {
+				this.controllers.push(controller);
+				this.container.appendChild(controller.node);
+				controller.parent = this;
+			}
+	
+			// Listener is called from a child listener
+		}, {
+			key: 'listener',
+			value: function listener(e) {
+				this.options.onclick(e);
+			}
+		}, {
+			key: 'deselectAll',
+			value: function deselectAll() {
+				this.controllers.forEach(function (c) {
+					c.deselect();
+				});
+			}
+	
+			// Attempt to select the item
+		}, {
+			key: 'selectItem',
+			value: function selectItem(controller) {
+				// If controller is not already in selectedItems
+				if (this.selectedItems.indexOf(controller) < 0) {
+					// Add controller to selection and select it
+					this.selectedItems.push(controller);
+					controller.select();
+				}
+				// Deselect last controller if new selection count is greater than maximum
+				if (this.selectedItems.length > this.options.maxSelect) {
+					// Attempt to deselect first item
+					this.deselectItem(this.selectedItems[0]);
+				}
+			}
+	
+			// Attempt to deselect the item
+		}, {
+			key: 'deselectItem',
+			value: function deselectItem(controller) {
+				// Only deselect if current selection count is greater than minimum
+				if (this.selectedItems.length > this.options.minSelect) {
+					// Remove controller from selectedItems
+					var index = this.selectedItems.indexOf(controller);
+					this.selectedItems.splice(index, 1);
+					// Deselect controller
+					controller.deselect();
+				}
+			}
+		}]);
+	
+		return GridBin;
+	})(Bin);
+	
+	exports.GridBin = GridBin;
+	
+	var ListBin = (function (_Bin2) {
+		_inherits(ListBin, _Bin2);
+	
+		function ListBin(title, opts) {
+			_classCallCheck(this, ListBin);
+	
+			_get(Object.getPrototypeOf(ListBin.prototype), 'constructor', this).call(this, title, opts);
+			this.type = 'list';
+			this.itemSize = 48;
+			this.options = (0, _defaults2['default'])(opts, {
+				open: true
+			});
+		}
+	
+		_createClass(ListBin, [{
+			key: 'calculateHeight',
+			value: function calculateHeight() {
+				this.height = this.itemSize * this.controllers.length;
+			}
+		}]);
+	
+		return ListBin;
+	})(Bin);
+	
+	exports.ListBin = ListBin;
+
+/***/ },
+/* 16 */
+/*!*****************************************!*\
+  !*** ./src/gui/src/controller/index.js ***!
+  \*****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _actionJs = __webpack_require__(/*! ./action.js */ 17);
+	
+	var _actionJs2 = _interopRequireDefault(_actionJs);
+	
+	var _canvasJs = __webpack_require__(/*! ./canvas.js */ 19);
+	
+	var _canvasJs2 = _interopRequireDefault(_canvasJs);
+	
+	var _colorJs = __webpack_require__(/*! ./color.js */ 20);
+	
+	var _colorJs2 = _interopRequireDefault(_colorJs);
+	
+	var _dropdownJs = __webpack_require__(/*! ./dropdown.js */ 21);
+	
+	var _dropdownJs2 = _interopRequireDefault(_dropdownJs);
+	
+	var _gridJs = __webpack_require__(/*! ./grid.js */ 22);
+	
+	var _gridJs2 = _interopRequireDefault(_gridJs);
+	
+	var _htmlJs = __webpack_require__(/*! ./html.js */ 23);
+	
+	var _htmlJs2 = _interopRequireDefault(_htmlJs);
+	
+	var _infoJs = __webpack_require__(/*! ./info.js */ 24);
+	
+	var _infoJs2 = _interopRequireDefault(_infoJs);
+	
+	var _numberJs = __webpack_require__(/*! ./number.js */ 25);
+	
+	var _numberJs2 = _interopRequireDefault(_numberJs);
+	
+	var _textJs = __webpack_require__(/*! ./text.js */ 26);
+	
+	var _textJs2 = _interopRequireDefault(_textJs);
+	
+	var _toggleJs = __webpack_require__(/*! ./toggle.js */ 27);
+	
+	var _toggleJs2 = _interopRequireDefault(_toggleJs);
+	
+	exports['default'] = {
+		ActionController: _actionJs2['default'],
+		CanvasController: _canvasJs2['default'],
+		ColorController: _colorJs2['default'],
+		DropdownController: _dropdownJs2['default'],
+		GridController: _gridJs2['default'],
+		HTMLController: _htmlJs2['default'],
+		InfoController: _infoJs2['default'],
+		NumberController: _numberJs2['default'],
+		TextController: _textJs2['default'],
+		ToggleController: _toggleJs2['default']
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 17 */
+/*!******************************************!*\
+  !*** ./src/gui/src/controller/action.js ***!
+  \******************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+			value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 18);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var ActionController = (function (_Controller) {
+			_inherits(ActionController, _Controller);
+	
+			function ActionController(title, opts) {
+					_classCallCheck(this, ActionController);
+	
+					_get(Object.getPrototypeOf(ActionController.prototype), 'constructor', this).call(this, 'action', title);
+					this.height = 48;
+	
+					// Set default options
+					this.options = (0, _defaults2['default'])(opts, {
+							icon: 'ion-ios-arrow-thin-right',
+							action: function action(e) {}
+					});
+	
+					var label = document.createElement('label');
+	
+					var name = document.createElement('span');
+					name.classList.add('bin-item-name');
+					name.textContent = title;
+					label.appendChild(name);
+	
+					this.input = document.createElement('button');
+					this.input.classList.add('bin-item-value');
+					// this.input.type = 'button';
+					label.appendChild(this.input);
+	
+					var icon = document.createElement('i');
+					icon.classList.add(this.options.icon);
+					label.appendChild(icon);
+	
+					this.node.appendChild(label);
+	
+					this.input.addEventListener('click', this.listener.bind(this));
+			}
+	
+			_createClass(ActionController, [{
+					key: 'listener',
+					value: function listener(e) {
+							// console.log(`Running ${this.title}`);
+							this.options.action(e);
+					}
+			}]);
+	
+			return ActionController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = ActionController;
+	module.exports = exports['default'];
+
+/***/ },
 /* 18 */
+/*!**********************************************!*\
+  !*** ./src/gui/src/controller/controller.js ***!
+  \**********************************************/
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	var Controller = (function () {
+		function Controller(type, title) {
+			_classCallCheck(this, Controller);
+	
+			this.title = title;
+			this.type = type;
+			this.node = document.createElement('div');
+			this.node.classList.add('bin-item', 'controller', type);
+			this.parent = null;
+			this.height = 0;
+			this.animator = null;
+			this.enabled = false;
+			// this.node.appendChild();
+		}
+	
+		_createClass(Controller, [{
+			key: 'init',
+			value: function init() {}
+		}, {
+			key: 'setValue',
+			value: function setValue(val) {
+				this.value = val;
+				if (this.hasOwnProperty('input')) {
+					this.input.value = val;
+				}
+			}
+		}, {
+			key: 'listener',
+			value: function listener(e) {
+				this.setValue(e.target.value);
+				// console.log(`Setting ${this.title}: ${this.value}`);
+				// this.options.onchange(this.value);
+			}
+		}, {
+			key: 'watch',
+			value: function watch(getter) {
+				this.getter = getter;
+				this.disable();
+				this.update();
+				return this;
+			}
+		}, {
+			key: 'update',
+			value: function update() {
+				this.animator = requestAnimationFrame(this.update.bind(this));
+				this.setValue(this.getter());
+			}
+		}, {
+			key: 'unwatch',
+			value: function unwatch() {
+				cancelAnimationFrame(this.animator);
+				this.enable();
+			}
+		}, {
+			key: 'rewatch',
+			value: function rewatch() {
+				this.disable();
+				this.update();
+			}
+		}, {
+			key: 'disable',
+			value: function disable() {
+				this.enabled = false;
+				this.node.classList.add('disabled');
+				if (this.hasOwnProperty('input')) {
+					this.input.disabled = true;
+				}
+			}
+		}, {
+			key: 'enable',
+			value: function enable() {
+				this.enabled = true;
+				this.node.classList.remove('disabled');
+				if (this.hasOwnProperty('input')) {
+					this.input.disabled = false;
+				}
+			}
+		}, {
+			key: 'destroy',
+			value: function destroy() {
+				// TODO: ensure proper destruction
+				this.unwatch();
+				this.node.parentNode.removeChild(this.node);
+				this.node = null;
+				this.parent = null;
+				this.getter = null;
+			}
+		}]);
+	
+		return Controller;
+	})();
+	
+	exports['default'] = Controller;
+	module.exports = exports['default'];
+
+/***/ },
+/* 19 */
+/*!******************************************!*\
+  !*** ./src/gui/src/controller/canvas.js ***!
+  \******************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 18);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var CanvasController = (function (_Controller) {
+		_inherits(CanvasController, _Controller);
+	
+		function CanvasController(title, opts) {
+			_classCallCheck(this, CanvasController);
+	
+			_get(Object.getPrototypeOf(CanvasController.prototype), 'constructor', this).call(this, 'canvas', title);
+			this.height = 48;
+			this.canvas = document.createElement('canvas');
+			this.node.appendChild(this.canvas);
+			this.ctx = null;
+			this.disable();
+		}
+	
+		_createClass(CanvasController, [{
+			key: 'init',
+			value: function init() {
+				this.canvas.height = this.height;
+				this.canvas.width = this.parent.pane.width;
+				this.ctx = this.canvas.getContext('2d');
+			}
+		}]);
+	
+		return CanvasController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = CanvasController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 20 */
+/*!*****************************************!*\
+  !*** ./src/gui/src/controller/color.js ***!
+  \*****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+			value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 18);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var ColorController = (function (_Controller) {
+			_inherits(ColorController, _Controller);
+	
+			function ColorController(title, value, opts) {
+					_classCallCheck(this, ColorController);
+	
+					_get(Object.getPrototypeOf(ColorController.prototype), 'constructor', this).call(this, 'color', title);
+					// this.value = value;
+					this.height = 48;
+	
+					// Set default options
+					this.options = (0, _defaults2['default'])(opts, {
+							onchange: function onchange() {}
+					});
+	
+					var label = document.createElement('label');
+	
+					var name = document.createElement('span');
+					name.classList.add('bin-item-name');
+					name.textContent = title;
+					label.appendChild(name);
+	
+					this.input = document.createElement('input');
+					this.input.type = 'color';
+					this.input.classList.add('bin-item-value');
+					label.appendChild(this.input);
+	
+					this.node.appendChild(label);
+	
+					this.input.addEventListener('change', this.listener.bind(this));
+			}
+	
+			_createClass(ColorController, [{
+					key: 'listener',
+					value: function listener(e) {
+							this.value = this.input.value;
+							// console.log(`Setting ${this.title}: ${this.value}`);
+							this.options.onchange(this.value);
+					}
+			}]);
+	
+			return ColorController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = ColorController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 21 */
+/*!********************************************!*\
+  !*** ./src/gui/src/controller/dropdown.js ***!
+  \********************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 18);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var DropdownController = (function (_Controller) {
+		_inherits(DropdownController, _Controller);
+	
+		function DropdownController(title, items, opts) {
+			_classCallCheck(this, DropdownController);
+	
+			_get(Object.getPrototypeOf(DropdownController.prototype), 'constructor', this).call(this, 'dropdown', title);
+			// this.value = value;
+			this.height = 48;
+			this.items = [];
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				onchange: function onchange() {}
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.textContent = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('select');
+			this.input.classList.add('bin-item-value');
+			this.createItems(items);
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.input.addEventListener('change', this.listener.bind(this));
+		}
+	
+		_createClass(DropdownController, [{
+			key: 'createItems',
+			value: function createItems(list) {
+				var _this = this;
+	
+				list.forEach(function (item) {
+					if (!item.hasOwnProperty('name')) {
+						item.name = '(unnamed)';
+					}
+					item = (0, _defaults2['default'])(item, {
+						value: item.name,
+						selected: false,
+						disabled: false
+					});
+					_this.items.push(item);
+	
+					if (item.hasOwnProperty('children')) {
+						// TODO: handle grouped options
+					}
+	
+					var option = document.createElement('option');
+					option.value = item.value;
+					option.textContent = item.name;
+					if (item.selected) {
+						option.selected = true;
+						// this.value = item.value;
+					}
+					if (item.disabled) {
+						option.disabled = true;
+					}
+					_this.input.add(option);
+				});
+			}
+		}, {
+			key: 'listener',
+			value: function listener(e) {
+				// this.value = this.input.value;
+				this.options.onchange(this.input.value);
+			}
+		}]);
+	
+		return DropdownController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = DropdownController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 22 */
+/*!****************************************!*\
+  !*** ./src/gui/src/controller/grid.js ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 18);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var GridController = (function (_Controller) {
+		_inherits(GridController, _Controller);
+	
+		function GridController(title, opts) {
+			_classCallCheck(this, GridController);
+	
+			_get(Object.getPrototypeOf(GridController.prototype), 'constructor', this).call(this, 'grid', title);
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				type: 'select',
+				disabled: false,
+				selected: false,
+				state: 0,
+				states: [],
+				onclick: function onclick(e) {}
+			});
+	
+			this.iconNode = document.createElement('i');
+	
+			this.state = this.options.state;
+			this.enabled = !this.options.disabled;
+			this.setCurrent(this.options.state);
+	
+			this.node.appendChild(this.iconNode);
+			this.node.addEventListener('click', this.listener.bind(this));
+	
+			// this.selectedIndex = 0;
+			// this.multiSelection = [];
+		}
+	
+		_createClass(GridController, [{
+			key: 'init',
+			value: function init() {
+				if (this.options.selected) {
+					this.parent.selectItem(this);
+				}
+			}
+		}, {
+			key: 'setCurrent',
+			value: function setCurrent(state) {
+				this.state = state;
+				this.current = (0, _defaults2['default'])(this.options.states[state], {
+					tooltip: '',
+					icon: '',
+					onclick: function onclick(e) {}
+				});
+	
+				this.node.title = this.current.tooltip;
+				if (!this.enabled) {
+					this.node.classList.add('disabled');
+				}
+				if (this.current.icon.length > 0) {
+					this.iconNode.className = this.current.icon;
+					this.iconNode.textContent = '';
+				} else if (this.options.shortcut.length > 0) {
+					this.iconNode.textContent = this.options.shortcut.toUpperCase().charAt(0);
+					this.iconNode.className = '';
+				}
+			}
+		}, {
+			key: 'listener',
+			value: function listener(e) {
+				if (!this.enabled) {
+					return;
+				}
+				this.current.onclick(e);
+				this.options.onclick(e);
+	
+				// Move to next state
+				var index = (this.state + 1) % this.options.states.length;
+				this.setCurrent(index);
+	
+				// Handle selection
+				if (this.parent.options.selectable) {
+					this.toggle();
+				}
+	
+				// Send event to parent
+				this.parent.listener(e);
+			}
+		}, {
+			key: 'select',
+			value: function select() {
+				this.selected = true;
+				this.node.classList.add('selected');
+			}
+		}, {
+			key: 'deselect',
+			value: function deselect() {
+				this.selected = false;
+				this.node.classList.remove('selected');
+			}
+		}, {
+			key: 'toggle',
+			value: function toggle() {
+				if (!this.selected) {
+					this.parent.selectItem(this);
+				} else {
+					this.parent.deselectItem(this);
+				}
+			}
+		}]);
+	
+		return GridController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = GridController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 23 */
+/*!****************************************!*\
+  !*** ./src/gui/src/controller/html.js ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 18);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var HTMLController = (function (_Controller) {
+		_inherits(HTMLController, _Controller);
+	
+		function HTMLController(title, opts) {
+			_classCallCheck(this, HTMLController);
+	
+			_get(Object.getPrototypeOf(HTMLController.prototype), 'constructor', this).call(this, 'html', title);
+			this.options = (0, _defaults2['default'])(opts, {
+				editable: false
+			});
+	
+			// TODO: how to determine the height dynamically?
+			this.height = 176;
+			if (!this.options.editable) {
+				this.disable();
+			} else {
+				this.node.contentEditable = true;
+			}
+		}
+	
+		// init() {
+		// 	this.disable();
+		// }
+	
+		_createClass(HTMLController, [{
+			key: 'getHTML',
+			value: function getHTML() {
+				return this.node.innerHTML;
+			}
+		}, {
+			key: 'setHTML',
+			value: function setHTML(content) {
+				this.node.innerHTML = content;
+			}
+	
+			// append(text) {}
+		}]);
+	
+		return HTMLController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = HTMLController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 24 */
+/*!****************************************!*\
+  !*** ./src/gui/src/controller/info.js ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 18);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var InfoController = (function (_Controller) {
+		_inherits(InfoController, _Controller);
+	
+		function InfoController(title, getter, opts) {
+			_classCallCheck(this, InfoController);
+	
+			_get(Object.getPrototypeOf(InfoController.prototype), 'constructor', this).call(this, 'info', title);
+			this.height = 48;
+			this.getter = getter;
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				interval: 100,
+				decimals: 2,
+				format: 'auto'
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.textContent = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('input');
+			this.input.classList.add('bin-item-value');
+			this.input.type = 'text';
+			this.input.value = getter();
+			this.input.disabled = true;
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.watch();
+		}
+	
+		_createClass(InfoController, [{
+			key: 'watch',
+			value: function watch() {
+				setTimeout(this.watch.bind(this), this.options.interval);
+				this.setInfo(this.getter());
+			}
+		}, {
+			key: 'setInfo',
+			value: function setInfo(value) {
+				var infoString = undefined,
+				    vx = undefined,
+				    vy = undefined;
+	
+				switch (this.options.format) {
+					case 'text':
+						infoString = value;break;
+					case 'boolean':
+						infoString = value ? 'True' : 'False';break;
+					case 'number':
+						infoString = value.toFixed(this.options.decimals);break;
+					case 'vector':
+						vx = value.x.toFixed(this.options.decimals);
+						vy = value.y.toFixed(this.options.decimals);
+						infoString = '(' + vx + ', ' + vy + ')';
+						break;
+					default:
+						infoString = value.toString();
+				}
+				this.input.value = infoString;
+			}
+		}]);
+	
+		return InfoController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = InfoController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 25 */
+/*!******************************************!*\
+  !*** ./src/gui/src/controller/number.js ***!
+  \******************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+		value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 18);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var NumberController = (function (_Controller) {
+		_inherits(NumberController, _Controller);
+	
+		function NumberController(title, value, opts) {
+			_classCallCheck(this, NumberController);
+	
+			_get(Object.getPrototypeOf(NumberController.prototype), 'constructor', this).call(this, 'number', title);
+			this.value = value;
+			this.height = 48;
+	
+			// Set default options
+			this.options = (0, _defaults2['default'])(opts, {
+				min: null,
+				max: null,
+				step: null,
+				decimals: 3,
+				onchange: function onchange(val) {}
+			});
+	
+			var label = document.createElement('label');
+	
+			var name = document.createElement('span');
+			name.classList.add('bin-item-name');
+			name.textContent = title;
+			label.appendChild(name);
+	
+			this.input = document.createElement('input');
+			this.input.classList.add('bin-item-value');
+			this.input.type = 'number';
+			this.input.value = this.value;
+			if (this.options.min !== null) {
+				this.input.min = this.options.min;
+			}
+			if (this.options.max !== null) {
+				this.input.max = this.options.max;
+			}
+			if (this.options.step !== null) {
+				this.input.step = this.options.step;
+			}
+			label.appendChild(this.input);
+	
+			this.node.appendChild(label);
+	
+			this.input.addEventListener('change', this.listener.bind(this));
+		}
+	
+		_createClass(NumberController, [{
+			key: 'setValue',
+			value: function setValue(val) {
+				this.value = val;
+				this.input.value = this.value.toFixed(this.options.decimals);
+			}
+		}, {
+			key: 'listener',
+			value: function listener(e) {
+				this.value = e.target.value;
+				// console.log(`Setting ${this.title}: ${this.value}`);
+				this.options.onchange(parseFloat(this.value));
+			}
+		}]);
+	
+		return NumberController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = NumberController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 26 */
+/*!****************************************!*\
+  !*** ./src/gui/src/controller/text.js ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+			value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 18);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var TextController = (function (_Controller) {
+			_inherits(TextController, _Controller);
+	
+			function TextController(title, value, opts) {
+					_classCallCheck(this, TextController);
+	
+					_get(Object.getPrototypeOf(TextController.prototype), 'constructor', this).call(this, 'text', title);
+					this.value = value;
+					this.height = 48;
+	
+					// Set default options
+					this.options = (0, _defaults2['default'])(opts, {
+							size: Number.MAX_VALUE,
+							onchange: function onchange(e) {}
+					});
+	
+					var label = document.createElement('label');
+	
+					var name = document.createElement('span');
+					name.classList.add('bin-item-name');
+					name.textContent = title;
+					label.appendChild(name);
+	
+					this.input = document.createElement('input');
+					this.input.classList.add('bin-item-value');
+					this.input.type = 'text';
+					this.input.value = this.value;
+					label.appendChild(this.input);
+	
+					this.node.appendChild(label);
+	
+					this.input.addEventListener('change', this.listener.bind(this));
+			}
+	
+			_createClass(TextController, [{
+					key: 'listener',
+					value: function listener(e) {
+							this.value = e.target.value;
+							// console.log(`Setting ${this.title}: ${this.value}`);
+							this.options.onchange(this.value);
+					}
+			}]);
+	
+			return TextController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = TextController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 27 */
+/*!******************************************!*\
+  !*** ./src/gui/src/controller/toggle.js ***!
+  \******************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+			value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _defaults = __webpack_require__(/*! defaults */ 8);
+	
+	var _defaults2 = _interopRequireDefault(_defaults);
+	
+	var _controllerJs = __webpack_require__(/*! ./controller.js */ 18);
+	
+	var _controllerJs2 = _interopRequireDefault(_controllerJs);
+	
+	var ToggleController = (function (_Controller) {
+			_inherits(ToggleController, _Controller);
+	
+			function ToggleController(title, value, opts) {
+					_classCallCheck(this, ToggleController);
+	
+					_get(Object.getPrototypeOf(ToggleController.prototype), 'constructor', this).call(this, 'toggle', title);
+					this.value = value;
+					this.height = 48;
+	
+					// Set default options
+					this.options = (0, _defaults2['default'])(opts, {
+							icon_checked: 'ion-ios-checkmark-outline',
+							icon_unchecked: 'ion-ios-circle-outline',
+							onchange: function onchange() {}
+					});
+	
+					var label = document.createElement('label');
+	
+					var name = document.createElement('span');
+					name.classList.add('bin-item-name');
+					name.textContent = title;
+					label.appendChild(name);
+	
+					this.input = document.createElement('input');
+					this.input.classList.add('bin-item-value');
+					this.input.type = 'checkbox';
+					this.input.checked = this.value;
+					label.appendChild(this.input);
+	
+					var icon_unchecked = document.createElement('i');
+					icon_unchecked.classList.add(this.options.icon_unchecked, 'unchecked');
+					label.appendChild(icon_unchecked);
+	
+					var icon_checked = document.createElement('i');
+					icon_checked.classList.add(this.options.icon_checked, 'checked');
+					label.appendChild(icon_checked);
+	
+					this.node.appendChild(label);
+	
+					this.input.addEventListener('change', this.listener.bind(this));
+			}
+	
+			_createClass(ToggleController, [{
+					key: 'listener',
+					value: function listener(e) {
+							this.value = e.target.checked;
+							// console.log(`Toggling ${this.title}: ${this.value ? 'on' : 'off'}`);
+							this.options.onchange(this.value);
+					}
+			}]);
+	
+			return ToggleController;
+	})(_controllerJs2['default']);
+	
+	exports['default'] = ToggleController;
+	module.exports = exports['default'];
+
+/***/ },
+/* 28 */
+/*!**********************************!*\
+  !*** ./src/gui/styles/main.less ***!
+  \**********************************/
+/***/ function(module, exports) {
+
+	// removed by extract-text-webpack-plugin
+
+/***/ },
+/* 29 */,
+/* 30 */,
+/* 31 */,
+/* 32 */,
+/* 33 */,
+/* 34 */
 /*!***************************!*\
   !*** ./src/playground.js ***!
   \***************************/
@@ -2352,6 +3904,8 @@
 		value: true
 	});
 	
+	var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }; })();
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 	
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
@@ -2360,45 +3914,47 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _simulatorJs = __webpack_require__(/*! ./simulator.js */ 19);
+	var _simulatorJs = __webpack_require__(/*! ./simulator.js */ 35);
 	
 	var _simulatorJs2 = _interopRequireDefault(_simulatorJs);
 	
-	var _guiIndexJs = __webpack_require__(/*! ./gui/index.js */ 32);
+	var _guiIndexJs = __webpack_require__(/*! ./gui/index.js */ 6);
 	
 	var GUI = _interopRequireWildcard(_guiIndexJs);
 	
-	var _clockJs = __webpack_require__(/*! ./clock.js */ 23);
+	var _clockJs = __webpack_require__(/*! ./clock.js */ 39);
 	
 	var _clockJs2 = _interopRequireDefault(_clockJs);
 	
-	var _entityJs = __webpack_require__(/*! ./entity.js */ 22);
+	var _entityJs = __webpack_require__(/*! ./entity.js */ 38);
 	
-	var _canvasRendererJs = __webpack_require__(/*! ./canvas-renderer.js */ 24);
+	var _canvasRendererJs = __webpack_require__(/*! ./canvas-renderer.js */ 40);
 	
 	var _canvasRendererJs2 = _interopRequireDefault(_canvasRendererJs);
 	
-	var _enumJs = __webpack_require__(/*! ./enum.js */ 25);
+	var _enumJs = __webpack_require__(/*! ./enum.js */ 41);
 	
-	var _vec2Js = __webpack_require__(/*! ./vec2.js */ 20);
+	var _vec2Js = __webpack_require__(/*! ./vec2.js */ 36);
 	
 	var _vec2Js2 = _interopRequireDefault(_vec2Js);
 	
-	var _modalOverlayJs = __webpack_require__(/*! ./modal-overlay.js */ 26);
+	var _modalOverlayJs = __webpack_require__(/*! ./modal-overlay.js */ 42);
 	
 	var _modalOverlayJs2 = _interopRequireDefault(_modalOverlayJs);
 	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
+	var _defaults = __webpack_require__(/*! defaults */ 8);
 	
 	var _defaults2 = _interopRequireDefault(_defaults);
 	
 	// Webpack: load stylesheet
-	__webpack_require__(/*! ../assets/styles/playground.less */ 29);
+	__webpack_require__(/*! ../assets/styles/playground.less */ 45);
 	
 	var counter = 0;
 	
 	var Playground = (function () {
 		function Playground(opts) {
+			var _this = this;
+	
 			_classCallCheck(this, Playground);
 	
 			// Set default options
@@ -2410,6 +3966,8 @@
 			this.animator = null;
 			this.runtime = 0;
 			this.running = false;
+			this.paused = false;
+			this.events = {};
 	
 			// Create DOM node
 			this.el = document.createElement('div');
@@ -2459,135 +4017,216 @@
 				}
 			};
 	
-			// Define Event Handlers
-			this.events = {};
-			this.events.contextmenu = function (e) {
+			var wasPaused = this.paused;
+	
+			// Define Default Event Handlers
+			this.on('contextmenu', function (e) {
 				e.preventDefault();
 				return false;
-			};
-			this.events.resize = function () {
-				this.simulator.options.bounds.width = this.renderer.ctx.canvas.width = window.innerWidth - this.gui.width;
-				this.simulator.options.bounds.height = this.renderer.ctx.canvas.height = window.innerHeight;
-			};
-			this.events.mousedown = function (e) {
-				if (!this.running) {
-					return;
+			});
+			this.on('resize', function () {
+				_this.simulator.options.bounds.width = _this.renderer.ctx.canvas.width = window.innerWidth - _this.gui.width;
+				_this.simulator.options.bounds.height = _this.renderer.ctx.canvas.height = window.innerHeight;
+			});
+			this.on('blur', function () {
+				wasPaused = _this.paused;
+				_this.pause(true);
+			});
+			this.on('focus', function () {
+				if (!wasPaused) {
+					_this.pause(false);
 				}
+			});
+			this.on('mousedown', function (e) {
 				// console.log(e.layerX, e.layerY);
-				this.input.mouse.isDown = true;
-				this.input.mouse.dragStartX = e.layerX;
-				this.input.mouse.dragStartY = e.layerY;
-				this.input.mouse.dragX = 0;
-				this.input.mouse.dragY = 0;
-				this.input.mouse.dx = 0;
-				this.input.mouse.dy = 0;
+				_this.input.mouse.isDown = true;
+				_this.input.mouse.dragStartX = e.layerX;
+				_this.input.mouse.dragStartY = e.layerY;
+				_this.input.mouse.dragX = 0;
+				_this.input.mouse.dragY = 0;
+				_this.input.mouse.dx = 0;
+				_this.input.mouse.dy = 0;
 	
-				switch (this.tool._current) {
-					case this.tool.PAN:
-						if (this.renderer.following !== null) {
-							this.renderer.unfollow();
+				switch (_this.tool._current) {
+					case _this.tool.PAN:
+						if (_this.renderer.following !== null) {
+							_this.renderer.unfollow();
 						}
 						break;
 	
-					case this.tool.GRAB:
-						this.renderer.setAltCursor(this.tool);
-						this.selectedEntities.forEach(function (entity) {
+					case _this.tool.GRAB:
+						_this.renderer.setAltCursor(_this.tool);
+						_this.selectedEntities.forEach(function (entity) {
 							entity._fixed = entity.fixed;
 							entity.fixed = true;
 						});
 						break;
 				}
-			};
-			this.events.mousemove = function (e) {
-				if (!this.running) {
+			});
+			this.on('mousemove', function (e) {
+				if (!_this.running) {
 					return;
 				}
 				var delta = undefined;
-				this.input.mouse.dx = e.layerX - this.input.mouse.x;
-				this.input.mouse.dy = e.layerY - this.input.mouse.y;
-				this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
-				this.input.mouse.dragY = e.layerY - this.input.mouse.dragStartY;
-				this.input.mouse.x = e.layerX;
-				this.input.mouse.y = e.layerY;
+				_this.input.mouse.dx = e.layerX - _this.input.mouse.x;
+				_this.input.mouse.dy = e.layerY - _this.input.mouse.y;
+				_this.input.mouse.dragX = e.layerX - _this.input.mouse.dragStartX;
+				_this.input.mouse.dragY = e.layerY - _this.input.mouse.dragStartY;
+				_this.input.mouse.x = e.layerX;
+				_this.input.mouse.y = e.layerY;
 	
-				switch (this.tool._current) {
-					case this.tool.PAN:
-						if (this.input.mouse.isDown) {
-							delta = new _vec2Js2['default'](this.input.mouse.dx, this.input.mouse.dy);
-							this.renderer.camera.subtractSelf(delta);
+				switch (_this.tool._current) {
+					case _this.tool.PAN:
+						if (_this.input.mouse.isDown) {
+							delta = new _vec2Js2['default'](_this.input.mouse.dx, _this.input.mouse.dy);
+							_this.renderer.camera.subtractSelf(delta);
 						}
 						break;
 	
-					case this.tool.GRAB:
-						if (this.input.mouse.isDown) {
-							delta = new _vec2Js2['default'](this.input.mouse.dx, this.input.mouse.dy);
-							this.selectedEntities.forEach(function (entity) {
+					case _this.tool.GRAB:
+						if (_this.input.mouse.isDown) {
+							delta = new _vec2Js2['default'](_this.input.mouse.dx, _this.input.mouse.dy);
+							_this.selectedEntities.forEach(function (entity) {
 								entity.position.addSelf(delta);
 								entity.velocity.set(delta.x, delta.y);
 							});
 						}
 						break;
 				}
-			};
-			this.events.mousewheel = function (e) {
-				if (!this.running) {
+			});
+			this.on('mousewheel', function (e) {
+				if (!_this.running) {
 					return;
 				}
-				this.input.mouse.wheel = e.wheelDelta;
-				this.simulator.parameters.createMass = Math.max(10, this.simulator.parameters.createMass + e.wheelDelta / 10);
-			};
-			this.events.mouseup = function (e) {
-				if (!this.running) {
+				_this.input.mouse.wheel = e.wheelDelta;
+				_this.simulator.parameters.createMass = Math.max(10, _this.simulator.parameters.createMass + e.wheelDelta / 10);
+			});
+			this.on('mouseup', function (e) {
+				if (!_this.running) {
 					return;
 				}
 				var particle = undefined;
-				this.input.mouse.isDown = false;
-				this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
-				this.input.mouse.dragY = e.layerY - this.input.mouse.dragStartY;
+				_this.input.mouse.isDown = false;
+				_this.input.mouse.dragX = e.layerX - _this.input.mouse.dragStartX;
+				_this.input.mouse.dragY = e.layerY - _this.input.mouse.dragStartY;
 	
-				switch (this.tool._current) {
-					case this.tool.CREATE:
-						particle = new _entityJs.Body(this.input.mouse.dragStartX + this.renderer.camera.x, this.input.mouse.dragStartY + this.renderer.camera.y, this.simulator.parameters.createMass, this.input.mouse.dragX / 50, this.input.mouse.dragY / 50);
-						this.simulator.entities.push(particle);
-						this.selectedEntities = [particle];
-						this.events.selection(this.selectedEntities);
+				switch (_this.tool._current) {
+					case _this.tool.CREATE:
+						particle = new _entityJs.Body(_this.input.mouse.dragStartX + _this.renderer.camera.x, _this.input.mouse.dragStartY + _this.renderer.camera.y, _this.simulator.parameters.createMass, _this.input.mouse.dragX / 50, _this.input.mouse.dragY / 50);
+						_this.simulator.entities.push(particle);
+						_this.selectedEntities = [particle];
+						_this.dispatch('selection', _this.selectedEntities);
 						break;
 	
-					case this.tool.SELECT:
-						this.selectRegion(this.input.mouse.dragStartX + this.renderer.camera.x, this.input.mouse.dragStartY + this.renderer.camera.y, this.input.mouse.dragX, this.input.mouse.dragY);
+					case _this.tool.SELECT:
+						_this.selectRegion(_this.input.mouse.dragStartX + _this.renderer.camera.x, _this.input.mouse.dragStartY + _this.renderer.camera.y, _this.input.mouse.dragX, _this.input.mouse.dragY);
 						break;
 	
-					case this.tool.GRAB:
-						this.renderer.setCursor(this.tool);
-						this.selectedEntities.forEach(function (entity) {
+					case _this.tool.GRAB:
+						_this.renderer.setCursor(_this.tool);
+						_this.selectedEntities.forEach(function (entity) {
 							entity.fixed = entity._fixed;
 						});
 						break;
 				}
-			};
-			this.events.selection = function (entities) {};
-			this.events.pause = function () {};
-			this.events.resume = function () {};
+			});
 	
 			// Attach event handlers
-			window.addEventListener('resize', this.events.resize.bind(this));
-			document.body.addEventListener('contextmenu', this.events.contextmenu.bind(this));
-			this.renderer.el.addEventListener('mousedown', this.events.mousedown.bind(this));
-			this.renderer.el.addEventListener('mousemove', this.events.mousemove.bind(this));
-			this.renderer.el.addEventListener('mouseup', this.events.mouseup.bind(this));
-			this.renderer.el.addEventListener('mousewheel', this.events.mousewheel.bind(this));
+			window.addEventListener('resize', function (e) {
+				_this.dispatch('resize', e);
+			});
+			window.addEventListener('focus', function (e) {
+				_this.dispatch('focus', e);
+			});
+			window.addEventListener('blur', function (e) {
+				_this.dispatch('blur', e);
+			});
+			document.body.addEventListener('contextmenu', function (e) {
+				_this.dispatch('contextmenu', e);
+			});
+			this.renderer.el.addEventListener('mousedown', function (e) {
+				_this.dispatch('mousedown', e);
+			});
+			this.renderer.el.addEventListener('mousemove', function (e) {
+				_this.dispatch('mousemove', e);
+			});
+			this.renderer.el.addEventListener('mouseup', function (e) {
+				_this.dispatch('mouseup', e);
+			});
+			this.renderer.el.addEventListener('mousewheel', function (e) {
+				_this.dispatch('mousewheel', e);
+			});
 		}
 	
 		_createClass(Playground, [{
-			key: 'on',
-			value: function on(eventName, handler) {
-				this.events[eventName] = handler;
+			key: 'dispatch',
+			value: function dispatch(eventName, data) {
+				if (!this.running) {
+					return;
+				}
+				// TODO: maybe handle multiple arguments?
+				if (!this.events.hasOwnProperty(eventName)) {
+					return;
+				}
+				// this.events[eventName].forEach(listener => { listener(data); });
+				var _iteratorNormalCompletion = true;
+				var _didIteratorError = false;
+				var _iteratorError = undefined;
+	
+				try {
+					for (var _iterator = this.events[eventName][Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+						var _step$value = _slicedToArray(_step.value, 2);
+	
+						var handle = _step$value[0];
+						var listener = _step$value[1];
+	
+						listener(data);
+					}
+				} catch (err) {
+					_didIteratorError = true;
+					_iteratorError = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion && _iterator['return']) {
+							_iterator['return']();
+						}
+					} finally {
+						if (_didIteratorError) {
+							throw _iteratorError;
+						}
+					}
+				}
 			}
+	
+			/**
+	   * Attaches an event listener and returns a Symbol reference to the
+	   * listener.
+	   * @param  {String}   eventName The name of the event to listen for
+	   * @param  {Function} listener  The function to be called on the event
+	   * @return {Symbol}
+	   */
+		}, {
+			key: 'on',
+			value: function on(eventName, listener) {
+				var handle = Symbol();
+				if (!this.events.hasOwnProperty(eventName)) {
+					this.events[eventName] = new Map();
+				}
+				this.events[eventName].set(handle, listener);
+				return handle;
+			}
+	
+			/**
+	   * Removes an event listener by the Symbol reference to the listener
+	   * returned from calling {@link Playground#on}.
+	   * @param  {String} eventName The name of the event to remove from
+	   * @param  {Symbol} handle    The reference to the event listener
+	   */
 		}, {
 			key: 'off',
-			value: function off(eventName) {
+			value: function off(eventName, handle) {
 				if (this.events.hasOwnProperty(eventName)) {
-					this.events[eventName] = function () {};
+					delete this.events[eventName]['delete'](handle);
 				}
 			}
 		}, {
@@ -2599,7 +4238,7 @@
 					return e.inRegion(x, y, w, h);
 				});
 	
-				this.events.selection(this.selectedEntities);
+				this.dispatch('selection', this.selectedEntities);
 	
 				return this;
 			}
@@ -2607,7 +4246,7 @@
 			key: 'deselect',
 			value: function deselect() {
 				this.selectedEntities.length = 0;
-				this.events.selection(this.selectedEntities);
+				this.dispatch('selection', this.selectedEntities);
 			}
 		}, {
 			key: 'setTool',
@@ -2628,17 +4267,23 @@
 			}
 		}, {
 			key: 'pause',
-			value: function pause() {
-				this.paused = !this.paused;
-				if (this.paused) {
-					this.events.pause();
+			value: function pause(state) {
+				if (state !== null && typeof state === 'boolean') {
+					this.paused = state;
 				} else {
-					this.events.resume();
+					this.paused = !this.paused;
+				}
+				if (this.paused) {
+					this.dispatch('pause');
+				} else {
+					this.dispatch('resume');
 				}
 			}
 		}, {
 			key: 'stop',
 			value: function stop() {
+				var _this2 = this;
+	
 				this.gui.disableAll();
 				this.running = false;
 				cancelAnimationFrame(this.animator);
@@ -2653,12 +4298,15 @@
 							refreshMessage.destroy();
 						} }, { text: 'Reload', key: '<enter>', 'default': true, onclick: function onclick(e) {
 							document.location.reload();
-						} }]
+						} }],
+					onopen: function onopen() {
+						_this2.el.classList.add('defocus');
+					},
+					onclose: function onclose() {
+						_this2.el.classList.remove('defocus');
+					}
 				});
-				refreshMessage.appendTo(this.el);
-	
-				// Blur background
-				this.el.classList.add('defocus');
+				refreshMessage.appendTo(document.body);
 			}
 		}, {
 			key: 'reset',
@@ -2687,7 +4335,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 19 */
+/* 35 */
 /*!**************************!*\
   !*** ./src/simulator.js ***!
   \**************************/
@@ -2705,15 +4353,15 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _vec2Js = __webpack_require__(/*! ./vec2.js */ 20);
+	var _vec2Js = __webpack_require__(/*! ./vec2.js */ 36);
 	
 	var _vec2Js2 = _interopRequireDefault(_vec2Js);
 	
-	var _colliderJs = __webpack_require__(/*! ./collider.js */ 21);
+	var _colliderJs = __webpack_require__(/*! ./collider.js */ 37);
 	
 	var _colliderJs2 = _interopRequireDefault(_colliderJs);
 	
-	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 6);
+	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 8);
 	
 	var _node_modulesDefaults2 = _interopRequireDefault(_node_modulesDefaults);
 	
@@ -2877,7 +4525,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 20 */
+/* 36 */
 /*!*********************!*\
   !*** ./src/vec2.js ***!
   \*********************/
@@ -3097,7 +4745,7 @@
 	exports["default"] = Vec2;
 
 /***/ },
-/* 21 */
+/* 37 */
 /*!*************************!*\
   !*** ./src/collider.js ***!
   \*************************/
@@ -3112,11 +4760,11 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _vec2Js = __webpack_require__(/*! ./vec2.js */ 20);
+	var _vec2Js = __webpack_require__(/*! ./vec2.js */ 36);
 	
 	var _vec2Js2 = _interopRequireDefault(_vec2Js);
 	
-	var _entityJs = __webpack_require__(/*! ./entity.js */ 22);
+	var _entityJs = __webpack_require__(/*! ./entity.js */ 38);
 	
 	function collider(entities, response, bounded, bounds, dt) {
 		var displacement = undefined,
@@ -3362,7 +5010,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 22 */
+/* 38 */
 /*!***********************!*\
   !*** ./src/entity.js ***!
   \***********************/
@@ -3384,7 +5032,7 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _vec2Js = __webpack_require__(/*! ./vec2.js */ 20);
+	var _vec2Js = __webpack_require__(/*! ./vec2.js */ 36);
 	
 	var _vec2Js2 = _interopRequireDefault(_vec2Js);
 	
@@ -3531,7 +5179,7 @@
 	exports.Body = Body;
 
 /***/ },
-/* 23 */
+/* 39 */
 /*!**********************!*\
   !*** ./src/clock.js ***!
   \**********************/
@@ -3592,7 +5240,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 24 */
+/* 40 */
 /*!********************************!*\
   !*** ./src/canvas-renderer.js ***!
   \********************************/
@@ -3610,13 +5258,13 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _vec2Js = __webpack_require__(/*! ./vec2.js */ 20);
+	var _vec2Js = __webpack_require__(/*! ./vec2.js */ 36);
 	
 	var _vec2Js2 = _interopRequireDefault(_vec2Js);
 	
-	var _entityJs = __webpack_require__(/*! ./entity.js */ 22);
+	var _entityJs = __webpack_require__(/*! ./entity.js */ 38);
 	
-	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 6);
+	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 8);
 	
 	var _node_modulesDefaults2 = _interopRequireDefault(_node_modulesDefaults);
 	
@@ -3898,7 +5546,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 25 */
+/* 41 */
 /*!*********************!*\
   !*** ./src/enum.js ***!
   \*********************/
@@ -3966,7 +5614,7 @@
 	exports.TaggedUnion = TaggedUnion;
 
 /***/ },
-/* 26 */
+/* 42 */
 /*!******************************!*\
   !*** ./src/modal-overlay.js ***!
   \******************************/
@@ -3984,16 +5632,16 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 6);
+	var _node_modulesDefaults = __webpack_require__(/*! ../~/defaults */ 8);
 	
 	var _node_modulesDefaults2 = _interopRequireDefault(_node_modulesDefaults);
 	
-	var _node_modulesVkey = __webpack_require__(/*! ../~/vkey */ 27);
+	var _node_modulesVkey = __webpack_require__(/*! ../~/vkey */ 43);
 	
 	var _node_modulesVkey2 = _interopRequireDefault(_node_modulesVkey);
 	
 	// Webpack: load stylesheet
-	__webpack_require__(/*! ../assets/styles/modal-overlay.less */ 28);
+	__webpack_require__(/*! ../assets/styles/modal-overlay.less */ 44);
 	
 	var ModalOverlay = (function () {
 		function ModalOverlay(opts) {
@@ -4013,7 +5661,9 @@
 						this.destroy();
 					} }],
 				scrollable: false,
-				dismissable: true
+				dismissable: true,
+				onopen: function onopen() {},
+				onclose: function onclose() {}
 			});
 	
 			this.el = document.createElement('div');
@@ -4077,7 +5727,7 @@
 			if (this.options.title.length > 0) {
 				$title = document.createElement('h1');
 				$title.classList.add(this.options.titleSize);
-				$title.innerText = this.options.title;
+				$title.textContent = this.options.title;
 				$content.appendChild($title);
 			}
 	
@@ -4102,7 +5752,7 @@
 					if (action['default']) {
 						$action.classList.add('default');
 					}
-					$action.innerText = action.text;
+					$action.textContent = action.text;
 					$action.addEventListener('click', action.onclick);
 					$actions.appendChild($action);
 					// Attach event listener
@@ -4115,6 +5765,8 @@
 	
 			$container.appendChild($content);
 			this.el.appendChild($container);
+	
+			this.options.onopen();
 		}
 	
 		_createClass(ModalOverlay, [{
@@ -4152,6 +5804,8 @@
 				setTimeout(function () {
 					_this2.el.parentNode.removeChild(_this2.el);
 				}, 1000);
+	
+				this.options.onclose();
 			}
 		}]);
 	
@@ -4162,7 +5816,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 27 */
+/* 43 */
 /*!*************************!*\
   !*** ./~/vkey/index.js ***!
   \*************************/
@@ -4307,7 +5961,7 @@
 
 
 /***/ },
-/* 28 */
+/* 44 */
 /*!******************************************!*\
   !*** ./assets/styles/modal-overlay.less ***!
   \******************************************/
@@ -4316,7 +5970,7 @@
 	// removed by extract-text-webpack-plugin
 
 /***/ },
-/* 29 */
+/* 45 */
 /*!***************************************!*\
   !*** ./assets/styles/playground.less ***!
   \***************************************/
@@ -4325,7 +5979,7 @@
 	// removed by extract-text-webpack-plugin
 
 /***/ },
-/* 30 */
+/* 46 */
 /*!*********************!*\
   !*** ./src/plot.js ***!
   \*********************/
@@ -4341,7 +5995,7 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _utilJs = __webpack_require__(/*! ./util.js */ 31);
+	var _utilJs = __webpack_require__(/*! ./util.js */ 47);
 	
 	var Plot = (function () {
 		function Plot(ctx) {
@@ -4425,7 +6079,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 31 */
+/* 47 */
 /*!*********************!*\
   !*** ./src/util.js ***!
   \*********************/
@@ -4451,1533 +6105,6 @@
 	function mapRange(val, min, max, newMin, newMax) {
 		return (val - min) / (max - min) * (newMax - newMin) + newMin;
 	}
-
-/***/ },
-/* 32 */
-/*!**************************!*\
-  !*** ./src/gui/index.js ***!
-  \**************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	// GRAPHICAL USER INTERFACE CONTROLLER
-	
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _srcPaneJs = __webpack_require__(/*! ./src/pane.js */ 48);
-	
-	var _srcPaneJs2 = _interopRequireDefault(_srcPaneJs);
-	
-	var _srcBinIndexJs = __webpack_require__(/*! ./src/bin/index.js */ 49);
-	
-	var _srcControllerIndexJs = __webpack_require__(/*! ./src/controller/index.js */ 51);
-	
-	exports['default'] = {
-		Pane: _srcPaneJs2['default'],
-		Bin: _srcBinIndexJs.Bin,
-		GridBin: _srcBinIndexJs.GridBin,
-		ListBin: _srcBinIndexJs.ListBin,
-		ActionController: _srcControllerIndexJs.ActionController,
-		CanvasController: _srcControllerIndexJs.CanvasController,
-		ColorController: _srcControllerIndexJs.ColorController,
-		DropdownController: _srcControllerIndexJs.DropdownController,
-		GridController: _srcControllerIndexJs.GridController,
-		HTMLController: _srcControllerIndexJs.HTMLController,
-		InfoController: _srcControllerIndexJs.InfoController,
-		NumberController: _srcControllerIndexJs.NumberController,
-		TextController: _srcControllerIndexJs.TextController,
-		ToggleController: _srcControllerIndexJs.ToggleController
-	};
-	
-	// Webpack: load stylesheet
-	__webpack_require__(/*! ./styles/main.less */ 64);
-	module.exports = exports['default'];
-
-/***/ },
-/* 33 */,
-/* 34 */,
-/* 35 */,
-/* 36 */,
-/* 37 */,
-/* 38 */,
-/* 39 */,
-/* 40 */,
-/* 41 */,
-/* 42 */,
-/* 43 */,
-/* 44 */,
-/* 45 */,
-/* 46 */,
-/* 47 */,
-/* 48 */
-/*!*****************************!*\
-  !*** ./src/gui/src/pane.js ***!
-  \*****************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var Pane = (function () {
-		function Pane(container, opts) {
-			_classCallCheck(this, Pane);
-	
-			// Set default options
-			this.options = (0, _defaults2['default'])(opts, {});
-			this.bins = [];
-			this.width = 288;
-			this.node = document.createElement('div');
-			this.node.classList.add('gui-pane');
-			this.setStyleWidth();
-	
-			container.appendChild(this.node);
-		}
-	
-		_createClass(Pane, [{
-			key: 'setStyleWidth',
-			value: function setStyleWidth() {
-				this.node.style.width = this.width + 'px';
-			}
-		}, {
-			key: 'addBin',
-			value: function addBin(bin) {
-				this.bins.push(bin);
-				this.node.appendChild(bin.node);
-				bin.pane = this;
-				bin.init();
-			}
-		}, {
-			key: 'addBins',
-			value: function addBins() {
-				for (var _len = arguments.length, bins = Array(_len), _key = 0; _key < _len; _key++) {
-					bins[_key] = arguments[_key];
-				}
-	
-				bins.forEach(this.addBin);
-			}
-		}, {
-			key: 'disableAll',
-			value: function disableAll() {
-				this.bins.forEach(function (bin) {
-					bin.disable();
-				});
-			}
-		}]);
-	
-		return Pane;
-	})();
-	
-	exports['default'] = Pane;
-	module.exports = exports['default'];
-
-/***/ },
-/* 49 */
-/*!**********************************!*\
-  !*** ./src/gui/src/bin/index.js ***!
-  \**********************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-	  value: true
-	});
-	
-	var _binJs = __webpack_require__(/*! ./bin.js */ 50);
-	
-	exports['default'] = { Bin: _binJs.Bin, ListBin: _binJs.ListBin, GridBin: _binJs.GridBin };
-	module.exports = exports['default'];
-
-/***/ },
-/* 50 */
-/*!********************************!*\
-  !*** ./src/gui/src/bin/bin.js ***!
-  \********************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var Bin = (function () {
-		function Bin(title, opts) {
-			var _this = this;
-	
-			_classCallCheck(this, Bin);
-	
-			this.title = title;
-			this.type = 'generic';
-			this.height = 0;
-			this.container = null;
-			this.controllers = [];
-			this.node = null;
-			this.node = document.createElement('div');
-			this.node.classList.add('bin');
-			this.pane = null;
-			this.options = (0, _defaults2['default'])(opts, {
-				open: true
-			});
-			this.isOpen = this.options.open;
-	
-			var titlebar = document.createElement('div');
-			titlebar.classList.add('bin-title-bar');
-			titlebar.addEventListener('click', function (e) {
-				_this.toggle();
-			});
-	
-			var icon = document.createElement('i');
-			icon.classList.add('ion-ios-arrow-right');
-			titlebar.appendChild(icon);
-	
-			var label = document.createElement('span');
-			label.classList.add('bin-title');
-			label.innerText = this.title;
-			titlebar.appendChild(label);
-	
-			this.node.appendChild(titlebar);
-	
-			this.container = document.createElement('div');
-			this.container.classList.add('bin-container');
-			this.node.appendChild(this.container);
-	
-			if (this.isOpen) {
-				this.open();
-			} else {
-				this.close();
-			}
-		}
-	
-		_createClass(Bin, [{
-			key: 'init',
-			value: function init() {
-				this.controllers.forEach(function (c) {
-					c.init();
-				});
-				this.calculateHeight();
-				this.setStyleHeight();
-				this.container.classList.add('bin-' + this.type);
-			}
-		}, {
-			key: 'open',
-			value: function open() {
-				this.node.classList.add('open');
-				// this.setStyleHeight(this.height);
-				this.isOpen = true;
-			}
-		}, {
-			key: 'close',
-			value: function close() {
-				this.node.classList.remove('open');
-				// this.setStyleHeight(0);
-				this.isOpen = false;
-			}
-		}, {
-			key: 'toggle',
-			value: function toggle() {
-				if (this.isOpen) {
-					this.close();
-				} else {
-					this.open();
-				}
-			}
-		}, {
-			key: 'setStyleHeight',
-			value: function setStyleHeight() {
-				this.container.style.height = this.height + 'px';
-			}
-		}, {
-			key: 'calculateHeight',
-			value: function calculateHeight() {
-				this.height = this.controllers.reduce(function (sum, c) {
-					return sum + c.height;
-				}, 0);
-			}
-		}, {
-			key: 'addController',
-			value: function addController(controller) {
-				this.controllers.push(controller);
-				this.container.appendChild(controller.node);
-				controller.parent = this;
-				// this.height += controller.height;
-				this.calculateHeight();
-				this.setStyleHeight();
-			}
-		}, {
-			key: 'addControllers',
-			value: function addControllers() {
-				for (var _len = arguments.length, controllers = Array(_len), _key = 0; _key < _len; _key++) {
-					controllers[_key] = arguments[_key];
-				}
-	
-				controllers.forEach(this.addController.bind(this));
-			}
-		}, {
-			key: 'removeController',
-			value: function removeController(controller) {
-				this.height -= controller.height;
-				controller.destroy();
-				this.setStyleHeight();
-				var i = this.controllers.indexOf(controller);
-				delete this.controllers[i];
-				// this.controllers.splice(i, 1);
-			}
-		}, {
-			key: 'removeAllControllers',
-			value: function removeAllControllers() {
-				this.controllers.forEach(this.removeController.bind(this));
-				this.controllers.length = 0;
-			}
-		}, {
-			key: 'disable',
-			value: function disable() {
-				this.controllers.forEach(function (controller) {
-					controller.disable();
-				});
-			}
-		}]);
-	
-		return Bin;
-	})();
-	
-	exports.Bin = Bin;
-	
-	var GridBin = (function (_Bin) {
-		_inherits(GridBin, _Bin);
-	
-		function GridBin(title, opts) {
-			_classCallCheck(this, GridBin);
-	
-			_get(Object.getPrototypeOf(GridBin.prototype), 'constructor', this).call(this, title, opts);
-			this.type = 'grid';
-			this.options = (0, _defaults2['default'])(opts, {
-				selectable: false,
-				minSelect: 1,
-				maxSelect: 1,
-				size: 48,
-				onclick: function onclick(e) {}
-			});
-	
-			this.selectedItems = [];
-			this.itemSize = this.options.size;
-		}
-	
-		_createClass(GridBin, [{
-			key: 'calculateHeight',
-			value: function calculateHeight() {
-				this.pane.x;
-				if (this.pane === null) {
-					return;
-				}
-				var n = this.controllers.length;
-				var cols = Math.floor(this.pane.width / this.itemSize);
-				this.height = this.itemSize * Math.ceil(n / cols);
-			}
-		}, {
-			key: 'addController',
-			value: function addController(controller) {
-				this.controllers.push(controller);
-				this.container.appendChild(controller.node);
-				controller.parent = this;
-			}
-	
-			// Listener is called from a child listener
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				this.options.onclick(e);
-			}
-		}, {
-			key: 'deselectAll',
-			value: function deselectAll() {
-				this.controllers.forEach(function (c) {
-					c.deselect();
-				});
-			}
-	
-			// Attempt to select the item
-		}, {
-			key: 'selectItem',
-			value: function selectItem(controller) {
-				// If controller is not already in selectedItems
-				if (this.selectedItems.indexOf(controller) < 0) {
-					// Add controller to selection and select it
-					this.selectedItems.push(controller);
-					controller.select();
-				}
-				// Deselect last controller if new selection count is greater than maximum
-				if (this.selectedItems.length > this.options.maxSelect) {
-					// Attempt to deselect first item
-					this.deselectItem(this.selectedItems[0]);
-				}
-			}
-	
-			// Attempt to deselect the item
-		}, {
-			key: 'deselectItem',
-			value: function deselectItem(controller) {
-				// Only deselect if current selection count is greater than minimum
-				if (this.selectedItems.length > this.options.minSelect) {
-					// Remove controller from selectedItems
-					var index = this.selectedItems.indexOf(controller);
-					this.selectedItems.splice(index, 1);
-					// Deselect controller
-					controller.deselect();
-				}
-			}
-		}]);
-	
-		return GridBin;
-	})(Bin);
-	
-	exports.GridBin = GridBin;
-	
-	var ListBin = (function (_Bin2) {
-		_inherits(ListBin, _Bin2);
-	
-		function ListBin(title, opts) {
-			_classCallCheck(this, ListBin);
-	
-			_get(Object.getPrototypeOf(ListBin.prototype), 'constructor', this).call(this, title, opts);
-			this.type = 'list';
-			this.itemSize = 48;
-			this.options = (0, _defaults2['default'])(opts, {
-				open: true
-			});
-		}
-	
-		_createClass(ListBin, [{
-			key: 'calculateHeight',
-			value: function calculateHeight() {
-				this.height = this.itemSize * this.controllers.length;
-			}
-		}]);
-	
-		return ListBin;
-	})(Bin);
-	
-	exports.ListBin = ListBin;
-
-/***/ },
-/* 51 */
-/*!*****************************************!*\
-  !*** ./src/gui/src/controller/index.js ***!
-  \*****************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _actionJs = __webpack_require__(/*! ./action.js */ 52);
-	
-	var _actionJs2 = _interopRequireDefault(_actionJs);
-	
-	var _canvasJs = __webpack_require__(/*! ./canvas.js */ 54);
-	
-	var _canvasJs2 = _interopRequireDefault(_canvasJs);
-	
-	var _colorJs = __webpack_require__(/*! ./color.js */ 55);
-	
-	var _colorJs2 = _interopRequireDefault(_colorJs);
-	
-	var _dropdownJs = __webpack_require__(/*! ./dropdown.js */ 56);
-	
-	var _dropdownJs2 = _interopRequireDefault(_dropdownJs);
-	
-	var _gridJs = __webpack_require__(/*! ./grid.js */ 57);
-	
-	var _gridJs2 = _interopRequireDefault(_gridJs);
-	
-	var _htmlJs = __webpack_require__(/*! ./html.js */ 58);
-	
-	var _htmlJs2 = _interopRequireDefault(_htmlJs);
-	
-	var _infoJs = __webpack_require__(/*! ./info.js */ 59);
-	
-	var _infoJs2 = _interopRequireDefault(_infoJs);
-	
-	var _numberJs = __webpack_require__(/*! ./number.js */ 60);
-	
-	var _numberJs2 = _interopRequireDefault(_numberJs);
-	
-	var _textJs = __webpack_require__(/*! ./text.js */ 61);
-	
-	var _textJs2 = _interopRequireDefault(_textJs);
-	
-	var _toggleJs = __webpack_require__(/*! ./toggle.js */ 62);
-	
-	var _toggleJs2 = _interopRequireDefault(_toggleJs);
-	
-	exports['default'] = {
-		ActionController: _actionJs2['default'],
-		CanvasController: _canvasJs2['default'],
-		ColorController: _colorJs2['default'],
-		DropdownController: _dropdownJs2['default'],
-		GridController: _gridJs2['default'],
-		HTMLController: _htmlJs2['default'],
-		InfoController: _infoJs2['default'],
-		NumberController: _numberJs2['default'],
-		TextController: _textJs2['default'],
-		ToggleController: _toggleJs2['default']
-	};
-	module.exports = exports['default'];
-
-/***/ },
-/* 52 */
-/*!******************************************!*\
-  !*** ./src/gui/src/controller/action.js ***!
-  \******************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
-	
-	var _controllerJs2 = _interopRequireDefault(_controllerJs);
-	
-	var ActionController = (function (_Controller) {
-		_inherits(ActionController, _Controller);
-	
-		function ActionController(title, opts) {
-			_classCallCheck(this, ActionController);
-	
-			_get(Object.getPrototypeOf(ActionController.prototype), 'constructor', this).call(this, 'action', title);
-			this.height = 48;
-	
-			// Set default options
-			this.options = (0, _defaults2['default'])(opts, {
-				action: function action(e) {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('button');
-			this.input.classList.add('bin-item-value', 'icon');
-			// this.input.type = 'button';
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('click', this.listener.bind(this));
-		}
-	
-		_createClass(ActionController, [{
-			key: 'listener',
-			value: function listener(e) {
-				// console.log(`Running ${this.title}`);
-				this.options.action(e);
-			}
-		}]);
-	
-		return ActionController;
-	})(_controllerJs2['default']);
-	
-	exports['default'] = ActionController;
-	module.exports = exports['default'];
-
-/***/ },
-/* 53 */
-/*!**********************************************!*\
-  !*** ./src/gui/src/controller/controller.js ***!
-  \**********************************************/
-/***/ function(module, exports) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	var Controller = (function () {
-		function Controller(type, title) {
-			_classCallCheck(this, Controller);
-	
-			this.title = title;
-			this.type = type;
-			this.node = document.createElement('div');
-			this.node.classList.add('bin-item', 'controller', type);
-			this.parent = null;
-			this.height = 0;
-			this.animator = null;
-			this.enabled = false;
-			// this.node.appendChild();
-		}
-	
-		_createClass(Controller, [{
-			key: 'init',
-			value: function init() {}
-		}, {
-			key: 'setValue',
-			value: function setValue(val) {
-				this.value = val;
-				if (this.hasOwnProperty('input')) {
-					this.input.value = val;
-				}
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				this.setValue(e.target.value);
-				// console.log(`Setting ${this.title}: ${this.value}`);
-				// this.options.onchange(this.value);
-			}
-		}, {
-			key: 'watch',
-			value: function watch(getter) {
-				this.getter = getter;
-				this.disable();
-				this.update();
-				return this;
-			}
-		}, {
-			key: 'update',
-			value: function update() {
-				this.animator = requestAnimationFrame(this.update.bind(this));
-				this.setValue(this.getter());
-			}
-		}, {
-			key: 'unwatch',
-			value: function unwatch() {
-				cancelAnimationFrame(this.animator);
-				this.enable();
-			}
-		}, {
-			key: 'rewatch',
-			value: function rewatch() {
-				this.disable();
-				this.update();
-			}
-		}, {
-			key: 'disable',
-			value: function disable() {
-				this.enabled = false;
-				this.node.classList.add('disabled');
-				if (this.hasOwnProperty('input')) {
-					this.input.disabled = true;
-				}
-			}
-		}, {
-			key: 'enable',
-			value: function enable() {
-				this.enabled = true;
-				this.node.classList.remove('disabled');
-				if (this.hasOwnProperty('input')) {
-					this.input.disabled = false;
-				}
-			}
-		}, {
-			key: 'destroy',
-			value: function destroy() {
-				// TODO: ensure proper destruction
-				this.unwatch();
-				this.node.parentNode.removeChild(this.node);
-				this.node = null;
-				this.parent = null;
-				this.getter = null;
-			}
-		}]);
-	
-		return Controller;
-	})();
-	
-	exports['default'] = Controller;
-	module.exports = exports['default'];
-
-/***/ },
-/* 54 */
-/*!******************************************!*\
-  !*** ./src/gui/src/controller/canvas.js ***!
-  \******************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
-	
-	var _controllerJs2 = _interopRequireDefault(_controllerJs);
-	
-	var CanvasController = (function (_Controller) {
-		_inherits(CanvasController, _Controller);
-	
-		function CanvasController(title, opts) {
-			_classCallCheck(this, CanvasController);
-	
-			_get(Object.getPrototypeOf(CanvasController.prototype), 'constructor', this).call(this, 'canvas', title);
-			this.height = 48;
-			this.canvas = document.createElement('canvas');
-			this.node.appendChild(this.canvas);
-			this.ctx = null;
-			this.disable();
-		}
-	
-		_createClass(CanvasController, [{
-			key: 'init',
-			value: function init() {
-				this.canvas.height = this.height;
-				this.canvas.width = this.parent.pane.width;
-				this.ctx = this.canvas.getContext('2d');
-			}
-		}]);
-	
-		return CanvasController;
-	})(_controllerJs2['default']);
-	
-	exports['default'] = CanvasController;
-	module.exports = exports['default'];
-
-/***/ },
-/* 55 */
-/*!*****************************************!*\
-  !*** ./src/gui/src/controller/color.js ***!
-  \*****************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
-	
-	var _controllerJs2 = _interopRequireDefault(_controllerJs);
-	
-	var ColorController = (function (_Controller) {
-		_inherits(ColorController, _Controller);
-	
-		function ColorController(title, value, opts) {
-			_classCallCheck(this, ColorController);
-	
-			_get(Object.getPrototypeOf(ColorController.prototype), 'constructor', this).call(this, 'color', title);
-			// this.value = value;
-			this.height = 48;
-	
-			// Set default options
-			this.options = (0, _defaults2['default'])(opts, {
-				onchange: function onchange() {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('input');
-			this.input.type = 'color';
-			this.input.classList.add('bin-item-value');
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('change', this.listener.bind(this));
-		}
-	
-		_createClass(ColorController, [{
-			key: 'listener',
-			value: function listener(e) {
-				this.value = this.input.value;
-				// console.log(`Setting ${this.title}: ${this.value}`);
-				this.options.onchange(this.value);
-			}
-		}]);
-	
-		return ColorController;
-	})(_controllerJs2['default']);
-	
-	exports['default'] = ColorController;
-	module.exports = exports['default'];
-
-/***/ },
-/* 56 */
-/*!********************************************!*\
-  !*** ./src/gui/src/controller/dropdown.js ***!
-  \********************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
-	
-	var _controllerJs2 = _interopRequireDefault(_controllerJs);
-	
-	var DropdownController = (function (_Controller) {
-		_inherits(DropdownController, _Controller);
-	
-		function DropdownController(title, items, opts) {
-			_classCallCheck(this, DropdownController);
-	
-			_get(Object.getPrototypeOf(DropdownController.prototype), 'constructor', this).call(this, 'dropdown', title);
-			// this.value = value;
-			this.height = 48;
-			this.items = [];
-	
-			// Set default options
-			this.options = (0, _defaults2['default'])(opts, {
-				onchange: function onchange() {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('select');
-			this.input.classList.add('bin-item-value');
-			this.createItems(items);
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('change', this.listener.bind(this));
-		}
-	
-		_createClass(DropdownController, [{
-			key: 'createItems',
-			value: function createItems(list) {
-				var _this = this;
-	
-				list.forEach(function (item) {
-					if (!item.hasOwnProperty('name')) {
-						item.name = '(unnamed)';
-					}
-					item = (0, _defaults2['default'])(item, {
-						value: item.name,
-						selected: false,
-						disabled: false
-					});
-					_this.items.push(item);
-	
-					if (item.hasOwnProperty('children')) {
-						// TODO: handle grouped options
-					}
-	
-					var option = document.createElement('option');
-					option.value = item.value;
-					option.text = item.name;
-					if (item.selected) {
-						option.selected = true;
-						// this.value = item.value;
-					}
-					if (item.disabled) {
-						option.disabled = true;
-					}
-					_this.input.add(option);
-				});
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				// this.value = this.input.value;
-				this.options.onchange(this.input.value);
-			}
-		}]);
-	
-		return DropdownController;
-	})(_controllerJs2['default']);
-	
-	exports['default'] = DropdownController;
-	module.exports = exports['default'];
-
-/***/ },
-/* 57 */
-/*!****************************************!*\
-  !*** ./src/gui/src/controller/grid.js ***!
-  \****************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
-	
-	var _controllerJs2 = _interopRequireDefault(_controllerJs);
-	
-	var GridController = (function (_Controller) {
-		_inherits(GridController, _Controller);
-	
-		function GridController(title, opts) {
-			_classCallCheck(this, GridController);
-	
-			_get(Object.getPrototypeOf(GridController.prototype), 'constructor', this).call(this, 'grid', title);
-	
-			// Set default options
-			this.options = (0, _defaults2['default'])(opts, {
-				type: 'select',
-				disabled: false,
-				selected: false,
-				state: 0,
-				states: [],
-				onclick: function onclick(e) {}
-			});
-	
-			this.iconNode = document.createElement('i');
-	
-			this.state = this.options.state;
-			this.enabled = !this.options.disabled;
-			this.setCurrent(this.options.state);
-	
-			this.node.appendChild(this.iconNode);
-			this.node.addEventListener('click', this.listener.bind(this));
-	
-			// this.selectedIndex = 0;
-			// this.multiSelection = [];
-		}
-	
-		_createClass(GridController, [{
-			key: 'init',
-			value: function init() {
-				if (this.options.selected) {
-					this.parent.selectItem(this);
-				}
-			}
-		}, {
-			key: 'setCurrent',
-			value: function setCurrent(state) {
-				this.state = state;
-				this.current = (0, _defaults2['default'])(this.options.states[state], {
-					tooltip: '',
-					icon: '',
-					onclick: function onclick(e) {}
-				});
-	
-				this.node.title = this.current.tooltip;
-				if (!this.enabled) {
-					this.node.classList.add('disabled');
-				}
-				if (this.current.icon.length > 0) {
-					this.iconNode.className = this.current.icon;
-					this.iconNode.innerText = '';
-				} else if (this.options.shortcut.length > 0) {
-					this.iconNode.innerText = this.options.shortcut.toUpperCase().charAt(0);
-					this.iconNode.className = '';
-				}
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				if (!this.enabled) {
-					return;
-				}
-				this.current.onclick(e);
-				this.options.onclick(e);
-	
-				// Move to next state
-				var index = (this.state + 1) % this.options.states.length;
-				this.setCurrent(index);
-	
-				// Handle selection
-				if (this.parent.options.selectable) {
-					this.toggle();
-				}
-	
-				// Send event to parent
-				this.parent.listener(e);
-			}
-		}, {
-			key: 'select',
-			value: function select() {
-				this.selected = true;
-				this.node.classList.add('selected');
-			}
-		}, {
-			key: 'deselect',
-			value: function deselect() {
-				this.selected = false;
-				this.node.classList.remove('selected');
-			}
-		}, {
-			key: 'toggle',
-			value: function toggle() {
-				if (!this.selected) {
-					this.parent.selectItem(this);
-				} else {
-					this.parent.deselectItem(this);
-				}
-			}
-		}]);
-	
-		return GridController;
-	})(_controllerJs2['default']);
-	
-	exports['default'] = GridController;
-	module.exports = exports['default'];
-
-/***/ },
-/* 58 */
-/*!****************************************!*\
-  !*** ./src/gui/src/controller/html.js ***!
-  \****************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
-	
-	var _controllerJs2 = _interopRequireDefault(_controllerJs);
-	
-	var HTMLController = (function (_Controller) {
-		_inherits(HTMLController, _Controller);
-	
-		function HTMLController(title, opts) {
-			_classCallCheck(this, HTMLController);
-	
-			_get(Object.getPrototypeOf(HTMLController.prototype), 'constructor', this).call(this, 'html', title);
-			this.options = (0, _defaults2['default'])(opts, {
-				editable: false
-			});
-	
-			// TODO: how to determine the height dynamically?
-			this.height = 176;
-			if (!this.options.editable) {
-				this.disable();
-			} else {
-				this.node.contentEditable = true;
-			}
-		}
-	
-		// init() {
-		// 	this.disable();
-		// }
-	
-		_createClass(HTMLController, [{
-			key: 'getHTML',
-			value: function getHTML() {
-				return this.node.innerHTML;
-			}
-		}, {
-			key: 'setHTML',
-			value: function setHTML(content) {
-				this.node.innerHTML = content;
-			}
-	
-			// append(text) {}
-		}]);
-	
-		return HTMLController;
-	})(_controllerJs2['default']);
-	
-	exports['default'] = HTMLController;
-	module.exports = exports['default'];
-
-/***/ },
-/* 59 */
-/*!****************************************!*\
-  !*** ./src/gui/src/controller/info.js ***!
-  \****************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
-	
-	var _controllerJs2 = _interopRequireDefault(_controllerJs);
-	
-	var InfoController = (function (_Controller) {
-		_inherits(InfoController, _Controller);
-	
-		function InfoController(title, getter, opts) {
-			_classCallCheck(this, InfoController);
-	
-			_get(Object.getPrototypeOf(InfoController.prototype), 'constructor', this).call(this, 'info', title);
-			this.height = 48;
-			this.getter = getter;
-	
-			// Set default options
-			this.options = (0, _defaults2['default'])(opts, {
-				interval: 100,
-				decimals: 2,
-				format: 'auto'
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('input');
-			this.input.classList.add('bin-item-value');
-			this.input.type = 'text';
-			this.input.value = getter();
-			this.input.disabled = true;
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.watch();
-		}
-	
-		_createClass(InfoController, [{
-			key: 'watch',
-			value: function watch() {
-				setTimeout(this.watch.bind(this), this.options.interval);
-				this.setInfo(this.getter());
-			}
-		}, {
-			key: 'setInfo',
-			value: function setInfo(value) {
-				var infoString = undefined,
-				    vx = undefined,
-				    vy = undefined;
-	
-				switch (this.options.format) {
-					case 'text':
-						infoString = value;break;
-					case 'boolean':
-						infoString = value ? 'True' : 'False';break;
-					case 'number':
-						infoString = value.toFixed(this.options.decimals);break;
-					case 'vector':
-						vx = value.x.toFixed(this.options.decimals);
-						vy = value.y.toFixed(this.options.decimals);
-						infoString = '(' + vx + ', ' + vy + ')';
-						break;
-					default:
-						infoString = value.toString();
-				}
-				this.input.value = infoString;
-			}
-		}]);
-	
-		return InfoController;
-	})(_controllerJs2['default']);
-	
-	exports['default'] = InfoController;
-	module.exports = exports['default'];
-
-/***/ },
-/* 60 */
-/*!******************************************!*\
-  !*** ./src/gui/src/controller/number.js ***!
-  \******************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
-	
-	var _controllerJs2 = _interopRequireDefault(_controllerJs);
-	
-	var NumberController = (function (_Controller) {
-		_inherits(NumberController, _Controller);
-	
-		function NumberController(title, value, opts) {
-			_classCallCheck(this, NumberController);
-	
-			_get(Object.getPrototypeOf(NumberController.prototype), 'constructor', this).call(this, 'number', title);
-			this.value = value;
-			this.height = 48;
-	
-			// Set default options
-			this.options = (0, _defaults2['default'])(opts, {
-				min: null,
-				max: null,
-				step: null,
-				decimals: 3,
-				onchange: function onchange(val) {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('input');
-			this.input.classList.add('bin-item-value');
-			this.input.type = 'number';
-			this.input.value = this.value;
-			if (this.options.min !== null) this.input.min = this.options.min;
-			if (this.options.max !== null) this.input.max = this.options.max;
-			if (this.options.step !== null) this.input.step = this.options.step;
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('change', this.listener.bind(this));
-		}
-	
-		_createClass(NumberController, [{
-			key: 'setValue',
-			value: function setValue(val) {
-				this.value = val;
-				this.input.value = this.value.toFixed(this.options.decimals);
-			}
-		}, {
-			key: 'listener',
-			value: function listener(e) {
-				this.value = e.target.value;
-				// console.log(`Setting ${this.title}: ${this.value}`);
-				this.options.onchange(parseFloat(this.value));
-			}
-		}]);
-	
-		return NumberController;
-	})(_controllerJs2['default']);
-	
-	exports['default'] = NumberController;
-	module.exports = exports['default'];
-
-/***/ },
-/* 61 */
-/*!****************************************!*\
-  !*** ./src/gui/src/controller/text.js ***!
-  \****************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
-	
-	var _controllerJs2 = _interopRequireDefault(_controllerJs);
-	
-	var TextController = (function (_Controller) {
-		_inherits(TextController, _Controller);
-	
-		function TextController(title, value, opts) {
-			_classCallCheck(this, TextController);
-	
-			_get(Object.getPrototypeOf(TextController.prototype), 'constructor', this).call(this, 'text', title);
-			this.value = value;
-			this.height = 48;
-	
-			// Set default options
-			this.options = (0, _defaults2['default'])(opts, {
-				size: Number.MAX_VALUE,
-				onchange: function onchange(e) {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('input');
-			this.input.classList.add('bin-item-value');
-			this.input.type = 'text';
-			this.input.value = this.value;
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('change', this.listener.bind(this));
-		}
-	
-		_createClass(TextController, [{
-			key: 'listener',
-			value: function listener(e) {
-				this.value = e.target.value;
-				// console.log(`Setting ${this.title}: ${this.value}`);
-				this.options.onchange(this.value);
-			}
-		}]);
-	
-		return TextController;
-	})(_controllerJs2['default']);
-	
-	exports['default'] = TextController;
-	module.exports = exports['default'];
-
-/***/ },
-/* 62 */
-/*!******************************************!*\
-  !*** ./src/gui/src/controller/toggle.js ***!
-  \******************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-		value: true
-	});
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var _defaults = __webpack_require__(/*! defaults */ 6);
-	
-	var _defaults2 = _interopRequireDefault(_defaults);
-	
-	var _controllerJs = __webpack_require__(/*! ./controller.js */ 53);
-	
-	var _controllerJs2 = _interopRequireDefault(_controllerJs);
-	
-	var ToggleController = (function (_Controller) {
-		_inherits(ToggleController, _Controller);
-	
-		function ToggleController(title, value, opts) {
-			_classCallCheck(this, ToggleController);
-	
-			_get(Object.getPrototypeOf(ToggleController.prototype), 'constructor', this).call(this, 'toggle', title);
-			this.value = value;
-			this.height = 48;
-	
-			// Set default options
-			this.options = (0, _defaults2['default'])(opts, {
-				onchange: function onchange() {}
-			});
-	
-			var label = document.createElement('label');
-	
-			var name = document.createElement('span');
-			name.classList.add('bin-item-name');
-			name.innerText = title;
-			label.appendChild(name);
-	
-			this.input = document.createElement('input');
-			this.input.classList.add('bin-item-value', 'icon');
-			this.input.type = 'checkbox';
-			this.input.checked = this.value;
-			label.appendChild(this.input);
-	
-			this.node.appendChild(label);
-	
-			this.input.addEventListener('change', this.listener.bind(this));
-		}
-	
-		_createClass(ToggleController, [{
-			key: 'listener',
-			value: function listener(e) {
-				this.value = e.target.checked;
-				// console.log(`Toggling ${this.title}: ${this.value ? 'on' : 'off'}`);
-				this.options.onchange(this.value);
-			}
-		}]);
-	
-		return ToggleController;
-	})(_controllerJs2['default']);
-	
-	exports['default'] = ToggleController;
-	module.exports = exports['default'];
-
-/***/ },
-/* 63 */,
-/* 64 */
-/*!**********************************!*\
-  !*** ./src/gui/styles/main.less ***!
-  \**********************************/
-/***/ function(module, exports) {
-
-	// removed by extract-text-webpack-plugin
 
 /***/ }
 /******/ ]);
