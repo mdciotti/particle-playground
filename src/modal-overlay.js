@@ -17,7 +17,9 @@ export default class ModalOverlay {
 				{ text: 'OK', 'key': '<return>', onclick: function (e) { this.destroy(); } }
 			],
 			scrollable: false,
-			dismissable: true
+			dismissable: true,
+			onopen: function () {},
+			onclose: function () {}
 		});
 
 		this.el = document.createElement('div');
@@ -60,13 +62,13 @@ export default class ModalOverlay {
 			$icon.classList.add('icon');
 			$content.appendChild($icon);
 		} else {
-			$content.classList.add('no-icon');			
+			$content.classList.add('no-icon');
 		}
 
 		if (this.options.title.length > 0) {
 			$title = document.createElement('h1');
 			$title.classList.add(this.options.titleSize);
-			$title.innerText = this.options.title;
+			$title.textContent = this.options.title;
 			$content.appendChild($title);
 		}
 
@@ -87,7 +89,7 @@ export default class ModalOverlay {
 				$action = document.createElement('a');
 				if (action.soft) { $action.classList.add('soft'); }
 				if (action.default) { $action.classList.add('default'); }
-				$action.innerText = action.text;
+				$action.textContent = action.text;
 				$action.addEventListener('click', action.onclick);
 				$actions.appendChild($action);
 				// Attach event listener
@@ -100,6 +102,8 @@ export default class ModalOverlay {
 
 		$container.appendChild($content);
 		this.el.appendChild($container);
+
+		this.options.onopen();
 	}
 
 	appendTo(container) {
@@ -128,5 +132,7 @@ export default class ModalOverlay {
 		setTimeout(() => {
 			this.el.parentNode.removeChild(this.el);
 		}, 1000);
+
+		this.options.onclose();
 	}
 }

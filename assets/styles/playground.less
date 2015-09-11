@@ -1,6 +1,13 @@
+body {
+	background: #000000;
+	margin: 0;
+}
+
 .playground {
 	display: flex;
 	background: #000000;
+	transition: filter 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+	transition: -webkit-filter 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 
 	canvas {
 		&[data-cursor="default"] { cursor: default; }
@@ -15,6 +22,7 @@
 	}
 
 	&.defocus {
-		filter: blur(32px);
+		filter: blur(8px);
+		-webkit-filter: blur(8px);
 	}
 }

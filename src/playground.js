@@ -270,12 +270,11 @@ export default class Playground {
 			actions: [
 				{ text: 'Cancel', soft: true, onclick: (e) => { refreshMessage.destroy(); } },
 				{ text: 'Reload', key: '<enter>', default: true, onclick: (e) => { document.location.reload(); } }
-			]
+			],
+			onopen: () => { this.el.classList.add('defocus'); },
+			onclose: () => { this.el.classList.remove('defocus'); }
 		});
-		refreshMessage.appendTo(this.el);
-
-		// Blur background
-		this.el.classList.add('defocus');
+		refreshMessage.appendTo(document.body);
 	}
 
 	reset() {

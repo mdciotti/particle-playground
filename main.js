@@ -205,7 +205,9 @@ window.addEventListener('load', () => {
 			{ text: 'Hide', soft: true, onclick: (e) => { /* TODO: set localstorage setings */ } },
 			{ text: 'Instructions', onclick: (e) => { startInfo.destroy(); p.tour(); } },
 			{ text: 'Start', key: '<enter>', default: true, onclick: (e) => { startInfo.destroy(); p.start(); playButton.enable(); resetButton.enable(); startButton.setCurrent(1); } }
-		]
+		],
+		onopen: () => { p.el.classList.add('defocus'); },
+		onclose: () => { p.el.classList.remove('defocus'); }
 	});
-	startInfo.appendTo(p.el);
+	startInfo.appendTo(document.body);
 });

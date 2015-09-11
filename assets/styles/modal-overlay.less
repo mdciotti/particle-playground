@@ -38,8 +38,7 @@
 	.container {
 		width: 100%;
 		// max-height: 75%;
-		background-color: fade(@background, 90%);
-		// opacity: 0;
+		background-color: fade(@background, 60%);
 		.fadeupin(1s, 0s);
 		overflow: hidden;
 
@@ -79,12 +78,13 @@
 				left: 32px;
 				top: 32px;
 				font-size: 128px;
+				// color: mix(@foreground, @background, 20%);
+				// filter: brightness(180%);
 				.fadeupin(1s, 0.05s);
 			}
 
 			h1 {
 				font-weight: 100;
-				// text-transform: lowercase;
 				line-height: 1;
 				margin: 0 0 16px 0;
 				.fadeupin(1s, 0.05s);
@@ -101,7 +101,6 @@
 				line-height: 1.5;
 				margin-top: 0;
 				color: @foreground;
-				// color: mix(@foreground, @background, 90%);
 
 				&:last-child {
 					margin-bottom: 0;
@@ -130,7 +129,7 @@
 					padding: 8px 32px;
 					text-align: center;
 					min-width: 64px;
-					border: 2px solid mix(@foreground, @background, 60%);
+					border: 2px solid mix(@foreground, @background, 20%);
 					margin-left: 16px;
 					color: mix(@foreground, @background, 80%);
 					// background: @background;
@@ -138,14 +137,15 @@
 					transition: all 0.1s @ease-out-expo;
 
 					&:hover, &:focus {
-						background: mix(@foreground, @background, 20%);
+						// background: mix(@foreground, @background, 20%);
 						color: @foreground;
-						border-color: @foreground;
+						border: 2px solid mix(@foreground, @background, 60%);
 					}
 
 					&:active {
 						background: @foreground;
 						color: @background;
+						border-color: @foreground;
 						// border-color: mix(@background, @foreground, 20%);
 					}
 				}
@@ -161,11 +161,12 @@
 
 				a.default {
 					color: @foreground;
-					// border-color: @foreground;
+					border-color: transparent;
 					background: mix(@foreground, @background, 20%);
 
 					&:hover {
-						background: mix(@foreground, @background, 40%);
+						border-color: @foreground;
+						// background: mix(@foreground, @background, 40%);
 					}
 					&:active {
 						background: @foreground;
@@ -181,6 +182,18 @@
 
 		.container {
 			.fadeupout(1s, 0s);
+
+			h1, .icon {
+				.fadeupout(1s, 0.05s);
+			}
+
+			.content-view {
+				.fadeupout(1s, 0.1s);
+			}
+
+			.actions {
+				.fadeupout(1s, 0.2s);
+			}
 		}
 	}
 }
