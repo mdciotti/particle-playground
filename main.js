@@ -129,60 +129,84 @@ window.addEventListener('load', () => {
 	plot1.addSeries('PE', '#ed00ac', 1000, getPE);
 	plot1.addSeries('TE', '#ededed', 1000, getTE);
 
+	// Container for entity property controllers
+	let entityProp = {
+		onPauseHandle: null, onResumeHandle: null,
+		name: null, xpos: null, ypos: null, color: null, mass: null,
+		fixed: null, collidable: null, follow: null, remove: null,
+		entity: null
+	};
+
+	// this refers to the entityProp removed (defined above)
+	function removeEntity() {
+		console.log(this);
+		this.entity.willDelete = true;
+		propertiesBin.removeAllControllers();
+		p.off('pause', this.onPauseHandle);
+		p.off('resume', this.onResumeHandle);
+		let index = p.selectedEntities.indexOf(this.entity);
+		p.selectedEntities.splice(index, 1);
+		setEntityControllers(p.selectedEntities);
+		// delete this.name;
+		// delete this.xpos;
+		// delete this.ypos;
+		// delete this.color;
+		// delete this.mass;
+		// delete this.fixed;
+		// delete this.collidable;
+		// delete this.follow;
+		// delete this.remove;
+		// delete this.entity;
+		// delete this.onPauseHandle;
+		// delete this.onResumeHandle;
+		// TODO: check that properties controllers are being properly destroyed
+	}
+
+	function onPause() {
+		// console.log(this, entityProp, this === entityProp);
+		entityProp.xpos.unwatch();
+		entityProp.ypos.unwatch();
+		entityProp.mass.unwatch();
+	}
+
+	function onResume() {
+		entityProp.xpos.rewatch();
+		entityProp.ypos.rewatch();
+		entityProp.mass.rewatch();
+	}
+
 	function setEntityControllers(entities) {
 		propertiesBin.removeAllControllers();
 		if (entities.length === 0) {
-			p.off('pause');
-			p.off('resume');
+			p.off('pause', entityProp.onPauseHandle);
+			p.off('resume', entityProp.onResumeHandle);
 			return;
 		}
-		let e, name, xpos, ypos, color, mass, fixed, collidable, follow, remove;
 
-		e = entities[0];
-		name = new GUI.TextController('name', e.name, { onchange: val => { e.name = val; } });
-		xpos = new GUI.NumberController('pos.x', e.position.x, { decimals: 1, onchange: val => { e.position.x = val; } });
-		xpos.watch(() => { return e.position.x; });
-		ypos = new GUI.NumberController('pos.y', e.position.y, { decimals: 1, onchange: val => { e.position.y = val; } });
-		ypos.watch(() => { return e.position.y; });
-		color = new GUI.ColorController('color', e.color, { onchange: val => { e.color = val; } });
-		propertiesBin.addControllers(name, xpos, ypos, color);
+		let e = entities[0];
+		entityProp.entity = e;
+		entityProp.name = new GUI.TextController('name', e.name, { onchange: val => { e.name = val; } });
+		entityProp.xpos = new GUI.NumberController('pos.x', e.position.x, { decimals: 1, onchange: val => { e.position.x = val; } });
+		entityProp.xpos.watch(() => { return e.position.x; });
+		entityProp.ypos = new GUI.NumberController('pos.y', e.position.y, { decimals: 1, onchange: val => { e.position.y = val; } });
+		entityProp.ypos.watch(() => { return e.position.y; });
+		entityProp.color = new GUI.ColorController('color', e.color, { onchange: val => { e.color = val; } });
+		propertiesBin.addControllers(entityProp.name, entityProp.xpos, entityProp.ypos, entityProp.color);
 
 		if (e instanceof Body) {
-			mass = new GUI.NumberController('mass', e.mass, { decimals: 0, onchange: val => { e.setMass(val); } });
-			mass.watch(() => { return e.mass; });
-			fixed = new GUI.ToggleController('fixed', e.fixed, { onchange: val => { e.fixed = val; } });
-			collidable = new GUI.ToggleController('collidable', !e.ignoreCollisions, { onchange: val => { e.ignoreCollisions = !val; } });
-			propertiesBin.addControllers(mass, fixed, collidable);
+			entityProp.mass = new GUI.NumberController('mass', e.mass, { decimals: 0, onchange: val => { e.setMass(val); } });
+			entityProp.mass.watch(() => { return e.mass; });
+			entityProp.fixed = new GUI.ToggleController('fixed', e.fixed, { onchange: val => { e.fixed = val; } });
+			entityProp.collidable = new GUI.ToggleController('collidable', !e.ignoreCollisions, { onchange: val => { e.ignoreCollisions = !val; } });
+			propertiesBin.addControllers(entityProp.mass, entityProp.fixed, entityProp.collidable);
 		}
 
-		follow = new GUI.ActionController('follow', { action: () => { p.renderer.follow(e); } });
-		remove = new GUI.ActionController('delete', { action: () => {
-			e.willDelete = true;
-			propertiesBin.removeAllControllers();
-			entities.splice(0, 1);
-			setEntityControllers(entities);
-			xpos = null;
-			ypos = null;
-			color = null;
-			mass = null;
-			fixed = null;
-			collidable = null;
-			follow = null;
-			remove = null;
-			// TODO: check that properties controllers are being properly destroyed
-		} });
-		propertiesBin.addControllers(follow, remove);
+		entityProp.follow = new GUI.ActionController('follow', { action: () => { p.renderer.follow(e); } });
+		entityProp.remove = new GUI.ActionController('delete', { action: removeEntity.bind(entityProp) });
+		propertiesBin.addControllers(entityProp.follow, entityProp.remove);
 
-		p.on('pause', () => {
-			xpos.unwatch();
-			ypos.unwatch();
-			mass.unwatch();
-		});
-		p.on('resume', () => {
-			xpos.rewatch();
-			ypos.rewatch();
-			mass.rewatch();
-		});
+		entityProp.onPauseHandle = p.on('pause', onPause.bind(entityProp));
+		entityProp.onResumeHandle = p.on('resume', onResume.bind(entityProp));
 	}
 
 	// Update properties bin on selection

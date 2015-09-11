@@ -25,6 +25,7 @@ export default class Playground {
 		this.runtime = 0;
 		this.running = false;
 		this.paused = false;
+		this.events = {};
 
 		// Create DOM node
 		this.el = document.createElement('div');
@@ -76,25 +77,23 @@ export default class Playground {
 
 		let wasPaused = this.paused;
 
-		// Define Event Handlers
-		this.events = {};
-		this.events.contextmenu = function(e) {
+		// Define Default Event Handlers
+		this.on('contextmenu', e => {
 			e.preventDefault();
 			return false;
-		};
-		this.events.resize = function() {
+		});
+		this.on('resize', () => {
 			this.simulator.options.bounds.width = this.renderer.ctx.canvas.width = window.innerWidth - this.gui.width;
 			this.simulator.options.bounds.height = this.renderer.ctx.canvas.height = window.innerHeight;
-		};
-		this.events.blur = function() {
+		});
+		this.on('blur', () => {
 			wasPaused = this.paused;
 			this.pause(true);
-		};
-		this.events.focus = function() {
+		});
+		this.on('focus', () => {
 			if (!wasPaused) { this.pause(false); }
-		};
-		this.events.mousedown = function(e) {
-			if (!this.running) { return; }
+		});
+		this.on('mousedown', e => {
 			// console.log(e.layerX, e.layerY);
 			this.input.mouse.isDown = true;
 			this.input.mouse.dragStartX = e.layerX;
@@ -117,8 +116,8 @@ export default class Playground {
 				});
 				break;
 			}
-		};
-		this.events.mousemove = function(e) {
+		});
+		this.on('mousemove', e => {
 			if (!this.running) { return; }
 			let delta;
 			this.input.mouse.dx = e.layerX - this.input.mouse.x;
@@ -146,13 +145,13 @@ export default class Playground {
 					}
 					break;
 			}
-		};
-		this.events.mousewheel = function(e) {
+		});
+		this.on('mousewheel', e => {
 			if (!this.running) { return; }
 			this.input.mouse.wheel = e.wheelDelta;
 			this.simulator.parameters.createMass = Math.max(10, this.simulator.parameters.createMass + e.wheelDelta / 10);
-		};
-		this.events.mouseup = function(e) {
+		});
+		this.on('mouseup', e => {
 			if (!this.running) { return; }
 			let particle;
 			this.input.mouse.isDown = false;
@@ -170,7 +169,7 @@ export default class Playground {
 					);
 					this.simulator.entities.push(particle);
 					this.selectedEntities = [particle];
-					this.events.selection(this.selectedEntities);
+					this.dispatch('selection', this.selectedEntities);
 					break;
 
 				case this.tool.SELECT:
@@ -188,29 +187,54 @@ export default class Playground {
 					});
 					break;
 			}
-		};
-		this.events.selection = function(entities) {};
-		this.events.pause = function () {};
-		this.events.resume = function () {};
+		});
 
 		// Attach event handlers
-		window.addEventListener('resize', this.events.resize.bind(this));
-		window.addEventListener('focus', this.events.focus.bind(this));
-		window.addEventListener('blur', this.events.blur.bind(this));
-		document.body.addEventListener('contextmenu', this.events.contextmenu.bind(this));
-		this.renderer.el.addEventListener('mousedown', this.events.mousedown.bind(this));
-		this.renderer.el.addEventListener('mousemove', this.events.mousemove.bind(this));
-		this.renderer.el.addEventListener('mouseup', this.events.mouseup.bind(this));
-		this.renderer.el.addEventListener('mousewheel', this.events.mousewheel.bind(this));
+		window.addEventListener('resize', e => { this.dispatch('resize', e); });
+		window.addEventListener('focus', e => { this.dispatch('focus', e); });
+		window.addEventListener('blur', e => { this.dispatch('blur', e); });
+		document.body.addEventListener('contextmenu', e => { this.dispatch('contextmenu', e); });
+		this.renderer.el.addEventListener('mousedown', e => { this.dispatch('mousedown', e); });
+		this.renderer.el.addEventListener('mousemove', e => { this.dispatch('mousemove', e); });
+		this.renderer.el.addEventListener('mouseup', e => { this.dispatch('mouseup', e); });
+		this.renderer.el.addEventListener('mousewheel', e => { this.dispatch('mousewheel', e); });
 	}
 
-	on(eventName, handler) {
-		this.events[eventName] = handler;
+	dispatch(eventName, data) {
+		if (!this.running) { return; }
+		// TODO: maybe handle multiple arguments?
+		if (!this.events.hasOwnProperty(eventName)) { return; }
+		// this.events[eventName].forEach(listener => { listener(data); });
+		for (var [handle, listener] of this.events[eventName]) {
+			listener(data);
+		}
 	}
 
-	off(eventName) {
+	/**
+	 * Attaches an event listener and returns a Symbol reference to the
+	 * listener.
+	 * @param  {String}   eventName The name of the event to listen for
+	 * @param  {Function} listener  The function to be called on the event
+	 * @return {Symbol}
+	 */
+	on(eventName, listener) {
+		let handle = Symbol();
+		if (!this.events.hasOwnProperty(eventName)) {
+			this.events[eventName] = new Map();
+		}
+		this.events[eventName].set(handle, listener);
+		return handle;
+	}
+
+	/**
+	 * Removes an event listener by the Symbol reference to the listener
+	 * returned from calling {@link Playground#on}.
+	 * @param  {String} eventName The name of the event to remove from
+	 * @param  {Symbol} handle    The reference to the event listener
+	 */
+	off(eventName, handle) {
 		if (this.events.hasOwnProperty(eventName)) {
-			this.events[eventName] = function () {};
+			delete this.events[eventName].delete(handle);
 		}
 	}
 
@@ -221,14 +245,14 @@ export default class Playground {
 			return e.inRegion(x, y, w, h);
 		});
 
-		this.events.selection(this.selectedEntities);
+		this.dispatch('selection', this.selectedEntities);
 
 		return this;
 	}
 
 	deselect() {
 		this.selectedEntities.length = 0;
-		this.events.selection(this.selectedEntities);
+		this.dispatch('selection', this.selectedEntities);
 	}
 
 	setTool(tool) {
@@ -252,8 +276,8 @@ export default class Playground {
 		} else {
 			this.paused = !this.paused;
 		}
-		if (this.paused) { this.events.pause(); }
-		else { this.events.resume(); }
+		if (this.paused) { this.dispatch('pause'); }
+		else { this.dispatch('resume'); }
 	}
 
 	stop() {
