@@ -16,6 +16,9 @@ export default class Pane {
 		this.node.classList.add('gui-pane');
 		if (this.options.overlay) { this.node.classList.add('overlay'); }
 		this.setStyleWidth();
+		if (this.options.position === 'right') { this.node.classList.add('right'); }
+		if (this.options.position === 'left') { this.node.classList.add('left'); }
+		if (this.options.overlay) { this.node.classList.add('overlay'); }
 
 		this.tabbar = document.createElement('div');
 		this.tabbar.classList.add('gui-tab-bar');

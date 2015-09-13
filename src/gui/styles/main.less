@@ -5,12 +5,18 @@
 @ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
 @transition-duration: 300ms;
 
+@bg_fade: fade(@background, 90%);
+@bg_fade-hover: fade(@background-hover, 90%);
+@bg_fade-active: fade(@background-active, 90%);
+@sel_fade: fade(@selected, 90%);
+@sel_fade-hover: fade(@selected-hover, 90%);
+@sel_fade-active: fade(@selected-active, 90%);
+
 .gui-pane {
-	background-color: @background;
+	background-color: @bg_fade;
 	color: @text-icons;
 	flex: 0 0 auto;
 	display: flex;
-	order: 2;
 	flex-direction: column;
 	font-family: 'Source Sans Pro', 'Segoe UI', 'Helvetica Neue', sans-serif;
 	font-weight: 300;
@@ -24,13 +30,24 @@
 	position: relative;
 	line-height: 1;
 
+	&.right { order: 1; }
+	&.left { order: 0; }
+
+	&.overlay {
+		position: absolute;
+		height: 100%;
+
+		&.right { right: 0; }
+		&.left { left: 0; }
+	}
+
 	.gui-tab-bar {
 		flex: 0 0 auto;
 		display: flex;
 		// padding: 16px;
 
 		.gui-tab-bar-button {
-			background-color: @background;
+			// background-color: @bg_fade;
 			border-top: 2px solid transparent;
 			flex: 1 1 auto;
 			text-align: center;
@@ -49,18 +66,18 @@
 			&.disabled { opacity: 0.25; }
 
 			&.selected {
-				background-color: @selected;
+				background-color: @sel_fade;
 				border-color: @accent;
 
-				&:not(.disabled):hover { background-color: @selected-hover; }
-				&:not(.disabled):active { background-color: @selected-active; }
+				&:not(.disabled):hover { background-color: @sel_fade-hover; }
+				&:not(.disabled):active { background-color: @sel_fade-active; }
 			}
 
 			&:not(.disabled):hover {
-				background-color: @background-hover;
+				background-color: @bg_fade-hover;
 				border-color: @accent;
 			}
-			&:not(.disabled):active { background-color: @background-active; }
+			&:not(.disabled):active { background-color: @bg_fade-active; }
 		}
 	}
 
@@ -101,7 +118,7 @@
 		}
 
 		.bin-title-bar {
-			background-color: @background-active;
+			background-color: @bg_fade-active;
 			border-top: 2px solid @accent;
 			padding: 8px 8px;
 			text-transform: uppercase;
@@ -130,7 +147,7 @@
 			}
 
 			&:focus {
-				background-color: @background-hover;
+				background-color: @bg_fade-hover;
 			}
 		}
 	}
@@ -140,7 +157,7 @@
 		font-size: 100%;
 		line-height: 1;
 		height: 24px;
-		background-color: @background-active;
+		background-color: @bg_fade-active;
 		transition: height @transition-duration @ease-out-expo;
 		overflow: hidden;
 
@@ -153,8 +170,8 @@
 				opacity: 0.25;
 			}
 
-			&:not(.disabled):hover { background-color: @background-hover; }
-			&:not(.disabled):active { background-color: @background; }
+			&:not(.disabled):hover { background-color: @bg_fade-hover; }
+			&:not(.disabled):active { background-color: transparent; }
 		}
 		.bin-nav-info {
 			font-size: 75%;
@@ -179,7 +196,7 @@
 			overflow: auto;
 
 			.bin-item {
-				// background-color: @background;
+				// background-color: @bg_fade;
 				height: 48px;
 				width: 48px;
 				// box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
@@ -189,14 +206,14 @@
 				position: relative;
 				transition: all 0.1s ease-out;
 
-				&:not(.disabled):hover { background-color: @background-hover; }
-				&:not(.disabled):active { background-color: @background-active; }
+				&:not(.disabled):hover { background-color: @bg_fade-hover; }
+				&:not(.disabled):active { background-color: @bg_fade-active; }
 
 				&.selected {
-					background-color: @selected;
+					background-color: @sel_fade;
 
-					&:not(.disabled):hover { background-color: @selected-hover; }
-					&:not(.disabled):active { background-color: @selected-active; }
+					&:not(.disabled):hover { background-color: @sel_fade-hover; }
+					&:not(.disabled):active { background-color: @sel_fade-active; }
 				}
 
 				&.disabled { opacity: 0.25; }
@@ -222,7 +239,7 @@
 		&.bin-collection,
 		&.bin-generic {
 			.bin-item {
-				background-color: @background;
+				// background-color: @bg_fade;
 				transition: all 0.1s ease-out;
 
 				label {
@@ -281,9 +298,9 @@
 					}
 				}
 
-				&:not(.disabled):hover { background-color: @background-hover; }
-				&:not(.disabled):active { background-color: @background-active; }
-				&:not(.disabled):focus { background-color: @background-hover; }
+				&:not(.disabled):hover { background-color: @bg_fade-hover; }
+				&:not(.disabled):active { background-color: @bg_fade-active; }
+				&:not(.disabled):focus { background-color: @bg_fade-hover; }
 
 				&.html {
 					padding: 16px;

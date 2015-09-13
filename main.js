@@ -141,8 +141,8 @@ window.addEventListener('load', () => {
 				propertiesBin.addControllers(entityProp.mass, entityProp.fixed, entityProp.collidable);
 			}
 
-			entityProp.follow = new GUI.ActionController('follow', { action: () => { p.renderer.follow(e); } });
-			entityProp.remove = new GUI.ActionController('delete', { action: removeEntity.bind(entityProp) });
+			entityProp.follow = new GUI.ActionController('follow', { icon: 'ion-ios-navigate-outline', action: () => { p.renderer.follow(e); } });
+			entityProp.remove = new GUI.ActionController('delete', { icon: 'ion-ios-trash-outline', action: removeEntity.bind(entityProp) });
 			propertiesBin.addControllers(entityProp.follow, entityProp.remove);
 
 			if (p.paused) {
@@ -266,10 +266,10 @@ window.addEventListener('load', () => {
 		}
 	});
 	p.on('mouseup', e => {
-		let particle;
-		switch (tool._current) {
+		if (p.input.mouse.dragStartedInCanvas) {
+			switch (tool._current) {
 			case tool.CREATE:
-				particle = new Body(
+				let particle = new Body(
 					p.input.mouse.dragStartX + p.renderer.camera.x,
 					p.input.mouse.dragStartY + p.renderer.camera.y,
 					p.simulator.parameters.createMass,
@@ -295,6 +295,7 @@ window.addEventListener('load', () => {
 					entity.fixed = entity._fixed;
 				});
 				break;
+			}
 		}
 	});
 	p.on('mousemove', e => {

@@ -20,7 +20,9 @@ export default class Playground {
 			width: window.innerWidth,
 			height: window.innerHeight,
 			pauseOnBlur: true,
-			disableRightClickMenu: true
+			disableRightClickMenu: true,
+			overlayGUI: true,
+			GUIposition: 'right'
 		});
 		this.animator = null;
 		this.runtime = 0;
@@ -40,15 +42,22 @@ export default class Playground {
 
 		// Initialize submodules
 		this.clock = new Clock();
-		this.gui = new Pane(this.el);
+		this.gui = new Pane(this.el, {
+			position: this.options.GUIposition,
+			overlay: this.options.overlayGUI
+		});
+
+		let w = this.options.width;
+		if (!this.gui.options.overlay) { w -= this.gui.width };
+
 		this.simulator = new Simulator({
-			bounds: { left: 0, top: 0, width: this.options.width - this.gui.width, height: this.options.height }
+			bounds: { left: 0, top: 0, width: w, height: this.options.height }
 		});
 		this.renderer = new CanvasRenderer();
 
 		// Setup renderer DOM node
-		this.renderer.el.width = this.el.clientWidth - this.gui.width;
-		this.renderer.el.height = this.el.clientHeight;
+		this.renderer.el.width = w;
+		this.renderer.el.height = this.options.height;
 		this.el.appendChild(this.renderer.el);
 
 		// Input State
@@ -87,30 +96,34 @@ export default class Playground {
 			});
 		}
 		this.on('mousedown', e => {
-			// console.log(e.layerX, e.layerY);
+			this.input.mouse.isOverCanvas = e.target === this.renderer.el;
+			this.input.mouse.dragStartedInCanvas = e.target === this.renderer.el;
 			this.input.mouse.isDown = true;
-			this.input.mouse.dragStartX = e.layerX;
-			this.input.mouse.dragStartY = e.layerY;
+			this.input.mouse.dragStartX = e.clientX - this.renderer.el.offsetLeft;
+			this.input.mouse.dragStartY = e.clientY - this.renderer.el.offsetTop;
 			this.input.mouse.dragX = 0;
 			this.input.mouse.dragY = 0;
 			this.input.mouse.dx = 0;
 			this.input.mouse.dy = 0;
 		});
 		this.on('mousemove', e => {
-			this.input.mouse.dx = e.layerX - this.input.mouse.x;
-			this.input.mouse.dy = e.layerY - this.input.mouse.y;
-			this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
-			this.input.mouse.dragY = e.layerY - this.input.mouse.dragStartY;
-			this.input.mouse.x = e.layerX;
-			this.input.mouse.y = e.layerY;
+			this.input.mouse.isOverCanvas = e.target === this.renderer.el;
+			this.input.mouse.dx = e.clientX - this.renderer.el.offsetLeft - this.input.mouse.x;
+			this.input.mouse.dy = e.clientY - this.renderer.el.offsetTop - this.input.mouse.y;
+			this.input.mouse.dragX = e.clientX - this.renderer.el.offsetLeft - this.input.mouse.dragStartX;
+			this.input.mouse.dragY = e.clientY - this.renderer.el.offsetTop - this.input.mouse.dragStartY;
+			this.input.mouse.x = e.clientX - this.renderer.el.offsetLeft;
+			this.input.mouse.y = e.clientY - this.renderer.el.offsetTop;
 		});
 		this.on('mousewheel', e => {
+			this.input.mouse.isOverCanvas = e.target === this.renderer.el;
 			this.input.mouse.wheel = e.wheelDelta;
 		});
 		this.on('mouseup', e => {
+			this.input.mouse.isOverCanvas = e.target === this.renderer.el;
 			this.input.mouse.isDown = false;
-			this.input.mouse.dragX = e.layerX - this.input.mouse.dragStartX;
-			this.input.mouse.dragY = e.layerY - this.input.mouse.dragStartY;
+			this.input.mouse.dragX = e.clientX - this.renderer.el.offsetLeft - this.input.mouse.dragStartX;
+			this.input.mouse.dragY = e.clientY - this.renderer.el.offsetTop - this.input.mouse.dragStartY;
 		});
 
 		// Attach event handlers
@@ -118,10 +131,10 @@ export default class Playground {
 		window.addEventListener('focus', e => { this.dispatch('focus', e); });
 		window.addEventListener('blur', e => { this.dispatch('blur', e); });
 		document.body.addEventListener('contextmenu', e => { this.dispatch('contextmenu', e); });
-		this.renderer.el.addEventListener('mousedown', e => { this.dispatch('mousedown', e); });
-		this.renderer.el.addEventListener('mousemove', e => { this.dispatch('mousemove', e); });
-		this.renderer.el.addEventListener('mouseup', e => { this.dispatch('mouseup', e); });
-		this.renderer.el.addEventListener('mousewheel', e => { this.dispatch('mousewheel', e); });
+		this.el.addEventListener('mousedown', e => { this.dispatch('mousedown', e); });
+		this.el.addEventListener('mousemove', e => { this.dispatch('mousemove', e); });
+		this.el.addEventListener('mouseup', e => { this.dispatch('mouseup', e); });
+		this.el.addEventListener('mousewheel', e => { this.dispatch('mousewheel', e); });
 	}
 
 	dispatch(eventName, data) {

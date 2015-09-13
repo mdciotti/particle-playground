@@ -50,7 +50,7 @@ export default class CanvasRenderer {
 	}
 
 	render(entities, input, selectedEntities, stats, params, tool, simOpts) {
-		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, isSelected, selectTool, x, y, i, j, len, altCursor;
+		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, isSelected, selectTool, canSelect, x, y, i, j, len, altCursor;
 
 		this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - this.options.motionBlur})`;
 		this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
@@ -90,12 +90,13 @@ export default class CanvasRenderer {
 			// Mouse interaction
 			m = new Vec2(input.mouse.x, input.mouse.y);
 			selectTool = tool._current === tool.SELECT;
-			inRadius = m.distSq(e.position.subtract(this.camera)) < e.radius * e.radius && selectTool;
+			canSelect = input.mouse.dragStartedInCanvas && input.mouse.isDown;
+			inRadius = m.distSq(e.position.subtract(this.camera)) < e.radius * e.radius && selectTool && input.mouse.isOverCanvas;
 			willSelect = e.inRegion(
 				input.mouse.dragStartX + this.camera.x,
 				input.mouse.dragStartY + this.camera.y,
 				input.mouse.dragX, input.mouse.dragY
-			) && input.mouse.isDown && selectTool;
+			) && input.mouse.isDown && selectTool && canSelect;
 			isSelected = selectedEntities.has(e);
 
 			// Set flag if current entity is under mouse pointer
@@ -160,7 +161,8 @@ export default class CanvasRenderer {
 		}
 
 		// Mouse drag
-		switch (tool._current) {
+		if (input.mouse.dragStartedInCanvas) {
+			switch (tool._current) {
 			case tool.SELECT:
 				if (input.mouse.isDown) {
 					let x0 = input.mouse.dragStartX;
@@ -211,13 +213,22 @@ export default class CanvasRenderer {
 					this.ctx.moveTo(input.mouse.dragStartX + p2.x, input.mouse.dragStartY + p2.y);
 					this.ctx.lineTo(Xend, Yend);
 					this.ctx.stroke();
-				}
 
-				// Create entity preview around cursor
-				this.ctx.strokeStyle = 'rgba(128,128,128,1)';
-				this.ctx.beginPath();
-				this.ctx.arc(x, y, Math.sqrt(params.createMass), 0, 2 * Math.PI, false);
-				this.ctx.stroke();
+					// Create entity preview around drag start
+					this.ctx.strokeStyle = 'rgba(128,128,128,1)';
+					this.ctx.beginPath();
+					this.ctx.arc(x, y, Math.sqrt(params.createMass), 0, 2 * Math.PI, false);
+					this.ctx.stroke();
+				}
+			}
+		}
+		if (tool._current === tool.CREATE &&
+			input.mouse.isOverCanvas && !input.mouse.isDown) {
+			// Create entity preview around cursor
+			this.ctx.strokeStyle = 'rgba(128,128,128,1)';
+			this.ctx.beginPath();
+			this.ctx.arc(input.mouse.x, input.mouse.y, Math.sqrt(params.createMass), 0, 2 * Math.PI, false);
+			this.ctx.stroke();
 		}
 
 		// TODO: use the state manager for this part?
