@@ -12,12 +12,14 @@ export default class Bin {
 		this.node.classList.add('bin');
 		this.pane = null;
 		this.options = defaults(opts, {
-			open: true
+			open: true,
+			showTitle: true
 		});
 		this.isOpen = this.options.open;
 
 		let titlebar = document.createElement('div');
 		titlebar.classList.add('bin-title-bar');
+		if (!this.options.showTitle) { titlebar.classList.add('hidden'); }
 		titlebar.addEventListener('click', e => { this.toggle(); });
 
 		let icon = document.createElement('i');
@@ -76,7 +78,7 @@ export default class Bin {
 	addController(controller) {
 		this.controllers.push(controller);
 		this.container.appendChild(controller.node);
-		controller.parent = this;
+		controller.parentBin = this;
 		// this.height += controller.height;
 		this.calculateHeight();
 		this.setStyleHeight();

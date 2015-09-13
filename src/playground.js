@@ -1,5 +1,5 @@
 import Simulator from './simulator.js';
-import * as GUI from './gui/index.js';
+import { Pane } from './gui/index.js';
 import Clock from './clock.js';
 import Body from './body.js';
 import CanvasRenderer from './canvas-renderer.js';
@@ -40,7 +40,7 @@ export default class Playground {
 
 		// Initialize submodules
 		this.clock = new Clock();
-		this.gui = new GUI.Pane(this.el);
+		this.gui = new Pane(this.el);
 		this.simulator = new Simulator({
 			bounds: { left: 0, top: 0, width: this.options.width - this.gui.width, height: this.options.height }
 		});

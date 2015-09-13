@@ -18,17 +18,16 @@ export default class GridBin extends Bin {
 	}
 
 	calculateHeight() {
-		this.pane.x;
-		if (this.pane === null) { return; }
+		if (this.parentTab === null) { return; }
 		let n = this.controllers.length;
-		let cols = Math.floor(this.pane.width / this.itemSize);
+		let cols = Math.floor(this.parentTab.parentPane.width / this.itemSize);
 		this.height = this.itemSize * Math.ceil(n / cols);
 	}
 
 	addController(controller) {
 		this.controllers.push(controller);
 		this.container.appendChild(controller.node);
-		controller.parent = this;
+		controller.parentBin = this;
 	}
 
 	// Listener is called from a child listener

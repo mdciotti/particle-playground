@@ -1,6 +1,7 @@
 // GRAPHICAL USER INTERFACE CONTROLLER
 
 import Pane from './src/pane.js';
+import Tab from './src/tab.js';
 import { Bin, GridBin, ListBin, CollectionBin } from './src/bin/index.js';
 import {
 	ActionController,
@@ -17,6 +18,7 @@ import {
 
 export default {
 	Pane,
+	Tab,
 	Bin,
 	GridBin,
 	ListBin,

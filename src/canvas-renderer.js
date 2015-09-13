@@ -1,5 +1,6 @@
 import Vec2 from './vec2.js';
-import { Entity, Body } from './entity.js';
+import Entity from './entity.js';
+import Body from './body.js';
 import defaults from '../node_modules/defaults';
 
 export default class CanvasRenderer {

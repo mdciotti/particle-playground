@@ -2,6 +2,9 @@
 @import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400,600,700,900);
 @import url(http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css);
 
+@ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+@transition-duration: 300ms;
+
 .gui-pane {
 	background-color: @background;
 	color: @text-icons;
@@ -17,9 +20,63 @@
 	-moz-user-select: none;
 	-webkit-user-select: none;
 	overflow-x: hidden;
-	overflow-y: auto;
+	overflow-y: hidden;
 	position: relative;
 	line-height: 1;
+
+	.gui-tab-bar {
+		flex: 0 0 auto;
+		display: flex;
+		// padding: 16px;
+
+		.gui-tab-bar-button {
+			background-color: @background;
+			border-top: 2px solid transparent;
+			flex: 1 1 auto;
+			text-align: center;
+
+			span {
+				display: block;
+				padding: 16px;
+			}
+
+			i {
+				display: block;
+				font-size: 32px;
+				padding: 8px 16px;
+			}
+
+			&.disabled { opacity: 0.25; }
+
+			&.selected {
+				background-color: @selected;
+				border-color: @accent;
+
+				&:not(.disabled):hover { background-color: @selected-hover; }
+				&:not(.disabled):active { background-color: @selected-active; }
+			}
+
+			&:not(.disabled):hover {
+				background-color: @background-hover;
+				border-color: @accent;
+			}
+			&:not(.disabled):active { background-color: @background-active; }
+		}
+	}
+
+	.gui-tab-view {
+		display: flex;
+		flex: 1 1 auto;
+		transition: transform @transition-duration @ease-out-expo;
+		transform: translateX(0%);
+		// overflow-x: hidden;
+		overflow-y: auto;
+	}
+
+	.gui-tab {
+		flex: 0 0 auto;
+		// width: 100%;
+	}
 
 	.bin {
 		flex: 0 0 auto;
@@ -36,8 +93,11 @@
 			}
 		}
 
-		&:not(.open) .bin-container {
-			height: 0 !important;
+		&:not(.open) {
+			.bin-container,
+			.bin-nav {
+				height: 0 !important;
+			}
 		}
 
 		.bin-title-bar {
@@ -52,6 +112,10 @@
 			display: block;
 			outline: none;
 
+			&.hidden {
+				display: none;
+			}
+
 			&::-webkit-details-marker {
 				opacity: 0.5;
 				display: none;
@@ -62,7 +126,7 @@
 				display: inline-block;
 				margin-right: 8px;
 				transform: rotate(0deg);
-				transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1.0);
+				transition: transform @transition-duration @ease-out-expo;
 			}
 
 			&:focus {
@@ -77,6 +141,8 @@
 		line-height: 1;
 		height: 24px;
 		background-color: @background-active;
+		transition: height @transition-duration @ease-out-expo;
+		overflow: hidden;
 
 		.bin-nav-button {
 			flex: 0 0 16px;
@@ -102,7 +168,7 @@
 
 	.bin-container {
 		display: block;
-		transition: height 300ms cubic-bezier(0.2, 0.8, 0.2, 1.0);
+		transition: height @transition-duration @ease-out-expo;
 		overflow: hidden;
 		// background-color: #333333;
 

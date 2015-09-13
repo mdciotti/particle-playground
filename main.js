@@ -9,6 +9,7 @@ import Vec2 from './src/vec2.js';
 
 // Global variables
 let tool, p, selectedEntities,
+	aboutTab, editorTab, statsTab,
 	infoBin, info,
 	player, playButton, startButton, resetButton,
 	toolBin, createTool, selectTool, panTool, zoomTool, grabTool,
@@ -45,8 +46,16 @@ window.addEventListener('load', () => {
 	});
 
 	// Create GUI
+	aboutTab = new GUI.Tab('About', { icon: 'ion-ios-information-outline' });
+	p.gui.addTab(aboutTab);
 
-	infoBin = new GUI.Bin('Information');
+	editorTab = new GUI.Tab('Editor', { icon: 'ion-ios-toggle-outline' });
+	p.gui.addTab(editorTab);
+
+	statsTab = new GUI.Tab('Stats', { icon: 'ion-ios-pulse' });
+	p.gui.addTab(statsTab);
+
+	infoBin = new GUI.Bin('Information', { showTitle: false });
 	infoBin.height = 16;
 	info = new GUI.HTMLController('Introduction', {});
 	info.setHTML('<h1>Particle Playground</h1>' +
@@ -57,7 +66,7 @@ window.addEventListener('load', () => {
 		'<a href="https://github.com/mdciotti/particle-playground" target="_blank">v0.1.0-alpha</a></small>'
 	);
 	infoBin.addController(info);
-	p.gui.addBin(infoBin);
+	aboutTab.addBin(infoBin);
 
 	player = new GUI.GridBin('Simulation');
 	playButton = new GUI.GridController('play state', {
@@ -74,11 +83,11 @@ window.addEventListener('load', () => {
 	});
 	resetButton = new GUI.GridController('reset', {
 		shortcut: 'R', type: 'action', disabled: true, state: 0, states: [
-			{ tooltip: 'reset', icon: 'ion-ios-reload', onclick: () => { p.reset(); } }
+			{ tooltip: 'reset', icon: 'ion-ios-refresh-outline', onclick: () => { p.reset(); } }
 		]
 	});
 	player.addControllers(playButton, startButton, resetButton);
-	p.gui.addBin(player);
+	editorTab.addBin(player);
 
 	toolBin = new GUI.GridBin('Tools', { selectable: true });
 	createTool = new GUI.GridController('create', {
@@ -107,7 +116,7 @@ window.addEventListener('load', () => {
 		], onclick: () => { setTool(tool.GRAB); }
 	});
 	toolBin.addControllers(createTool, selectTool, panTool, zoomTool, grabTool);
-	p.gui.addBin(toolBin);
+	editorTab.addBin(toolBin);
 
 	propertiesBin = new GUI.CollectionBin('Properties', {
 		setControllers: e => {
@@ -146,7 +155,7 @@ window.addEventListener('load', () => {
 			entityProp.onResumeHandle = p.on('resume', onResume.bind(entityProp));
 		}
 	});
-	p.gui.addBin(propertiesBin);
+	editorTab.addBin(propertiesBin);
 
 	physicsBin = new GUI.Bin('Physics');
 	gravity = new GUI.ToggleController('gravity', p.simulator.options.gravity, { onchange: (val) => { p.simulator.options.gravity = val; } });
@@ -162,7 +171,7 @@ window.addEventListener('load', () => {
 		{ name: 'explode', selected: false, disabled: false }
 	], { onchange: (val) => { p.simulator.options.collisions = val; } });
 	physicsBin.addControllers(gravity, friction, bounded, collisions);
-	p.gui.addBin(physicsBin);
+	editorTab.addBin(physicsBin);
 
 	appearance = new GUI.Bin('Appearance', { open: false });
 	trails = new GUI.ToggleController('trails', p.renderer.options.trails, { onchange: (val) => { p.renderer.options.trails = val; } });
@@ -171,14 +180,14 @@ window.addEventListener('load', () => {
 	motionBlur = new GUI.NumberController('motion blur', p.renderer.options.motionBlur, { min: 0, max: 1, step: 0.1, onchange: (val) => { p.renderer.options.motionBlur = val; } });
 	vectors = new GUI.ToggleController('vectors', p.renderer.options.debug, { onchange: (val) => { p.renderer.options.debug = val; } });
 	appearance.addControllers(trails, trailLength, trailFade, motionBlur, vectors);
-	p.gui.addBin(appearance);
+	editorTab.addBin(appearance);
 
 	function getKE() { return p.simulator.stats.totalKineticEnergy; }
 	function getPE() { return p.simulator.stats.totalPotentialEnergy; }
 	function getTE() { return p.simulator.stats.totalPotentialEnergy + p.simulator.stats.totalKineticEnergy + p.simulator.stats.totalHeat; }
 	function getMomentum() { return p.simulator.stats.totalMomentum; }
 
-	statsBin = new GUI.Bin('Stats', { open: false });
+	statsBin = new GUI.Bin('Stats');
 	ke = new GUI.InfoController('Kinetic Energy', getKE, { interval: 100, format: 'number' });
 	pe = new GUI.InfoController('Potential Energy', getPE, { interval: 100, format: 'number' });
 	te = new GUI.InfoController('Total Energy', getTE, { interval: 100, format: 'number' });
@@ -186,7 +195,7 @@ window.addEventListener('load', () => {
 	statPlot = new GUI.CanvasController();
 	statsBin.addControllers(ke, pe, te, momentum, statPlot);
 	statsBin.disable();
-	p.gui.addBin(statsBin);
+	statsTab.addBin(statsBin);
 
 	let plot1 = new Plot(statPlot.ctx);
 	plot1.addSeries('KE', '#00aced', 1000, getKE);

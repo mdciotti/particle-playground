@@ -13,7 +13,7 @@ export default class CanvasController extends Controller {
 
 	init() {
 		this.canvas.height = this.height;
-		this.canvas.width = this.parent.pane.width;
+		this.canvas.width = this.parentBin.parentTab.parentPane.width;
 		this.ctx = this.canvas.getContext('2d');
 	}
 }

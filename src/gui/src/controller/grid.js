@@ -30,7 +30,7 @@ export default class GridController extends Controller {
 	}
 
 	init() {
-		if (this.options.selected) { this.parent.selectItem(this); }
+		if (this.options.selected) { this.parentBin.selectItem(this); }
 	}
 
 	setCurrent(state) {
@@ -61,12 +61,12 @@ export default class GridController extends Controller {
 		this.setCurrent(index);
 
 		// Handle selection
-		if (this.parent.options.selectable) {
+		if (this.parentBin.options.selectable) {
 			this.toggle();
 		}
 
 		// Send event to parent
-		this.parent.listener(e);
+		this.parentBin.listener(e);
 	}
 
 	select() {
@@ -80,7 +80,7 @@ export default class GridController extends Controller {
 	}
 
 	toggle() {
-		if (!this.selected) { this.parent.selectItem(this); }
-		else { this.parent.deselectItem(this); }
+		if (!this.selected) { this.parentBin.selectItem(this); }
+		else { this.parentBin.deselectItem(this); }
 	}
 }
