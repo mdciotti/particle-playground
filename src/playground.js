@@ -72,6 +72,8 @@ export default class Playground {
 			});
 		}
 		this.on('resize', () => {
+			this.el.style.width = `${window.innerWidth}px`;
+			this.el.style.height = `${window.innerHeight}px`;
 			this.simulator.options.bounds.width = this.renderer.ctx.canvas.width = window.innerWidth - this.gui.width;
 			this.simulator.options.bounds.height = this.renderer.ctx.canvas.height = window.innerHeight;
 		});
