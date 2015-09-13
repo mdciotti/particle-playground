@@ -17,6 +17,14 @@ let tool, p, selectedEntities,
 	appearance, trails, trailLength, trailFade, motionBlur, vectors,
 	statsBin, ke, pe, te, momentum, statPlot;
 
+// Container for entity property controllers
+let entityProp = {
+	onPauseHandle: null, onResumeHandle: null,
+	name: null, xpos: null, ypos: null, color: null, mass: null,
+	fixed: null, collidable: null, follow: null, remove: null,
+	entity: null
+};
+
 window.addEventListener('load', () => {
 	p = new Playground({
 		container: document.body
@@ -101,7 +109,43 @@ window.addEventListener('load', () => {
 	toolBin.addControllers(createTool, selectTool, panTool, zoomTool, grabTool);
 	p.gui.addBin(toolBin);
 
-	propertiesBin = new GUI.Bin('Properties');
+	propertiesBin = new GUI.CollectionBin('Properties', {
+		setControllers: e => {
+			// Remove previous pause/resume listeners
+			p.off('pause', entityProp.onPauseHandle);
+			p.off('resume', entityProp.onResumeHandle);
+
+			entityProp.entity = e;
+			entityProp.name = new GUI.TextController('name', e.name, { onchange: val => { e.name = val; } });
+			entityProp.xpos = new GUI.NumberController('pos.x', e.position.x, { decimals: 1, onchange: val => { e.position.x = val; } });
+			entityProp.xpos.watch(() => { return e.position.x; });
+			entityProp.ypos = new GUI.NumberController('pos.y', e.position.y, { decimals: 1, onchange: val => { e.position.y = val; } });
+			entityProp.ypos.watch(() => { return e.position.y; });
+			entityProp.color = new GUI.ColorController('color', e.color, { onchange: val => { e.color = val; } });
+			propertiesBin.addControllers(entityProp.name, entityProp.xpos, entityProp.ypos, entityProp.color);
+
+			if (e instanceof Body) {
+				entityProp.mass = new GUI.NumberController('mass', e.mass, { decimals: 0, step: 5, onchange: val => { e.setMass(val); } });
+				entityProp.mass.watch(() => { return e.mass; });
+				entityProp.fixed = new GUI.ToggleController('fixed', e.fixed, { onchange: val => { e.fixed = val; } });
+				entityProp.collidable = new GUI.ToggleController('collidable', !e.ignoreCollisions, { onchange: val => { e.ignoreCollisions = !val; } });
+				propertiesBin.addControllers(entityProp.mass, entityProp.fixed, entityProp.collidable);
+			}
+
+			entityProp.follow = new GUI.ActionController('follow', { action: () => { p.renderer.follow(e); } });
+			entityProp.remove = new GUI.ActionController('delete', { action: removeEntity.bind(entityProp) });
+			propertiesBin.addControllers(entityProp.follow, entityProp.remove);
+
+			if (p.paused) {
+				entityProp.xpos.enable();
+				entityProp.ypos.enable();
+				entityProp.mass.enable();
+			}
+
+			entityProp.onPauseHandle = p.on('pause', onPause.bind(entityProp));
+			entityProp.onResumeHandle = p.on('resume', onResume.bind(entityProp));
+		}
+	});
 	p.gui.addBin(propertiesBin);
 
 	physicsBin = new GUI.Bin('Physics');
@@ -149,19 +193,10 @@ window.addEventListener('load', () => {
 	plot1.addSeries('PE', '#ed00ac', 1000, getPE);
 	plot1.addSeries('TE', '#ededed', 1000, getTE);
 
-	// Container for entity property controllers
-	let entityProp = {
-		onPauseHandle: null, onResumeHandle: null,
-		name: null, xpos: null, ypos: null, color: null, mass: null,
-		fixed: null, collidable: null, follow: null, remove: null,
-		entity: null
-	};
-
-	// this refers to the entityProp removed (defined above)
+	// `this` refers to the entityProp removed (defined at top)
 	function removeEntity() {
-		console.log(this);
+		// console.log(this);
 		this.entity.willDelete = true;
-		propertiesBin.removeAllControllers();
 		p.off('pause', this.onPauseHandle);
 		p.off('resume', this.onResumeHandle);
 		selectedEntities.delete(this.entity);
@@ -198,37 +233,9 @@ window.addEventListener('load', () => {
 		// TODO: this is a temporary fix, see comment about managing state
 		p.selectedEntities = entities;
 
-		propertiesBin.removeAllControllers();
-		if (entities.size === 0) {
-			p.off('pause', entityProp.onPauseHandle);
-			p.off('resume', entityProp.onResumeHandle);
-			return;
-		}
-
-		let e = entities.values().next().value;
-		entityProp.entity = e;
-		entityProp.name = new GUI.TextController('name', e.name, { onchange: val => { e.name = val; } });
-		entityProp.xpos = new GUI.NumberController('pos.x', e.position.x, { decimals: 1, onchange: val => { e.position.x = val; } });
-		entityProp.xpos.watch(() => { return e.position.x; });
-		entityProp.ypos = new GUI.NumberController('pos.y', e.position.y, { decimals: 1, onchange: val => { e.position.y = val; } });
-		entityProp.ypos.watch(() => { return e.position.y; });
-		entityProp.color = new GUI.ColorController('color', e.color, { onchange: val => { e.color = val; } });
-		propertiesBin.addControllers(entityProp.name, entityProp.xpos, entityProp.ypos, entityProp.color);
-
-		if (e instanceof Body) {
-			entityProp.mass = new GUI.NumberController('mass', e.mass, { decimals: 0, onchange: val => { e.setMass(val); } });
-			entityProp.mass.watch(() => { return e.mass; });
-			entityProp.fixed = new GUI.ToggleController('fixed', e.fixed, { onchange: val => { e.fixed = val; } });
-			entityProp.collidable = new GUI.ToggleController('collidable', !e.ignoreCollisions, { onchange: val => { e.ignoreCollisions = !val; } });
-			propertiesBin.addControllers(entityProp.mass, entityProp.fixed, entityProp.collidable);
-		}
-
-		entityProp.follow = new GUI.ActionController('follow', { action: () => { p.renderer.follow(e); } });
-		entityProp.remove = new GUI.ActionController('delete', { action: removeEntity.bind(entityProp) });
-		propertiesBin.addControllers(entityProp.follow, entityProp.remove);
-
-		entityProp.onPauseHandle = p.on('pause', onPause.bind(entityProp));
-		entityProp.onResumeHandle = p.on('resume', onResume.bind(entityProp));
+		let collection = [];
+		for (var e of entities.values()) { collection.push(e); }
+		propertiesBin.setCollection(collection);
 	}
 
 	// Update properties bin on selection
@@ -261,8 +268,8 @@ window.addEventListener('load', () => {
 					p.input.mouse.dragY / 50
 				);
 				p.simulator.entities.push(particle);
-				deselect();
-				selectedEntities.add(particle);
+				// deselect();
+				// selectedEntities.add(particle);
 				break;
 
 			case tool.SELECT:
