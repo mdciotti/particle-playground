@@ -9,7 +9,7 @@ import Vec2 from './src/vec2.js';
 
 // Global variables
 let tool, p, selectedEntities,
-	aboutTab, editorTab, statsTab,
+	aboutTab, editorTab, inspectorTab, statsTab,
 	infoBin, info,
 	player, playButton, startButton, resetButton,
 	toolBin, createTool, selectTool, panTool, zoomTool, grabTool,
@@ -51,6 +51,9 @@ window.addEventListener('load', () => {
 
 	editorTab = new GUI.Tab('Editor', { icon: 'ion-ios-toggle-outline' });
 	p.gui.addTab(editorTab);
+
+	inspectorTab = new GUI.Tab('Inspector', { icon: 'ion-ios-glasses-outline' });
+	p.gui.addTab(inspectorTab);
 
 	statsTab = new GUI.Tab('Stats', { icon: 'ion-ios-pulse' });
 	p.gui.addTab(statsTab);
@@ -155,7 +158,7 @@ window.addEventListener('load', () => {
 			entityProp.onResumeHandle = p.on('resume', onResume.bind(entityProp));
 		}
 	});
-	editorTab.addBin(propertiesBin);
+	inspectorTab.addBin(propertiesBin);
 
 	physicsBin = new GUI.Bin('Physics');
 	gravity = new GUI.ToggleController('gravity', p.simulator.options.gravity, { onchange: (val) => { p.simulator.options.gravity = val; } });
@@ -173,7 +176,7 @@ window.addEventListener('load', () => {
 	physicsBin.addControllers(gravity, friction, bounded, collisions);
 	editorTab.addBin(physicsBin);
 
-	appearance = new GUI.Bin('Appearance', { open: false });
+	appearance = new GUI.Bin('Appearance');
 	trails = new GUI.ToggleController('trails', p.renderer.options.trails, { onchange: (val) => { p.renderer.options.trails = val; } });
 	trailLength = new GUI.NumberController('trail length', p.renderer.options.trailLength, { min: 0, max: 100, step: 5, onchange: (val) => { p.renderer.options.trailLength = val; } });
 	trailFade = new GUI.ToggleController('trail fade', p.renderer.options.trailFade, { onchange: (val) => { p.renderer.options.trailFade = val; } });
