@@ -19,6 +19,7 @@ export default class GridController extends Controller {
 
 		this.state = this.options.state;
 		this.enabled = !this.options.disabled;
+		if (!this.enabled) { this.node.classList.add('disabled'); }
 		this.setCurrent(this.options.state);
 
 		this.node.appendChild(this.iconNode);
@@ -41,7 +42,6 @@ export default class GridController extends Controller {
 		});
 
 		this.node.title = this.current.tooltip;
-		if (!this.enabled) { this.node.classList.add('disabled'); }
 		if (this.current.icon.length > 0) {
 			this.iconNode.className = this.current.icon;
 			this.iconNode.textContent = '';
