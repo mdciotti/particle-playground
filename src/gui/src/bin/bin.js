@@ -1,6 +1,6 @@
 import defaults from 'defaults';
 
-export class Bin {
+export default class Bin {
 	constructor(title, opts) {
 		this.title = title;
 		this.type = 'generic';
@@ -102,87 +102,5 @@ export class Bin {
 
 	disable() {
 		this.controllers.forEach(controller => { controller.disable(); });
-	}
-}
-
-export class GridBin extends Bin {
-	constructor(title, opts) {
-		super(title, opts);
-		this.type = 'grid';
-		this.options = defaults(opts, {
-			selectable: false,
-			minSelect: 1,
-			maxSelect: 1,
-			size: 48,
-			onclick: function (e) {}
-		});
-
-		this.selectedItems = [];
-		this.itemSize = this.options.size;
-	}
-
-	calculateHeight() {
-		this.pane.x;
-		if (this.pane === null) { return; }
-		let n = this.controllers.length;
-		let cols = Math.floor(this.pane.width / this.itemSize);
-		this.height = this.itemSize * Math.ceil(n / cols);
-	}
-
-	addController(controller) {
-		this.controllers.push(controller);
-		this.container.appendChild(controller.node);
-		controller.parent = this;
-	}
-
-	// Listener is called from a child listener
-	listener(e) {
-		this.options.onclick(e);
-	}
-
-	deselectAll() {
-		this.controllers.forEach(c => { c.deselect(); } );
-	}
-
-	// Attempt to select the item
-	selectItem(controller) {
-		// If controller is not already in selectedItems
-		if (this.selectedItems.indexOf(controller) < 0) {
-			// Add controller to selection and select it
-			this.selectedItems.push(controller);
-			controller.select();
-		}
-		// Deselect last controller if new selection count is greater than maximum
-		if (this.selectedItems.length > this.options.maxSelect) {
-			// Attempt to deselect first item
-			this.deselectItem(this.selectedItems[0]);
-		}
-	}
-
-	// Attempt to deselect the item
-	deselectItem(controller) {
-		// Only deselect if current selection count is greater than minimum
-		if (this.selectedItems.length > this.options.minSelect) {
-			// Remove controller from selectedItems
-			let index = this.selectedItems.indexOf(controller);
-			this.selectedItems.splice(index, 1);
-			// Deselect controller
-			controller.deselect();
-		}
-	}
-}
-
-export class ListBin extends Bin {
-	constructor(title, opts) {
-		super(title, opts);
-		this.type = 'list';
-		this.itemSize = 48;
-		this.options = defaults(opts, {
-			open: true
-		});
-	}
-
-	calculateHeight() {
-		this.height = this.itemSize * this.controllers.length;
 	}
 }
