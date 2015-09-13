@@ -1,22 +1,42 @@
 import * as GUI from './src/gui/index.js';
 import Playground from './src/playground.js';
 import Plot from './src/plot.js';
-import { Entity, Body } from './src/entity.js';
+import Entity from './src/entity.js';
+import Body from './src/body.js';
 import ModalOverlay from './src/modal-overlay.js';
+import { TaggedUnion } from './src/enum.js';
+import Vec2 from './src/vec2.js';
+
+// Global variables
+let tool, p, selectedEntities,
+	infoBin, info,
+	player, playButton, startButton, resetButton,
+	toolBin, createTool, selectTool, panTool, zoomTool, grabTool,
+	propertiesBin,
+	physicsBin, gravity, friction, bounded, collisions,
+	appearance, trails, trailLength, trailFade, motionBlur, vectors,
+	statsBin, ke, pe, te, momentum, statPlot;
 
 window.addEventListener('load', () => {
-	window.p = new Playground({
+	p = new Playground({
 		container: document.body
+	});
+	window.p = p;
+
+	selectedEntities = new Set();
+
+	// Define tools (enum-like)
+	// this.TOOL = new Enum('SELECT', 'CREATE', 'MOVE', 'ZOOM');
+	tool = new TaggedUnion({
+		SELECT: { cursor: 'default', altCursor: 'pointer' },
+		CREATE: { cursor: 'crosshair' },
+		PAN: { cursor: 'move' },
+		ZOOM: { cursor: 'zoom-in', altCursor: 'zoom-out' },
+		GRAB: { cursor: 'grab', altCursor: 'grabbing' },
+		NONE: { cursor: 'not-allowed' }
 	});
 
 	// Create GUI
-	let infoBin, info,
-		player, playButton, startButton, resetButton,
-		toolBin, createTool, selectTool, panTool, zoomTool, grabTool,
-		propertiesBin,
-		physicsBin, gravity, friction, bounded, collisions,
-		appearance, trails, trailLength, trailFade, motionBlur, vectors,
-		statsBin, ke, pe, te, momentum, statPlot;
 
 	infoBin = new GUI.Bin('Information');
 	infoBin.height = 16;
@@ -40,8 +60,8 @@ window.addEventListener('load', () => {
 	});
 	startButton = new GUI.GridController('start', {
 		shortcut: 'Q', type: 'toggle', disabled: false, state: 0, states: [
-			{ tooltip: 'start', icon: 'ion-ios-play-outline', onclick: () => { p.start(); playButton.enable(); resetButton.enable(); } },
-			{ tooltip: 'stop', icon: 'ion-ios-close-outline', onclick: () => { p.stop(); playButton.disable(); resetButton.disable(); } }
+			{ tooltip: 'start', icon: 'ion-ios-play-outline', onclick: () => { p.start(); } },
+			{ tooltip: 'stop', icon: 'ion-ios-close-outline', onclick: () => { p.stop(); } }
 		], onclick: function () { /*this.toggle(0);*/ }
 	});
 	resetButton = new GUI.GridController('reset', {
@@ -56,27 +76,27 @@ window.addEventListener('load', () => {
 	createTool = new GUI.GridController('create', {
 		shortcut: 'C', type: 'toggle', disabled: false, selected: true, state: 0, states: [
 			{ tooltip: 'create', icon: 'ion-ios-plus-outline' }
-		], onclick: () => { p.setTool(p.tool.CREATE); }
+		], onclick: () => { setTool(tool.CREATE); }
 	});
 	selectTool = new GUI.GridController('select', {
 		shortcut: 'S', type: 'toggle', disabled: false, state: 0, states: [
 			{ tooltip: 'select', icon: 'ion-ios-crop' }
-		], onclick: () => { p.setTool(p.tool.SELECT); }
+		], onclick: () => { setTool(tool.SELECT); }
 	});
 	panTool = new GUI.GridController('pan', {
 		shortcut: 'P', type: 'toggle', disabled: false, state: 0, states: [
 			{ tooltip: 'pan', icon: 'ion-arrow-move' }
-		], onclick: () => { p.setTool(p.tool.PAN); }
+		], onclick: () => { setTool(tool.PAN); }
 	});
 	zoomTool = new GUI.GridController('zoom', {
 		shortcut: 'Z', type: 'toggle', disabled: true, state: 0, states: [
 			{ tooltip: 'zoom', icon: 'ion-ios-search' }
-		], onclick: () => { p.setTool(p.tool.ZOOM); }
+		], onclick: () => { setTool(tool.ZOOM); }
 	});
 	grabTool = new GUI.GridController('select', {
 		shortcut: 'G', type: 'toggle', disabled: false, state: 0, states: [
 			{ tooltip: 'grab', icon: 'ion-android-hand' }
-		], onclick: () => { p.setTool(p.tool.GRAB); }
+		], onclick: () => { setTool(tool.GRAB); }
 	});
 	toolBin.addControllers(createTool, selectTool, panTool, zoomTool, grabTool);
 	p.gui.addBin(toolBin);
@@ -144,9 +164,8 @@ window.addEventListener('load', () => {
 		propertiesBin.removeAllControllers();
 		p.off('pause', this.onPauseHandle);
 		p.off('resume', this.onResumeHandle);
-		let index = p.selectedEntities.indexOf(this.entity);
-		p.selectedEntities.splice(index, 1);
-		setEntityControllers(p.selectedEntities);
+		selectedEntities.delete(this.entity);
+		setEntityControllers(selectedEntities);
 		// delete this.name;
 		// delete this.xpos;
 		// delete this.ypos;
@@ -176,14 +195,17 @@ window.addEventListener('load', () => {
 	}
 
 	function setEntityControllers(entities) {
+		// TODO: this is a temporary fix, see comment about managing state
+		p.selectedEntities = entities;
+
 		propertiesBin.removeAllControllers();
-		if (entities.length === 0) {
+		if (entities.size === 0) {
 			p.off('pause', entityProp.onPauseHandle);
 			p.off('resume', entityProp.onResumeHandle);
 			return;
 		}
 
-		let e = entities[0];
+		let e = entities.values().next().value;
 		entityProp.entity = e;
 		entityProp.name = new GUI.TextController('name', e.name, { onchange: val => { e.name = val; } });
 		entityProp.xpos = new GUI.NumberController('pos.x', e.position.x, { decimals: 1, onchange: val => { e.position.x = val; } });
@@ -212,9 +234,144 @@ window.addEventListener('load', () => {
 	// Update properties bin on selection
 	p.on('selection', setEntityControllers);
 
-	p.setTool(p.tool.CREATE);
+	p.on('mousedown', e => {
+		switch (tool._current) {
+		case tool.PAN:
+			if (p.renderer.following !== null) { p.renderer.unfollow(); }
+			break;
+
+		case tool.GRAB:
+			p.renderer.setCursor(tool._currentData.altCursor);
+			selectedEntities.forEach(entity => {
+				entity._fixed = entity.fixed;
+				entity.fixed = true;
+			});
+			break;
+		}
+	});
+	p.on('mouseup', e => {
+		let particle;
+		switch (tool._current) {
+			case tool.CREATE:
+				particle = new Body(
+					p.input.mouse.dragStartX + p.renderer.camera.x,
+					p.input.mouse.dragStartY + p.renderer.camera.y,
+					p.simulator.parameters.createMass,
+					p.input.mouse.dragX / 50,
+					p.input.mouse.dragY / 50
+				);
+				p.simulator.entities.push(particle);
+				deselect();
+				selectedEntities.add(particle);
+				break;
+
+			case tool.SELECT:
+				selectRegion(
+					p.input.mouse.dragStartX + p.renderer.camera.x,
+					p.input.mouse.dragStartY + p.renderer.camera.y,
+					p.input.mouse.dragX, p.input.mouse.dragY
+				);
+				break;
+
+			case tool.GRAB:
+				p.renderer.setCursor(tool._currentData.cursor);
+				selectedEntities.forEach(entity => {
+					entity.fixed = entity._fixed;
+				});
+				break;
+		}
+	});
+	p.on('mousemove', e => {
+		let delta;
+
+		switch (tool._current) {
+			case tool.PAN:
+				if (p.input.mouse.isDown) {
+					delta = new Vec2(p.input.mouse.dx, p.input.mouse.dy);
+					p.renderer.camera.subtractSelf(delta);
+				}
+				break;
+
+			case tool.GRAB:
+				if (p.input.mouse.isDown) {
+					delta = new Vec2(p.input.mouse.dx, p.input.mouse.dy);
+					selectedEntities.forEach(entity => {
+						entity.position.addSelf(delta);
+						entity.velocity.set(delta.x, delta.y);
+					});
+				}
+				break;
+		}
+	});
+	p.on('mousewheel', e => {
+		let newCreateMass = Math.max(10, p.simulator.parameters.createMass + p.input.mouse.wheel / 10)
+		p.simulator.parameters.createMass = newCreateMass;
+	});
+	p.on('start', () => {
+		playButton.enable();
+		resetButton.enable();
+	})
+	p.on('stop', () => {
+		playButton.disable();
+		resetButton.disable();
+		setTool(tool.NONE);
+		deselect();
+
+		let refreshMessage = new ModalOverlay({
+			// title: 'Simulation stopped',
+			message: '<p>Reload the page to restart the simulation.</p>',
+			icon: 'none',
+			actions: [
+				{ text: 'Cancel', soft: true, onclick: (e) => { refreshMessage.destroy(); } },
+				{ text: 'Reload', key: '<enter>', default: true, onclick: (e) => { document.location.reload(); } }
+			],
+			onopen: () => { p.el.classList.add('defocus'); },
+			onclose: () => { p.el.classList.remove('defocus'); }
+		});
+		refreshMessage.appendTo(document.body);
+	});
+	p.on('reset', () => {
+		deselect();
+	});
+
+	// TODO: move all tool/UI rendering into separate canvas?
+	// temporary fix: attach state to playground
+	// maybe have Playground store state?
+	p.tool = tool;
+	p.selectedEntities = selectedEntities;
+
+	setTool(tool.CREATE);
 	// p.start();
 
+	// TODO: only show if not disabled in LocalStorage
+	showStartScreen();
+});
+
+
+function selectRegion(x, y, w, h) {
+	// TODO: support modifiers to add to/remove from selection
+	selectedEntities.clear();
+
+	selectedEntities = new Set(p.simulator.entities.filter(e => {
+		return e.inRegion(x, y, w, h);
+	}));
+
+	p.dispatch('selection', selectedEntities);
+}
+
+function deselect() {
+	selectedEntities.clear();
+	p.dispatch('selection', selectedEntities);
+}
+
+function setTool(t) {
+	if (t !== tool._current) {
+		tool.setCurrent(t);
+		p.renderer.setCursor(tool._currentData.cursor);
+	}
+}
+
+function showStartScreen() {
 	let startInfo = new ModalOverlay({
 		title: 'Particle Playground',
 		titleSize: 'x-large',
@@ -228,10 +385,10 @@ window.addEventListener('load', () => {
 		actions: [
 			{ text: 'Hide', soft: true, onclick: (e) => { /* TODO: set localstorage setings */ } },
 			{ text: 'Instructions', onclick: (e) => { startInfo.destroy(); p.tour(); } },
-			{ text: 'Start', key: '<enter>', default: true, onclick: (e) => { startInfo.destroy(); p.start(); playButton.enable(); resetButton.enable(); startButton.setCurrent(1); } }
+			{ text: 'Start', key: '<enter>', default: true, onclick: (e) => { startInfo.destroy(); p.start(); startButton.setCurrent(1); } }
 		],
 		onopen: () => { p.el.classList.add('defocus'); },
 		onclose: () => { p.el.classList.remove('defocus'); }
 	});
 	startInfo.appendTo(document.body);
-});
+}

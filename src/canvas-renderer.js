@@ -41,16 +41,7 @@ export default class CanvasRenderer {
 		}
 	}
 
-	setCursor(tool) {
-		let cursor = tool._currentData.cursor;
-		let currentCursor = this.el.dataset.cursor;
-		if (currentCursor !== cursor) {
-			this.el.dataset.cursor = cursor;
-		}
-	}
-
-	setAltCursor(tool) {
-		let cursor = tool._currentData.altCursor;
+	setCursor(cursor) {
 		let currentCursor = this.el.dataset.cursor;
 		if (currentCursor !== cursor) {
 			this.el.dataset.cursor = cursor;
@@ -58,7 +49,7 @@ export default class CanvasRenderer {
 	}
 
 	render(entities, input, selectedEntities, stats, params, tool, simOpts) {
-		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, selectTool, x, y, i, j, len, altCursor;
+		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, isSelected, selectTool, x, y, i, j, len, altCursor;
 
 		this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - this.options.motionBlur})`;
 		this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
@@ -104,12 +95,16 @@ export default class CanvasRenderer {
 				input.mouse.dragStartY + this.camera.y,
 				input.mouse.dragX, input.mouse.dragY
 			) && input.mouse.isDown && selectTool;
+			isSelected = selectedEntities.has(e);
 
+			// Set flag if current entity is under mouse pointer
 			if (inRadius && !input.mouse.isDown) { altCursor = true; }
 
-			if (inRadius || willSelect || selectedEntities.indexOf(e) >= 0) {
+			// Draw selection focus ring
+			// if (inRadius || willSelect || selectedEntities.indexOf(e) >= 0) {
+			if (inRadius || willSelect || isSelected) {
 				this.ctx.save();
-				this.ctx.strokeStyle = '#FFFFFF';
+				this.ctx.strokeStyle = isSelected ? '#FFFFFF' : '#00ACED';
 				this.ctx.lineWidth = 2;
 				this.ctx.setLineDash([5]);
 				this.ctx.beginPath();
@@ -224,8 +219,11 @@ export default class CanvasRenderer {
 				this.ctx.stroke();
 		}
 
-		if (altCursor) { this.setAltCursor(tool); }
-		else if (tool._current === tool.SELECT) { this.setCursor(tool); }
+		// TODO: use the state manager for this part?
+		if (tool._current === tool.SELECT) {
+			if (altCursor) { this.setCursor(tool._currentData.altCursor); }
+			else { this.setCursor(tool._currentData.cursor); }
+		}
 
 		++this.frame;
 	}
