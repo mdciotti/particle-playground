@@ -118,12 +118,12 @@ export default class CanvasRenderer {
 			if (this.options.trails && e instanceof Body) {
 				// Add new positions
 				if (this.frame % this.options.trailSpace === 0) {
-					e.trailX.push(e.position.x);
-					e.trailY.push(e.position.y);
+					e.trailX.unshift(e.position.x);
+					e.trailY.unshift(e.position.y);
 				}
 				// Prune excess trails
-				while (e.trailX.length > this.options.trailLength) { e.trailX.shift(); }
-				while (e.trailY.length > this.options.trailLength) { e.trailY.shift(); }
+				while (e.trailX.length > this.options.trailLength) { e.trailX.pop(); }
+				while (e.trailY.length > this.options.trailLength) { e.trailY.pop(); }
 
 				this.ctx.strokeWidth = 1;
 				this.ctx.strokeStyle = 'rgba(255,255,255,0.5)';
@@ -132,7 +132,7 @@ export default class CanvasRenderer {
 				for (j = 1; j < this.options.trailLength; ++j) {
 					this.ctx.beginPath();
 					if (this.options.trailFade) {
-						this.ctx.globalAlpha = j / e.trailX.length;
+						this.ctx.globalAlpha = 1 - j / e.trailX.length;
 					}
 					this.ctx.moveTo(e.trailX[j - 1] - this.camera.x, e.trailY[j - 1] - this.camera.y);
 					this.ctx.lineTo(e.trailX[j] - this.camera.x, e.trailY[j] - this.camera.y);
