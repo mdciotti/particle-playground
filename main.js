@@ -11,7 +11,8 @@ import Vec2 from './src/vec2.js';
 let tool, p, selectedEntities, isolatedEntity,
 	aboutTab, editorTab, inspectorTab, statsTab,
 	infoBin, info,
-	player, playButton, startButton, resetButton,
+	shareBin, twitter, github,
+	player, playButton, startButton, resetButton, fullScreenButton,
 	toolBin, createTool, selectTool, panTool, zoomTool, grabTool,
 	propertiesBin,
 	physicsBin, gravity, friction, bounded, collisions,
@@ -62,7 +63,6 @@ window.addEventListener('load', () => {
 	p.gui.addTab(statsTab);
 
 	infoBin = new GUI.Bin('Information', { showTitle: false });
-	infoBin.height = 16;
 	info = new GUI.HTMLController('Introduction', {});
 	info.setHTML('<h1>Particle Playground</h1>' +
 		'<p>This is a sandbox for simulating 2D particle physics. Play around to see what you can do!</p>' +
@@ -73,6 +73,16 @@ window.addEventListener('load', () => {
 	);
 	infoBin.addController(info);
 	aboutTab.addBin(infoBin);
+
+	shareBin = new GUI.Bin('Share');
+	twitter = new GUI.ActionController('Twitter', { icon: 'ion-social-twitter-outline', action: () => {
+		window.open('https://twitter.com/intent/tweet?original_referer=http%3A%2F%2Fdev.dev%2Flabs%2Fparticle-playground%2F&ref_src=twsrc%5Etfw&text=Particle%20Playground&tw_p=tweetbutton&url=http%3A%2F%2Fdev.dev%2Flabs%2Fparticle-playground%2F&via=mdciotti');
+	}});
+	github = new GUI.ActionController('GitHub', { icon: 'ion-social-github-outline', action: () => {
+		window.open('https://github.com/mdciotti/particle-playground');
+	}});
+	shareBin.addControllers(twitter, github);
+	aboutTab.addBin(shareBin);
 
 	player = new GUI.GridBin('Simulation');
 	playButton = new GUI.GridController('play state', {
@@ -92,7 +102,13 @@ window.addEventListener('load', () => {
 			{ tooltip: 'reset', icon: 'ion-ios-refresh-outline', onclick: () => { p.reset(); } }
 		]
 	});
-	player.addControllers(playButton, startButton, resetButton);
+	fullScreenButton = new GUI.GridController('full screen', {
+		shortcut: 'F', type: 'action', state: 0, states: [
+			{ tooltip: 'enter full screen', icon: 'ion-ios-monitor-outline', onclick: () => { p.toggleFullScreen(); } },
+			{ tooltip: 'exit full screen', icon: 'ion-ios-monitor', onclick: () => { p.toggleFullScreen(); } }
+		]
+	});
+	player.addControllers(playButton, startButton, resetButton, fullScreenButton);
 	editorTab.addBin(player);
 
 	toolBin = new GUI.GridBin('Tools', { selectable: true });

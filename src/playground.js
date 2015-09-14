@@ -222,4 +222,28 @@ export default class Playground {
 		);
 		// this.dispatch('tick');
 	}
+
+	toggleFullScreen() {
+		if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+			if (this.el.requestFullscreen) {
+				this.el.requestFullscreen();
+			} else if (this.el.msRequestFullscreen) {
+				this.el.msRequestFullscreen();
+			} else if (this.el.mozRequestFullScreen) {
+				this.el.mozRequestFullScreen();
+			} else if (this.el.webkitRequestFullscreen) {
+				this.el.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+			}
+		} else {
+			if (document.exitFullscreen) {
+				document.exitFullscreen();
+			} else if (document.msExitFullscreen) {
+				document.msExitFullscreen();
+			} else if (document.mozCancelFullScreen) {
+				document.mozCancelFullScreen();
+			} else if (document.webkitExitFullscreen) {
+				document.webkitExitFullscreen();
+			}
+		}
+	}
 }
