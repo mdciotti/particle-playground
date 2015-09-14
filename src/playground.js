@@ -1,7 +1,6 @@
 import Simulator from './simulator.js';
 import { Pane } from './gui/index.js';
 import Clock from './clock.js';
-import Body from './body.js';
 import CanvasRenderer from './canvas-renderer.js';
 import Vec2 from './vec2.js';
 import ModalOverlay from './modal-overlay.js';

@@ -1,12 +1,12 @@
 import Vec2 from './vec2.js';
 import Entity from './entity.js';
 
-export default class Body extends Entity {
+export default class Particle extends Entity {
 	constructor(x, y, m, vx, vy, fixed = false) {
 		super(x, y, vx, vy);
 		this.mass = m;
 		this.radius = Math.sqrt(this.mass);
-		this.type = 'star';
+		this.type = 'particle';
 		this.restitution = 1;
 		this.strength = 0;
 		this.color = 'rgba(255,255,0,1)';

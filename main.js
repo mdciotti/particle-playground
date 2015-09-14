@@ -2,7 +2,7 @@ import * as GUI from './src/gui/index.js';
 import Playground from './src/playground.js';
 import Plot from './src/plot.js';
 import Entity from './src/entity.js';
-import Body from './src/body.js';
+import Particle from './src/particle.js';
 import ModalOverlay from './src/modal-overlay.js';
 import { TaggedUnion } from './src/enum.js';
 import Vec2 from './src/vec2.js';
@@ -155,7 +155,7 @@ window.addEventListener('load', () => {
 			entityProp.color = new GUI.ColorController('color', e.color, { onchange: val => { e.color = val; } });
 			propertiesBin.addControllers(entityProp.name, entityProp.xpos, entityProp.ypos, entityProp.color);
 
-			if (e instanceof Body) {
+			if (e instanceof Particle) {
 				entityProp.mass = new GUI.NumberController('mass', e.mass, { decimals: 0, step: 5, onchange: val => { e.setMass(val); } });
 				entityProp.mass.watch(() => { return e.mass; });
 				entityProp.fixed = new GUI.ToggleController('fixed', e.fixed, { onchange: val => { e.fixed = val; } });
@@ -300,7 +300,7 @@ window.addEventListener('load', () => {
 		if (p.input.mouse.dragStartedInCanvas) {
 			switch (tool._current) {
 			case tool.CREATE:
-				let particle = new Body(
+				let particle = new Particle(
 					p.input.mouse.dragStartX + p.renderer.camera.x,
 					p.input.mouse.dragStartY + p.renderer.camera.y,
 					p.simulator.parameters.createMass,

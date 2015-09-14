@@ -1,7 +1,7 @@
 import Vec2 from './vec2.js';
 import Entity from './entity.js';
-import Body from './body.js';
-import defaults from '../node_modules/defaults';
+import Particle from './particle.js';
+import defaults from 'defaults';
 
 export default class CanvasRenderer {
 	constructor(opts) {
@@ -119,7 +119,7 @@ export default class CanvasRenderer {
 			}
 
 			// Trail Vectors
-			if (this.options.trails && e instanceof Body) {
+			if (this.options.trails && e instanceof Particle) {
 				// Add new positions
 				if (this.frame % this.options.trailSpace === 0) {
 					e.trailX.unshift(e.position.x);

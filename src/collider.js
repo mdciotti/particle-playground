@@ -1,5 +1,5 @@
 import Vec2 from './vec2.js';
-import { Body } from './entity.js';
+import Particle from './particle.js';
 
 export default function collider(entities, response, bounded, bounds, dt) {
 	let displacement, A_momentum, Av, Avn, B_momentum, Bv, Bvn, C_momentum, C_velocity,
@@ -64,7 +64,7 @@ export default function collider(entities, response, bounded, bounds, dt) {
 						R = A.position.scale(A.mass).add(B.position.scale(B.mass)).scale(M_inverse);
 
 						// Create new particle at center of mass
-						to_create.push(new Body(R.x, R.y, M, C_velocity.x, C_velocity.y, false));
+						to_create.push(new Particle(R.x, R.y, M, C_velocity.x, C_velocity.y, false));
 						console.log(iA, iB);
 
 						// Remove old points
@@ -189,7 +189,7 @@ export default function collider(entities, response, bounded, bounds, dt) {
 						R = A.position.scale(A.mass).add(B.position.scale(B.mass)).scale(M_inverse);
 
 						// Create new star at center of mass
-						s = new Body(R.x, R.y, M, C_velocity.x, C_velocity.y, false);
+						s = new Particle(R.x, R.y, M, C_velocity.x, C_velocity.y, false);
 						entities.push(s);
 						s.explode(C_velocity, 5, 2 * Math.PI, entities);
 

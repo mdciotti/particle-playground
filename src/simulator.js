@@ -1,6 +1,6 @@
 import Vec2 from './vec2.js';
 import collider from './collider.js';
-import defaults from '../node_modules/defaults';
+import defaults from 'defaults';
 
 export default class Simulator {
 	constructor(opts) {
