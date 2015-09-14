@@ -214,6 +214,7 @@ export default class Playground {
 			this.simulator.entities,
 			this.input,
 			this.selectedEntities,
+			this.isolatedEntity,
 			this.simulator.stats,
 			this.simulator.parameters,
 			this.tool,

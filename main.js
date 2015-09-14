@@ -8,7 +8,7 @@ import { TaggedUnion } from './src/enum.js';
 import Vec2 from './src/vec2.js';
 
 // Global variables
-let tool, p, selectedEntities,
+let tool, p, selectedEntities, isolatedEntity,
 	aboutTab, editorTab, inspectorTab, statsTab,
 	infoBin, info,
 	player, playButton, startButton, resetButton,
@@ -33,6 +33,9 @@ window.addEventListener('load', () => {
 	window.p = p;
 
 	selectedEntities = new Set();
+	isolatedEntity = null;
+	// TODO: temp state fix
+	p.isolatedEntity = isolatedEntity;
 
 	// Define tools (enum-like)
 	// this.TOOL = new Enum('SELECT', 'CREATE', 'MOVE', 'ZOOM');
@@ -156,6 +159,10 @@ window.addEventListener('load', () => {
 
 			entityProp.onPauseHandle = p.on('pause', onPause.bind(entityProp));
 			entityProp.onResumeHandle = p.on('resume', onResume.bind(entityProp));
+
+			isolatedEntity = e;
+			// TODO: temp state fix
+			p.isolatedEntity = isolatedEntity;
 		}
 	});
 	inspectorTab.addBin(propertiesBin);
@@ -248,6 +255,11 @@ window.addEventListener('load', () => {
 		let collection = [];
 		for (var e of entities.values()) { collection.push(e); }
 		propertiesBin.setCollection(collection);
+		if (collection.length === 0) {
+			isolatedEntity = null;
+			// TODO: temp state fix
+			p.isolatedEntity = isolatedEntity;
+		}
 	}
 
 	// Update properties bin on selection

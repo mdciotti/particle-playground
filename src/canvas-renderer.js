@@ -49,12 +49,13 @@ export default class CanvasRenderer {
 		}
 	}
 
-	render(entities, input, selectedEntities, stats, params, tool, simOpts) {
-		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, isSelected, selectTool, canSelect, x, y, i, j, len, altCursor;
+	render(entities, input, selectedEntities, isolatedEntity, stats, params, tool, simOpts) {
+		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, isSelected, selectTool, canSelect, x, y, i, j, len, altCursor, entityAlpha;
 
 		this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - this.options.motionBlur})`;
 		this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 		// this.ctx.fillStyle = 'rgba(255,255,255,0.5)';
+		entityAlpha = isolatedEntity !== null ? 0.25 : 1.0;
 		
 		// Only increment lineDashOffset once per frame
 		this.ctx.lineDashOffset = (this.ctx.lineDashOffset + 0.5) % 10;
@@ -81,6 +82,7 @@ export default class CanvasRenderer {
 			y = e.position.y - this.camera.y;
 			this.ctx.save();
 			this.ctx.fillStyle = e.color;
+			if (e !== isolatedEntity) { this.ctx.globalAlpha = entityAlpha; }
 			this.ctx.beginPath();
 			this.ctx.arc(x, y, e.radius, 0, 2 * Math.PI, false);
 			this.ctx.closePath();
@@ -134,7 +136,7 @@ export default class CanvasRenderer {
 				for (j = 1; j < this.options.trailLength; ++j) {
 					this.ctx.beginPath();
 					if (this.options.trailFade) {
-						this.ctx.globalAlpha = 1 - j / e.trailX.length;
+						this.ctx.globalAlpha = entityAlpha * (1 - j / e.trailX.length);
 					}
 					this.ctx.moveTo(e.trailX[j - 1] - this.camera.x, e.trailY[j - 1] - this.camera.y);
 					this.ctx.lineTo(e.trailX[j] - this.camera.x, e.trailY[j] - this.camera.y);
