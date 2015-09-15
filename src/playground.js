@@ -101,6 +101,7 @@ export default class Playground {
 		}
 		this.on('keydown', e => {
 			this.input.key[e.keyCode] = true;
+			if (vkey[e.keyCode] === 'H') { this.gui.toggle(); }
 		});
 		this.on('keyup', e => {
 			this.input.key[e.keyCode] = false;

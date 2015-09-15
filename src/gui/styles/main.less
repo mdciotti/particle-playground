@@ -36,9 +36,16 @@
 	&.overlay {
 		position: absolute;
 		height: 100%;
+		transition: transform @transition-duration @ease-out-expo;
+		transform: translateX(0%);
+		will-change: transform;
 
 		&.right { right: 0; }
 		&.left { left: 0; }
+		&.hidden {
+			&.right { transform: translateX(100%); }
+			&.left { transform: translateX(-100%); }
+		}
 	}
 
 	.gui-tab-bar {
@@ -85,6 +92,7 @@
 		display: flex;
 		flex: 1 1 auto;
 		transition: transform @transition-duration @ease-out-expo;
+		will-change: transform;
 		transform: translateX(0%);
 		// overflow-x: hidden;
 		overflow-y: auto;

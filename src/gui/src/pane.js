@@ -6,7 +6,8 @@ export default class Pane {
 		this.options = defaults(opts, {
 			width: 288,
 			position: 'right',
-			overlay: false
+			overlay: false,
+			hidden: false
 		});
 		this.tabs = [];
 		this.currentTab = 0;
@@ -27,6 +28,8 @@ export default class Pane {
 		this.tabview = document.createElement('div');
 		this.tabview.classList.add('gui-tab-view');
 		this.node.appendChild(this.tabview);
+		
+		if (this.hidden) { this.toggle(); }
 
 		container.appendChild(this.node);
 	}
@@ -83,5 +86,9 @@ export default class Pane {
 	disableAll() {
 		// this.tabs.forEach(tab => { tab.disable(); });
 		this.tabs[this.currentTab].disableAll();
+	}
+
+	toggle() {
+		this.node.classList.toggle('hidden');
 	}
 }
