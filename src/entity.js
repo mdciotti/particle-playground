@@ -16,6 +16,7 @@ export default class Entity {
 		this.color = 'rgba(255,255,255,0.5)';
 		this.trailX = [];
 		this.trailY = [];
+		this.constraints = [];
 	}
 
 	remove() {

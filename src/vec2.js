@@ -56,6 +56,8 @@ export default class Vec2 {
     angle() { return Math.atan2(this.y, this.x); }
     angleFrom(v) { return Math.acos(this.dot(v) / (this.magnitude() * v.magnitude())); }
 
+    proj(v) { return this.dot(v.normalize()); }
+
     normalize() {
         let iMag = 1 / this.magnitude();
         return new Vec2(this.x * iMag, this.y * iMag);

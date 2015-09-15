@@ -49,7 +49,7 @@ export default class CanvasRenderer {
 		}
 	}
 
-	render(entities, input, selectedEntities, isolatedEntity, stats, params, tool, simOpts) {
+	render(entities, constraints, input, selectedEntities, isolatedEntity, stats, params, tool, simOpts) {
 		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, isSelected, selectTool, canSelect, x, y, i, j, len, altCursor, entityAlpha;
 
 		this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - this.options.motionBlur})`;
@@ -72,6 +72,14 @@ export default class CanvasRenderer {
 		}
 
 		altCursor = false;
+
+		this.ctx.save();
+		this.ctx.translate(-this.camera.x, -this.camera.y);
+		this.ctx.globalAlpha = entityAlpha;
+		for (i = 0, len = constraints.length; i < len; ++i) {
+			constraints[i].draw(this.ctx);
+		}
+		this.ctx.restore();
 
 		for (i = 0, len = entities.length; i < len; ++i) {
 			e = entities[i];

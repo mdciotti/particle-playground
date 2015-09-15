@@ -1,5 +1,7 @@
 import Vec2 from './vec2.js';
 import collider from './collider.js';
+import Entity from './entity.js';
+import Constraint from './constraint.js';
 import defaults from 'defaults';
 
 export default class Simulator {
@@ -14,6 +16,7 @@ export default class Simulator {
 			bounds: { left: 0, top: 0, width: 100, height: 100 }
 		});
 		this.entities = [];
+		this.constraints = [];
 		this.collider = collider;
 
 		this.stats = {
@@ -31,10 +34,21 @@ export default class Simulator {
 
 	reset() {
 		this.entities.length = 0;
+		this.constraints.length = 0;
+	}
+
+	add(...objects) {
+		objects.forEach(obj => {
+			if (obj instanceof Entity) {
+				this.entities.push(obj);
+			} else if (obj instanceof Constraint) {
+				this.constraints.push(obj);
+			}
+		});
 	}
 
 	update(dt) {
-		let i, len, iA, A, iB, B, d, dist2, f, FA, FB, e, next, to_create, v2;
+		let i, iA, A, iB, B, d, dist2, f, FA, FB, e, next, to_create, v2;
 		this.stats.totalMass = 0;
 		this.stats.totalKineticEnergy = 0;
 		this.stats.totalPotentialEnergy = 0;
@@ -42,11 +56,13 @@ export default class Simulator {
 
 		// Prune objects marked for deletion
 		this.entities = this.entities.filter(e => { return !e.willDelete; });
+		this.constraints = this.constraints.filter(c => { return !c.willDelete; });
 
-		len = this.entities.length;
+		let entity_count = this.entities.length;
+		let constraint_count = this.constraints.length;
 
 		// Force Accumulator
-		for (iA = 0; iA < len; iA++) {
+		for (iA = 0; iA < entity_count; iA++) {
 			A = this.entities[iA];
 
 			if (!A.hasOwnProperty('mass') || A.fixed) { continue; }
@@ -61,7 +77,7 @@ export default class Simulator {
 			}
 
 			if (this.options.gravity) {
-				for (iB = iA + 1; iB < len; iB++) {
+				for (iB = iA + 1; iB < entity_count; iB++) {
 					B = this.entities[iB];
 
 					if (!B.hasOwnProperty('mass') || B.fixed) { continue; }
@@ -82,8 +98,11 @@ export default class Simulator {
 			}
 		}
 
+		// Accumulate spring forces
+		for (i = 0; i < constraint_count; i++) { this.constraints[i].update(); }
+
 		// Integrator
-		for (i = 0; i < len; i++) {
+		for (i = 0; i < entity_count; i++) {
 			e = this.entities[i];
 			if (e.fixed) {
 				e.acceleration.zero();
@@ -131,7 +150,8 @@ export default class Simulator {
 			dt
 		);
 
-		for (i = 0, len = to_create.length; i < len; i++) {
+		let len = to_create.length;
+		for (i = 0; i < len; i++) {
 			this.entities.push(to_create[i]);
 		}
 	}

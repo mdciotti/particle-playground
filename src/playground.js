@@ -225,6 +225,7 @@ export default class Playground {
 		if (!this.paused) { this.simulator.update(dt); }
 		this.renderer.render(
 			this.simulator.entities,
+			this.simulator.constraints,
 			this.input,
 			this.selectedEntities,
 			this.isolatedEntity,
