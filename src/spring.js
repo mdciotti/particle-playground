@@ -5,17 +5,17 @@ export default class Spring extends Constraint {
 	constructor(p1, p2, opts) {
 		super(p1, p2, opts);
 		this.options = defaults(this.options, {
-			springConstant: 0.1,
+			stiffness: 1,
 			restingDistance: 100,
 			damping: true,
 			dampingRatio: 1 // Critically-damped
 		});
-		this.springConstant = this.options.springConstant;
+		this.stiffness = this.options.stiffness;
 		this.restingDistance = this.options.restingDistance;
 		if (this.options.damping) {
 			let zeta = this.options.dampingRatio;
 			// let m = (p1.mass + p2.mass) / 2;
-			let k = this.springConstant;
+			let k = this.stiffness;
 			this.dampingCoefficient1 = zeta * 2 * Math.sqrt(p1.mass * k);
 			this.dampingCoefficient2 = zeta * 2 * Math.sqrt(p2.mass * k);
 		}
@@ -25,7 +25,7 @@ export default class Spring extends Constraint {
 		let displ = this.p1.position.subtract(this.p2.position);
 		let dist = displ.magnitude();
 		let dx = dist - this.restingDistance;
-		let Fs = displ.scale(-this.springConstant * dx / dist);
+		let Fs = displ.scale(-this.stiffness * dx / dist);
 		// if (dx < 0) { Fs.scale(-1); }
 		this.p1.applyForce(Fs);
 		this.p2.applyForce(Fs.scale(-1));

@@ -3,6 +3,7 @@ import Playground from './src/playground.js';
 import Plot from './src/plot.js';
 import Entity from './src/entity.js';
 import Particle from './src/particle.js';
+import Spring from './src/spring.js';
 import ModalOverlay from './src/modal-overlay.js';
 import { TaggedUnion } from './src/enum.js';
 import Vec2 from './src/vec2.js';
@@ -16,7 +17,7 @@ let tool, p, selectedEntities, isolatedEntity,
 	toolBin, createTool, selectTool, panTool, zoomTool, grabTool,
 	propertiesBin,
 	physicsBin, gravity, friction, bounded, collisions,
-	appearance, trails, trailLength, trailFade, motionBlur, vectors,
+	appearance, trails, trailLength, trailFade, motionBlur, debug,
 	statsBin, ke, pe, te, momentum, statPlot;
 
 // Container for entity property controllers
@@ -204,8 +205,8 @@ window.addEventListener('load', () => {
 	trailLength = new GUI.NumberController('trail length', p.renderer.options.trailLength, { min: 0, max: 100, step: 5, onchange: (val) => { p.renderer.options.trailLength = val; } });
 	trailFade = new GUI.ToggleController('trail fade', p.renderer.options.trailFade, { onchange: (val) => { p.renderer.options.trailFade = val; } });
 	motionBlur = new GUI.NumberController('motion blur', p.renderer.options.motionBlur, { min: 0, max: 1, step: 0.1, onchange: (val) => { p.renderer.options.motionBlur = val; } });
-	vectors = new GUI.ToggleController('vectors', p.renderer.options.debug, { onchange: (val) => { p.renderer.options.debug = val; } });
-	appearance.addControllers(trails, trailLength, trailFade, motionBlur, vectors);
+	debug = new GUI.ToggleController('debug', p.renderer.options.debug, { onchange: (val) => { p.renderer.options.debug = val; } });
+	appearance.addControllers(trails, trailLength, trailFade, motionBlur, debug);
 	editorTab.addBin(appearance);
 
 	function getKE() { return p.simulator.stats.totalKineticEnergy; }
@@ -362,6 +363,7 @@ window.addEventListener('load', () => {
 	p.on('start', () => {
 		playButton.enable();
 		resetButton.enable();
+		startupScript();
 	})
 	p.on('stop', () => {
 		playButton.disable();
@@ -443,4 +445,21 @@ function showStartScreen() {
 		onclose: () => { p.el.classList.remove('defocus'); }
 	});
 	startInfo.appendTo(document.body);
+}
+
+function startupScript() {
+	let x = window.innerWidth / 2;
+	let y = window.innerHeight / 2;
+
+	let p1 = new Particle(x - 30, y + 40, 100, 0, 0);
+	let p2 = new Particle(x - 30, y - 40, 100, 0, 0);
+	let p3 = new Particle(x + 30, y - 40, 100, 0, 0);
+	let p4 = new Particle(x + 30, y + 40, 100, 0, 0);
+	let s1 = new Spring(p1, p2, { restingDistance: 80 });
+	let s2 = new Spring(p2, p3, { restingDistance: 60 });
+	let s3 = new Spring(p3, p4, { restingDistance: 80 });
+	let s4 = new Spring(p4, p1, { restingDistance: 60 });
+	let s5 = new Spring(p1, p3, { restingDistance: 100 });
+	let s6 = new Spring(p2, p4, { restingDistance: 100 });
+	p.simulator.add(p1, p2, p3, p4, s1, s2, s3, s4, s5, s6);
 }
