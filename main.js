@@ -231,7 +231,7 @@ window.addEventListener('load', () => {
 	// `this` refers to the entityProp removed (defined at top)
 	function removeEntity() {
 		// console.log(this);
-		this.entity.willDelete = true;
+		this.entity.destroy();
 		p.off('pause', this.onPauseHandle);
 		p.off('resume', this.onResumeHandle);
 		selectedEntities.delete(this.entity);

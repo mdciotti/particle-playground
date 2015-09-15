@@ -68,8 +68,8 @@ export default function collider(entities, response, bounded, bounds, dt) {
 						console.log(iA, iB);
 
 						// Remove old points
-						A.willDelete = true;
-						B.willDelete = true;
+						A.destroy();
+						B.destroy();
 
 						// if( A.mass > B.mass) {
 						// 	indices_to_delete.push(iB);
@@ -117,8 +117,8 @@ export default function collider(entities, response, bounded, bounds, dt) {
 						// dpA = A.velocity.scale(dm);
 						// dpB = B.velocity.scale(-dm);
 
-						if (A.mass <= 0) A.willDelete = true;
-						if (B.mass <= 0) B.willDelete = true;
+						if (A.mass <= 0) A.destroy();
+						if (B.mass <= 0) B.destroy();
 						break;
 
 					case 'elastic':
@@ -194,17 +194,11 @@ export default function collider(entities, response, bounded, bounds, dt) {
 						s.explode(C_velocity, 5, 2 * Math.PI, entities);
 
 						// Remove old points
-						A.willDelete = true;
-						B.willDelete = true;
+						A.destroy();
+						B.destroy();
 				}
 			}
 		});
 	});
-
-	entities = entities.filter(e => { return !e.willDelete; });
-
-	// for (let i = 0, len = to_create.length; i < len; i++) {
-	// 	entities.push(to_create[i]);
-	// }
 	return to_create;
 }

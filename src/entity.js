@@ -19,6 +19,13 @@ export default class Entity {
 		this.constraints = [];
 	}
 
+	destroy() {
+		this.willDelete = true;
+		while (this.constraints.length > 0) {
+			this.constraints[0].destroy();
+		}
+	}
+
 	remove() {
 		// this.entities.splice this.entities.indexOf(this.), 1
 	}
