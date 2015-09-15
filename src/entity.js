@@ -19,6 +19,10 @@ export default class Entity {
 		this.constraints = [];
 	}
 
+	draw(ctx) {
+
+	}
+
 	destroy() {
 		this.willDelete = true;
 		while (this.constraints.length > 0) {

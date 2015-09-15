@@ -81,21 +81,15 @@ export default class CanvasRenderer {
 		}
 		this.ctx.restore();
 
+		this.ctx.save();
+		this.ctx.translate(-this.camera.x, -this.camera.y);
+		this.ctx.globalAlpha = entityAlpha;
 		for (i = 0, len = entities.length; i < len; ++i) {
 			e = entities[i];
 
 			if (e.willDelete) { continue; }
 
-			x = e.position.x - this.camera.x;
-			y = e.position.y - this.camera.y;
-			this.ctx.save();
-			this.ctx.fillStyle = e.color;
-			if (e !== isolatedEntity) { this.ctx.globalAlpha = entityAlpha; }
-			this.ctx.beginPath();
-			this.ctx.arc(x, y, e.radius, 0, 2 * Math.PI, false);
-			this.ctx.closePath();
-			this.ctx.fill();
-			this.ctx.restore();
+			e.draw(this.ctx, e === isolatedEntity);
 
 			// Mouse interaction
 			m = new Vec2(input.mouse.x, input.mouse.y);
@@ -137,7 +131,7 @@ export default class CanvasRenderer {
 				while (e.trailX.length > this.options.trailLength) { e.trailX.pop(); }
 				while (e.trailY.length > this.options.trailLength) { e.trailY.pop(); }
 
-				this.ctx.strokeWidth = 1;
+				this.ctx.lineWidth = 2;
 				this.ctx.strokeStyle = 'rgba(255,255,255,0.5)';
 				this.ctx.save();
 
@@ -146,29 +140,16 @@ export default class CanvasRenderer {
 					if (this.options.trailFade) {
 						this.ctx.globalAlpha = entityAlpha * (1 - j / e.trailX.length);
 					}
-					this.ctx.moveTo(e.trailX[j - 1] - this.camera.x, e.trailY[j - 1] - this.camera.y);
-					this.ctx.lineTo(e.trailX[j] - this.camera.x, e.trailY[j] - this.camera.y);
+					this.ctx.moveTo(e.trailX[j - 1] - this.camera.x, e.trailY[j - 1]);
+					this.ctx.lineTo(e.trailX[j] - this.camera.x, e.trailY[j]);
 					this.ctx.stroke();
 				}
 				this.ctx.restore();
 			}
 
-			if (this.options.debug) {
-				// Acceleration Vectors
-				this.ctx.strokeStyle = 'rgba(255,0,255,1)';
-				this.ctx.beginPath();
-				this.ctx.moveTo(x, y);
-				this.ctx.lineTo(x + 10000 * e.acceleration.x, y + 10000 * e.acceleration.y);
-				this.ctx.stroke();
-
-				// Velocity Vectors
-				this.ctx.strokeStyle = 'rgba(0,255,0,1)';
-				this.ctx.beginPath();
-				this.ctx.moveTo(x, y);
-				this.ctx.lineTo(x + 10 * e.velocity.x, y + 10 * e.velocity.y);
-				this.ctx.stroke();
-			}
+			if (this.options.debug) { e.debug(this.ctx); }
 		}
+		this.ctx.restore();
 
 		// Mouse drag
 		if (input.mouse.dragStartedInCanvas) {

@@ -32,6 +32,47 @@ export default class Particle extends Entity {
 		this.acceleration.addSelf(F.scale(1 / this.mass));
 	}
 
+	draw(ctx, isolated) {
+		ctx.save();
+		ctx.fillStyle = this.color;
+		if (isolated) { ctx.globalAlpha = 1; }
+		ctx.beginPath();
+		ctx.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI, false);
+		ctx.closePath();
+		ctx.fill();
+		ctx.restore();
+	}
+
+	debug(ctx) {
+		ctx.save();
+		// Acceleration Vectors
+		ctx.strokeStyle = 'rgba(255,0,255,1)';
+		ctx.beginPath();
+		ctx.moveTo(this.position.x, this.position.y);
+		ctx.lineTo(this.position.x + 10000 * this.acceleration.x, this.position.y + 10000 * this.acceleration.y);
+		ctx.stroke();
+
+		// Velocity Vectors
+		ctx.strokeStyle = 'rgba(0,255,0,1)';
+		ctx.beginPath();
+		ctx.moveTo(this.position.x, this.position.y);
+		ctx.lineTo(this.position.x + 10 * this.velocity.x, this.position.y + 10 * this.velocity.y);
+		ctx.stroke();
+
+		// Names
+		let w = ctx.measureText(this.name).width;
+		let x = this.position.x - w / 2;
+		let y = this.position.y + this.radius;
+		ctx.fillStyle = '#000000';
+		ctx.fillRect(x, y, w, 10);
+		ctx.textBaseline = 'top';
+		ctx.font = '10px sans-serif';
+		ctx.fillStyle = '#FFFFFF';
+		ctx.fillText(this.name, x, y);
+
+		ctx.restore();
+	}
+
 	explode(velocity, n, spreadAngle, ent) {
 		let imass = this.mass / n;
 		let vimag = velocity.magnitude();
