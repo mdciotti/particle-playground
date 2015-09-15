@@ -80,10 +80,13 @@ export default class Playground {
 			});
 		}
 		this.on('resize', () => {
-			this.el.style.width = `${window.innerWidth}px`;
-			this.el.style.height = `${window.innerHeight}px`;
-			this.simulator.options.bounds.width = this.renderer.ctx.canvas.width = window.innerWidth - this.gui.width;
-			this.simulator.options.bounds.height = this.renderer.ctx.canvas.height = window.innerHeight;
+			let w = window.innerWidth;
+			let h = window.innerHeight;
+			if (!this.gui.options.overlay) { w -= this.gui.width };
+			this.el.style.width = `${w}px`;
+			this.el.style.height = `${h}px`;
+			this.simulator.options.bounds.width = this.renderer.ctx.canvas.width = w;
+			this.simulator.options.bounds.height = this.renderer.ctx.canvas.height = h;
 		});
 		if (this.options.pauseOnBlur) {
 			this.on('blur', () => {
