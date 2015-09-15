@@ -281,6 +281,10 @@ window.addEventListener('load', () => {
 	// Update properties bin on selection
 	p.on('selection', setEntityControllers);
 
+	p.on('keyup', e => {
+		console.log(e.keyCode);
+	});
+
 	p.on('mousedown', e => {
 		switch (tool._current) {
 		case tool.PAN:

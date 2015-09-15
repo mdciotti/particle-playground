@@ -5,6 +5,7 @@ import CanvasRenderer from './canvas-renderer.js';
 import Vec2 from './vec2.js';
 import ModalOverlay from './modal-overlay.js';
 import defaults from 'defaults';
+import vkey from 'vkey';
 
 // Webpack: load stylesheet
 require('../assets/styles/playground.less');
@@ -67,7 +68,8 @@ export default class Playground {
 				dragX: 0, dragY: 0,
 				dragStartX: 0, dragStartY: 0,
 				isDown: false
-			}
+			},
+			key: {}
 		};
 
 		let wasPaused = this.paused;
@@ -97,6 +99,12 @@ export default class Playground {
 				if (!wasPaused) { this.pause(false); }
 			});
 		}
+		this.on('keydown', e => {
+			this.input.key[e.keyCode] = true;
+		});
+		this.on('keyup', e => {
+			this.input.key[e.keyCode] = false;
+		});
 		this.on('mousedown', e => {
 			this.input.mouse.isOverCanvas = e.target === this.renderer.el;
 			this.input.mouse.dragStartedInCanvas = e.target === this.renderer.el;
@@ -132,6 +140,8 @@ export default class Playground {
 		window.addEventListener('resize', e => { this.dispatch('resize', e); });
 		window.addEventListener('focus', e => { this.dispatch('focus', e); });
 		window.addEventListener('blur', e => { this.dispatch('blur', e); });
+		window.addEventListener('keydown', e => { this.dispatch('keydown', e); });
+		window.addEventListener('keyup', e => { this.dispatch('keyup', e); });
 		document.body.addEventListener('contextmenu', e => { this.dispatch('contextmenu', e); });
 		this.el.addEventListener('mousedown', e => { this.dispatch('mousedown', e); });
 		this.el.addEventListener('mousemove', e => { this.dispatch('mousemove', e); });
