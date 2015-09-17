@@ -55,9 +55,27 @@
 
 		.gui-tab-bar-button {
 			// background-color: @bg_fade;
-			border-top: 2px solid transparent;
+			// border-top: 2px solid transparent;
 			flex: 1 1 auto;
 			text-align: center;
+			margin-right: 1px;
+
+			&:last-child {
+				margin-right: 0;
+			}
+
+			&::before {
+				display: block;
+				content: '';
+				width: 100%;
+				height: 2px;
+				background-color: @accent;
+				left: 0;
+				top: 0;
+				transform: scale(0.9, 1);
+				transition: transform @transition-duration @ease-out-expo;
+				will-change: transform;
+			}
 
 			span {
 				display: block;
@@ -76,6 +94,10 @@
 				background-color: @sel_fade;
 				border-color: @accent;
 
+				&::before {
+					transform: scale(1, 1);
+				}
+
 				&:not(.disabled):hover { background-color: @sel_fade-hover; }
 				&:not(.disabled):active { background-color: @sel_fade-active; }
 			}
@@ -83,6 +105,10 @@
 			&:not(.disabled):hover {
 				background-color: @bg_fade-hover;
 				border-color: @accent;
+
+				&::before {
+					transform: scale(1, 1);
+				}
 			}
 			&:not(.disabled):active { background-color: @bg_fade-active; }
 		}
