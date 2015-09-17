@@ -125,29 +125,8 @@ export default class CanvasRenderer {
 
 			// Trail Vectors
 			if (this.options.trails && e instanceof Particle) {
-				// Add new positions
-				if (this.frame % this.options.trailSpace === 0) {
-					e.trailX.unshift(e.position.x);
-					e.trailY.unshift(e.position.y);
-				}
-				// Prune excess trails
-				while (e.trailX.length > this.options.trailLength) { e.trailX.pop(); }
-				while (e.trailY.length > this.options.trailLength) { e.trailY.pop(); }
-
-				this.ctx.lineWidth = 2;
-				this.ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-				this.ctx.save();
-
-				for (j = 1; j < this.options.trailLength; ++j) {
-					this.ctx.beginPath();
-					if (this.options.trailFade) {
-						this.ctx.globalAlpha = entityAlpha * (1 - j / e.trailX.length);
-					}
-					this.ctx.moveTo(e.trailX[j - 1] - this.camera.x, e.trailY[j - 1]);
-					this.ctx.lineTo(e.trailX[j] - this.camera.x, e.trailY[j]);
-					this.ctx.stroke();
-				}
-				this.ctx.restore();
+				e.drawTrail(this.ctx, this.frame, this.options.trailLength,
+					this.options.trailSpace, this.options.trailFade, entityAlpha);
 			}
 
 			if (this.options.debug) { e.debug(this.ctx); }

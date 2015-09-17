@@ -23,6 +23,32 @@ export default class Entity {
 
 	}
 
+	drawTrail(ctx, frame, trailLength, trailSpace, trailFade, entityAlpha) {
+		// Add new positions
+		if (frame % trailSpace === 0) {
+			this.trailX.unshift(this.position.x);
+			this.trailY.unshift(this.position.y);
+		}
+		// Prune excess trails
+		while (this.trailX.length > trailLength) { this.trailX.pop(); }
+		while (this.trailY.length > trailLength) { this.trailY.pop(); }
+
+		ctx.save();
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+
+		for (let i = 1; i < trailLength; ++i) {
+			ctx.beginPath();
+			if (trailFade) {
+				ctx.globalAlpha = entityAlpha * (1 - i / this.trailX.length);
+			}
+			ctx.moveTo(this.trailX[i - 1], this.trailY[i - 1]);
+			ctx.lineTo(this.trailX[i], this.trailY[i]);
+			ctx.stroke();
+		}
+		ctx.restore();
+	}
+
 	destroy() {
 		this.willDelete = true;
 		while (this.constraints.length > 0) {
