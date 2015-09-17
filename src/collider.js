@@ -1,5 +1,6 @@
 import Vec2 from './vec2.js';
 import Particle from './particle.js';
+import { intersect } from './util.js';
 
 export default function collider(entities, response, bounded, bounds, dt) {
 	let displacement, A_momentum, Av, Avn, B_momentum, Bv, Bvn, C_momentum, C_velocity,
@@ -39,6 +40,16 @@ export default function collider(entities, response, bounded, bounds, dt) {
 
 		entities.slice(iA + 1).forEach((B, iB) => {
 			if (B.ignoreCollisions) { return; }
+
+			// If the `disableSelfCollisions` flag is set on a constraint common
+			// to both entities, do not collide these entities,
+			let commonConstraints = intersect(A.constraints, B.constraints);
+			if (commonConstraints.length > 0) {
+				for (let i = 0; i < commonConstraints.length; ++i) {
+					if (commonConstraints[i].disableSelfCollisions) { break; }
+				}
+				return;
+			}
 
 			dist = A.position.dist(B.position);
 			// dist2 = A.position.distSq(B.position);
