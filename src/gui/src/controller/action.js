@@ -19,15 +19,17 @@ export default class ActionController extends Controller {
 		name.textContent = title;
 		label.appendChild(name);
 
+		let container = document.createElement('div');
+		container.classList.add('bin-item-value');
+
 		this.input = document.createElement('button');
-		this.input.classList.add('bin-item-value');
-		// this.input.type = 'button';
-		label.appendChild(this.input);
+		container.appendChild(this.input);
 
 		let icon = document.createElement('i');
 		icon.classList.add(this.options.icon);
-		label.appendChild(icon);
+		container.appendChild(icon);
 
+		label.appendChild(container);
 		this.node.appendChild(label);
 
 		this.input.addEventListener('click', this.listener.bind(this));

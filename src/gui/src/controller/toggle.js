@@ -21,20 +21,23 @@ export default class ToggleController extends Controller {
 		name.textContent = title;
 		label.appendChild(name);
 
+		let container = document.createElement('div');
+		container.classList.add('bin-item-value');
+
 		this.input = document.createElement('input');
-		this.input.classList.add('bin-item-value');
 		this.input.type = 'checkbox';
 		this.input.checked = this.value;
-		label.appendChild(this.input);
+		container.appendChild(this.input);
 
 		let icon_unchecked = document.createElement('i');
 		icon_unchecked.classList.add(this.options.icon_unchecked, 'unchecked');
-		label.appendChild(icon_unchecked);
+		container.appendChild(icon_unchecked);
 
 		let icon_checked = document.createElement('i');
 		icon_checked.classList.add(this.options.icon_checked, 'checked');
-		label.appendChild(icon_checked);
+		container.appendChild(icon_checked);
 
+		label.appendChild(container);
 		this.node.appendChild(label);
 
 		this.input.addEventListener('change', this.listener.bind(this));
