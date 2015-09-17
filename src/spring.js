@@ -8,11 +8,14 @@ export default class Spring extends Constraint {
 		this.options = defaults(this.options, {
 			stiffness: 1,
 			restingDistance: d,
+			breakable: false,
+			breakFactor: 2.0,
 			damping: true,
 			dampingRatio: 1 // Critically-damped
 		});
 		this.stiffness = this.options.stiffness;
 		this.restingDistance = this.options.restingDistance;
+		this.breakDistance = this.options.breakFactor * this.options.restingDistance;
 		if (this.options.damping) {
 			let zeta = this.options.dampingRatio;
 			// let m = (p1.mass + p2.mass) / 2;
@@ -25,6 +28,11 @@ export default class Spring extends Constraint {
 	update() {
 		let displ = this.p1.position.subtract(this.p2.position);
 		let dist = displ.magnitude();
+		if (this.options.breakable && dist > this.breakDistance) {
+			this.destroy();
+			return;
+		}
+
 		let n = displ.scale(1 / dist);
 		let dx = dist - this.restingDistance;
 		let Fs = n.scale(-this.stiffness * dx);
