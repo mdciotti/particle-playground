@@ -4,9 +4,10 @@ import defaults from 'defaults';
 export default class Spring extends Constraint {
 	constructor(p1, p2, opts) {
 		super(p1, p2, opts);
+		let d = p1.position.dist(p2.position);
 		this.options = defaults(this.options, {
 			stiffness: 1,
-			restingDistance: 100,
+			restingDistance: d,
 			damping: true,
 			dampingRatio: 1 // Critically-damped
 		});
@@ -24,8 +25,9 @@ export default class Spring extends Constraint {
 	update() {
 		let displ = this.p1.position.subtract(this.p2.position);
 		let dist = displ.magnitude();
+		let n = displ.scale(1 / dist);
 		let dx = dist - this.restingDistance;
-		let Fs = displ.scale(-this.stiffness * dx / dist);
+		let Fs = n.scale(-this.stiffness * dx);
 		// if (dx < 0) { Fs.scale(-1); }
 		this.p1.applyForce(Fs);
 		this.p2.applyForce(Fs.scale(-1));
@@ -33,7 +35,6 @@ export default class Spring extends Constraint {
 		if (this.options.damping) {
 			// TODO: this should use velocity due to spring force, rather than
 			// the total velocity in the direction of the spring
-			let n = displ.scale(1 / dist);
 			let v1 = n.scale(this.p1.velocity.dot(n));
 			let v2 = n.scale(this.p2.velocity.dot(n));
 			this.p1.applyForce(v1.scale(-this.dampingCoefficient1));

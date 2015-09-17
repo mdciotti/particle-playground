@@ -455,11 +455,6 @@ function startupScript() {
 	let p2 = new Particle(x - 30, y - 40, 100, 0, 0);
 	let p3 = new Particle(x + 30, y - 40, 100, 0, 0);
 	let p4 = new Particle(x + 30, y + 40, 100, 0, 0);
-	let s1 = new Spring(p1, p2, { restingDistance: 80 });
-	let s2 = new Spring(p2, p3, { restingDistance: 60 });
-	let s3 = new Spring(p3, p4, { restingDistance: 80 });
-	let s4 = new Spring(p4, p1, { restingDistance: 60 });
-	let s5 = new Spring(p1, p3, { restingDistance: 100 });
-	let s6 = new Spring(p2, p4, { restingDistance: 100 });
 	p.simulator.add(p1, p2, p3, p4, s1, s2, s3, s4, s5, s6);
+	// p.simulator.add(p1, p2, p3, p4, s1, s2, s3, s4);
 }
