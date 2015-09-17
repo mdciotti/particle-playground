@@ -111,25 +111,16 @@ export default class CanvasRenderer {
 
 			// Draw isolated entity focus ring
 			if (e === isolatedEntity) {
-				this.ctx.save();
-				this.ctx.globalAlpha = 1.0;
-				this.ctx.strokeStyle = isSelected ? '#FFFFFF' : '#00ACED';
-				this.ctx.lineWidth = 2;
-				this.ctx.setLineDash([5]);
-				this.ctx.beginPath();
-				this.ctx.arc(e.position.x, e.position.y, e.radius + 4, 0, 2 * Math.PI, false);
-				this.ctx.closePath();
-				this.ctx.stroke();
-				this.ctx.restore();
+				e.drawFocusRing(this.ctx, isSelected);
 			}
 
 			// Trail Vectors
-			if (this.options.trails && e instanceof Particle) {
+			if (this.options.trails) {
 				e.drawTrail(this.ctx, this.frame, this.options.trailLength,
 					this.options.trailSpace, this.options.trailFade, entityAlpha);
 			}
 
-			if (this.options.debug) { e.debug(this.ctx); }
+			if (this.options.debug) { e.drawDebug(this.ctx); }
 		}
 		this.ctx.restore();
 
