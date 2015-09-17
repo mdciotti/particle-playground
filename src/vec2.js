@@ -55,7 +55,7 @@ export default class Vec2 {
     copy(v) { return new Vec2(v.x, v.y); }
     angle() { return Math.atan2(this.y, this.x); }
     angleFrom(v) { return Math.acos(this.dot(v) / (this.magnitude() * v.magnitude())); }
-
+    perp() { return new Vec2(-this.y, this.x); }
     proj(v) { return this.dot(v.normalize()); }
 
     normalize() {

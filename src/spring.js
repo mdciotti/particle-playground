@@ -6,6 +6,9 @@ export default class Spring extends Constraint {
 		super(p1, p2, opts);
 		let d = p1.position.dist(p2.position);
 		this.options = defaults(this.options, {
+			lineWidth: 8,
+			stretch: false,
+			style: 'curve',
 			stiffness: 1,
 			restingDistance: d,
 			breakable: false,
@@ -51,14 +54,45 @@ export default class Spring extends Constraint {
 	}
 
 	draw(ctx) {
+		let delta = this.p1.position.subtract(this.p2.position);
+		let dist = delta.magnitude();
+		if (dist <= this.p1.radius + this.p2.radius) { return; }
+		let stretchFactor = dist / this.restingDistance;
+		let u = delta.scale(1 / dist);
+		let v = u.perp();
+		let x;
+		if (this.options.stretch) {
+			x = this.options.lineWidth / (2 * stretchFactor);
+		} else {
+			x = this.p1.radius;
+		}
+		let p1 = v.scale(x).addSelf(this.p1.position);
+		let p2 = v.scale(-x).addSelf(this.p1.position);
+		if (!this.options.stretch) { x = this.p2.radius; }
+		if (this.options.style === 'tri') { x *= -1; }
+		let p3 = v.scale(-x).addSelf(this.p2.position);
+		let p4 = v.scale(x).addSelf(this.p2.position);
+
 		ctx.save();
-		ctx.lineWidth = 8;
-		ctx.strokeStyle = "#FFFFFF";
+		// ctx.lineWidth = this.options.lineWidth;
+		ctx.fillStyle = "#FFFFFF";
 		ctx.globalAlpha *= 0.5;
 		ctx.beginPath();
-		ctx.moveTo(this.p1.position.x, this.p1.position.y);
-		ctx.lineTo(this.p2.position.x, this.p2.position.y);
-		ctx.stroke();
+
+		if (this.options.style === 'curve') {
+			let m = this.p1.position.midpoint(this.p2.position);
+			ctx.moveTo(p2.x, p2.y);
+			ctx.quadraticCurveTo(m.x, m.y, p3.x, p3.y);
+			ctx.lineTo(p4.x, p4.y);
+			ctx.quadraticCurveTo(m.x, m.y, p1.x, p1.y);
+		} else {
+			ctx.moveTo(p1.x, p1.y);
+			ctx.lineTo(p2.x, p2.y);
+			ctx.lineTo(p3.x, p3.y);
+			ctx.lineTo(p4.x, p4.y);
+		}
+		ctx.closePath();
+		ctx.fill();
 		ctx.restore();
 	}
 }
