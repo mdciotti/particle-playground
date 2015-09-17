@@ -89,7 +89,7 @@ export default class CanvasRenderer {
 
 			if (e.willDelete) { continue; }
 
-			e.draw(this.ctx, e === isolatedEntity);
+			// e.draw(this.ctx, e === isolatedEntity);
 
 			// Mouse interaction
 			m = new Vec2(input.mouse.x, input.mouse.y);
@@ -106,15 +106,18 @@ export default class CanvasRenderer {
 			// Set flag if current entity is under mouse pointer
 			if (inRadius && !input.mouse.isDown) { altCursor = true; }
 
-			// Draw selection focus ring
-			// if (inRadius || willSelect || selectedEntities.indexOf(e) >= 0) {
-			if (inRadius || willSelect || isSelected) {
+			// Draw entity (pass if selected or will select)
+			e.draw(this.ctx, inRadius || willSelect || isSelected);
+
+			// Draw isolated entity focus ring
+			if (e === isolatedEntity) {
 				this.ctx.save();
+				this.ctx.globalAlpha = 1.0;
 				this.ctx.strokeStyle = isSelected ? '#FFFFFF' : '#00ACED';
 				this.ctx.lineWidth = 2;
 				this.ctx.setLineDash([5]);
 				this.ctx.beginPath();
-				this.ctx.arc(x, y, e.radius + 4, 0, 2 * Math.PI, false);
+				this.ctx.arc(e.position.x, e.position.y, e.radius + 4, 0, 2 * Math.PI, false);
 				this.ctx.closePath();
 				this.ctx.stroke();
 				this.ctx.restore();
