@@ -23,11 +23,15 @@ View the [live example](https://mdciotti.github.io/particle-playground/).
 * [ ] Inelastic collisions (sticky)
 * [ ] Keyboard shortcuts
 * [ ] Store user settings in LocalStorage
+* [ ] Look into using Web Workers for collider
+* [ ] Look into using Polymer
+* [ ] Use Object.observe() for Controller value watching
+* [ ] Selection polygons
 
 ## Build Instructions
 
-All source files are written in [ES6](http://babeljs.io/docs/learn-es2015/) and
-[Less](http://lesscss.org/), then bundled with
+All source files are written in [ES6](http://babeljs.io/docs/learn-es2015/)
+(transpiled with Babel) and [Less](http://lesscss.org/), then bundled with
 [Webpack](https://webpack.github.io/).
 
 Clone the repository and run `npm install` in the project directory to install

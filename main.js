@@ -455,6 +455,12 @@ function startupScript() {
 	let p2 = new Particle(x - 30, y - 40, 100, 0, 0);
 	let p3 = new Particle(x + 30, y - 40, 100, 0, 0);
 	let p4 = new Particle(x + 30, y + 40, 100, 0, 0);
+	let s1 = new Spring(p1, p2, { stiffness: 2, dampingRatio: 0.5 });
+	let s2 = new Spring(p2, p3, { stiffness: 2, dampingRatio: 0.5 });
+	let s3 = new Spring(p3, p4, { stiffness: 2, dampingRatio: 0.5 });
+	let s4 = new Spring(p4, p1, { stiffness: 2, dampingRatio: 0.5 });
+	let s5 = new Spring(p1, p3, { stiffness: 2, dampingRatio: 0.5 });
+	let s6 = new Spring(p2, p4, { stiffness: 2, dampingRatio: 0.5 });
 	p.simulator.add(p1, p2, p3, p4, s1, s2, s3, s4, s5, s6);
 	// p.simulator.add(p1, p2, p3, p4, s1, s2, s3, s4);
 }

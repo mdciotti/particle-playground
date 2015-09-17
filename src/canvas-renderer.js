@@ -125,6 +125,9 @@ export default class CanvasRenderer {
 		this.ctx.restore();
 
 		// Mouse drag
+		// TODO: store a selectionRegion object in simulation state and draw its
+		// boundaries here, rather than assuming the selection region is of a
+		// specific shape/type. This will allow for polygonal/lasso selections.
 		if (input.mouse.dragStartedInCanvas) {
 			switch (tool._current) {
 			case tool.SELECT:
