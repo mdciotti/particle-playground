@@ -17,6 +17,10 @@ export default class Entity {
 		this.trailX = [];
 		this.trailY = [];
 		this.constraints = [];
+		this.grabbable = true;
+		this.deleteConstraintsOnGrab = true;
+		this.createConstraintsOnRelease = true;
+		this.springRadius = 100;
 	}
 
 	draw(ctx) {
@@ -92,11 +96,15 @@ export default class Entity {
 		ctx.restore();
 	}
 
-	destroy() {
-		this.willDelete = true;
+	removeAllConstraints() {
 		while (this.constraints.length > 0) {
 			this.constraints[0].destroy();
 		}
+	}
+
+	destroy() {
+		this.willDelete = true;
+		this.removeAllConstraints();
 	}
 
 	remove() {

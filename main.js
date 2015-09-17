@@ -279,6 +279,8 @@ window.addEventListener('load', () => {
 		}
 	}
 
+	let grabbedEntity = null;
+
 	// Update properties bin on selection
 	p.on('selection', setEntityControllers);
 
@@ -286,7 +288,10 @@ window.addEventListener('load', () => {
 		console.log(e.keyCode);
 	});
 
-	p.on('mousedown', e => {
+	p.on('mousedown', () => {
+		let m = new Vec2(p.input.mouse.x, p.input.mouse.y);
+		m.addSelf(p.renderer.camera);
+
 		switch (tool._current) {
 		case tool.PAN:
 			if (p.renderer.following !== null) { p.renderer.unfollow(); }
@@ -294,14 +299,21 @@ window.addEventListener('load', () => {
 
 		case tool.GRAB:
 			p.renderer.setCursor(tool._currentData.altCursor);
-			selectedEntities.forEach(entity => {
-				entity._fixed = entity.fixed;
-				entity.fixed = true;
+			p.simulator.entities.forEach(e => {
+				if (!e.grabbable) { return; }
+				if (m.distSq(e.position) < e.radius * e.radius) {
+					grabbedEntity = e;
+					grabbedEntity._fixed = grabbedEntity.fixed;
+					grabbedEntity.fixed = true;
+					if (e.deleteConstraintsOnGrab) {
+						grabbedEntity.removeAllConstraints();
+					}
+				}
 			});
 			break;
 		}
 	});
-	p.on('mouseup', e => {
+	p.on('mouseup', () => {
 		if (p.input.mouse.dragStartedInCanvas) {
 			switch (tool._current) {
 			case tool.CREATE:
@@ -327,14 +339,28 @@ window.addEventListener('load', () => {
 
 			case tool.GRAB:
 				p.renderer.setCursor(tool._currentData.cursor);
-				selectedEntities.forEach(entity => {
-					entity.fixed = entity._fixed;
-				});
+				if (grabbedEntity !== null) {
+					grabbedEntity.fixed = grabbedEntity._fixed;
+					if (grabbedEntity.createConstraintsOnRelease) {
+						let r2 = grabbedEntity.springRadius * grabbedEntity.springRadius;
+						p.simulator.entities.forEach(e => {
+							if (e === grabbedEntity) { return; }
+							if (e.position.distSq(grabbedEntity.position) < r2) {
+								p.simulator.add(new Spring(grabbedEntity, e, {
+									restingDistance: grabbedEntity.springRadius,
+									stiffness: 2,
+									dampingRatio: 0.5
+								}));
+							}
+						});
+					}
+					grabbedEntity = null;
+				}
 				break;
 			}
 		}
 	});
-	p.on('mousemove', e => {
+	p.on('mousemove', () => {
 		let delta;
 
 		switch (tool._current) {
@@ -348,10 +374,15 @@ window.addEventListener('load', () => {
 			case tool.GRAB:
 				if (p.input.mouse.isDown) {
 					delta = new Vec2(p.input.mouse.dx, p.input.mouse.dy);
-					selectedEntities.forEach(entity => {
-						entity.position.addSelf(delta);
-						entity.velocity.set(delta.x, delta.y);
-					});
+					if (grabbedEntity !== null) {
+						grabbedEntity.position.addSelf(delta);
+						grabbedEntity.velocity.set(delta.x, delta.y);
+						// p.simulator.entities.forEach(e => {
+						// 	if (e.position.distSq(grabbedEntity.position) < 100) {
+						// 		// TODO: draw ghosted (preview) spring
+						// 	}
+						// });
+					}
 				}
 				break;
 		}
