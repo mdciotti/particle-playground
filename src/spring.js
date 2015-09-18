@@ -29,6 +29,7 @@ export default class Spring extends Constraint {
 	}
 
 	update() {
+		if (this.isGhost) { return; }
 		let displ = this.p1.position.subtract(this.p2.position);
 		let dist = displ.magnitude();
 		if (this.options.breakable && dist > this.breakDistance) {
@@ -76,7 +77,7 @@ export default class Spring extends Constraint {
 		ctx.save();
 		// ctx.lineWidth = this.options.lineWidth;
 		ctx.fillStyle = "#FFFFFF";
-		ctx.globalAlpha *= 0.5;
+		ctx.globalAlpha *= this.isGhost ? 0.15 : 0.5;
 		ctx.beginPath();
 
 		if (this.options.style === 'curve') {

@@ -1,3 +1,4 @@
+import SpringScroller from './spring-scroller.js';
 import defaults from 'defaults';
 
 export default class Pane {
@@ -46,6 +47,12 @@ export default class Pane {
 			Array.prototype.forEach.call(tabButtons, e => {
 				e.classList.remove('selected');
 			});
+			let scroller = new SpringScroller(this.tabs[i].node, {
+				stiffness: 1000,
+				dampingRatio: 1,
+				mass: 2.5
+			});
+			scroller.scrollTo(0);
 		}
 	}
 
