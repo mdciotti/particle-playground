@@ -26,7 +26,7 @@ View the [live example](https://mdciotti.github.io/particle-playground/).
 * [ ] Look into using Web Workers for collider
 * [ ] Look into using Polymer
 * [ ] Use Object.observe() for Controller value watching
-* [ ] Selection polygons
+* [x] Selection polygons
 
 ## Build Instructions
 

@@ -49,7 +49,7 @@ export default class CanvasRenderer {
 		}
 	}
 
-	render(entities, constraints, input, selectedEntities, isolatedEntity, stats, params, tool, simOpts) {
+	render(entities, constraints, input, selectedEntities, isolatedEntity, stats, params, tool, simOpts, selectionRegion) {
 		let KE, PE, TE, Xend, Yend, e, m, momentum, p1, p2, unv, uv, v, inRadius, willSelect, isSelected, selectTool, canSelect, x, y, i, j, len, altCursor, entityAlpha;
 
 		this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - this.options.motionBlur})`;
@@ -58,7 +58,7 @@ export default class CanvasRenderer {
 		entityAlpha = isolatedEntity !== null ? 0.25 : 1.0;
 		
 		// Only increment lineDashOffset once per frame
-		this.ctx.lineDashOffset = (this.ctx.lineDashOffset + 0.5) % 10;
+		this.ctx.lineDashOffset = (this.ctx.lineDashOffset - 0.5) % 10;
 
 		this.centerView();
 
@@ -132,23 +132,28 @@ export default class CanvasRenderer {
 			switch (tool._current) {
 			case tool.SELECT:
 				if (input.mouse.isDown) {
-					let x0 = input.mouse.dragStartX;
-					let x1 = x0 + input.mouse.dragX;
-					[x0, x1] = [Math.min(x0, x1), Math.max(x0, x1)];
-					let y0 = input.mouse.dragStartY;
-					let y1 = y0 + input.mouse.dragY;
-					[y0, y1] = [Math.min(y0, y1), Math.max(y0, y1)];
+					// let x0 = input.mouse.dragStartX;
+					// let x1 = x0 + input.mouse.dragX;
+					// [x0, x1] = [Math.min(x0, x1), Math.max(x0, x1)];
+					// let y0 = input.mouse.dragStartY;
+					// let y1 = y0 + input.mouse.dragY;
+					// [y0, y1] = [Math.min(y0, y1), Math.max(y0, y1)];
 
-					// do @ctx.beginPath
+					// // do @ctx.beginPath
 					this.ctx.save();
 					this.ctx.strokeStyle = '#00ACED';
 					this.ctx.fillStyle = '#00ACED';
 					this.ctx.lineWidth = 2;
 					this.ctx.setLineDash([5]);
+					this.ctx.beginPath();
+					this.ctx.moveTo(input.mouse.dragStartX, input.mouse.dragStartY);
+					selectionRegion.forEach(p => { this.ctx.lineTo(p.x, p.y); });
 					this.ctx.globalAlpha = 0.15;
-					this.ctx.fillRect(x0 + 8, y0 + 8, x1 - 16 - x0, y1 - 16 - y0);
+					// this.ctx.fillRect(x0 + 8, y0 + 8, x1 - 16 - x0, y1 - 16 - y0);
+					this.ctx.fill();
 					this.ctx.globalAlpha = 1;
-					this.ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+					// this.ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+					this.ctx.stroke();
 					this.ctx.restore();
 				}
 				break;

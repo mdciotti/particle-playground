@@ -6,6 +6,7 @@ import Particle from './src/particle.js';
 import Spring from './src/spring.js';
 import ModalOverlay from './src/modal-overlay.js';
 import { TaggedUnion } from './src/enum.js';
+import { pointInPoly } from './src/util.js';
 import Vec2 from './src/vec2.js';
 
 // Global variables
@@ -38,6 +39,9 @@ window.addEventListener('load', () => {
 	isolatedEntity = null;
 	// TODO: temp state fix
 	p.isolatedEntity = isolatedEntity;
+
+	// TODO: state fix
+	p.selectionRegion = [];
 
 	// Define tools (enum-like)
 	// this.TOOL = new Enum('SELECT', 'CREATE', 'MOVE', 'ZOOM');
@@ -330,11 +334,13 @@ window.addEventListener('load', () => {
 				break;
 
 			case tool.SELECT:
-				selectRegion(
-					p.input.mouse.dragStartX + p.renderer.camera.x,
-					p.input.mouse.dragStartY + p.renderer.camera.y,
-					p.input.mouse.dragX, p.input.mouse.dragY
-				);
+				// selectRectangularRegion(
+				// 	p.input.mouse.dragStartX + p.renderer.camera.x,
+				// 	p.input.mouse.dragStartY + p.renderer.camera.y,
+				// 	p.input.mouse.dragX, p.input.mouse.dragY
+				// );
+				selectPolygonalRegion(p.selectionRegion);
+				p.selectionRegion = [];
 				break;
 
 			case tool.GRAB:
@@ -364,6 +370,12 @@ window.addEventListener('load', () => {
 		let delta;
 
 		switch (tool._current) {
+			case tool.SELECT:
+				if (p.input.mouse.isDown) {
+					p.selectionRegion.push(new Vec2(p.input.mouse.x, p.input.mouse.y));
+				}
+				break;
+
 			case tool.PAN:
 				if (p.input.mouse.isDown) {
 					delta = new Vec2(p.input.mouse.dx, p.input.mouse.dy);
@@ -432,8 +444,18 @@ window.addEventListener('load', () => {
 	showStartScreen();
 });
 
+function selectPolygonalRegion(points) {
+	// TODO: support modifiers to add to/remove from selection
+	selectedEntities.clear();
 
-function selectRegion(x, y, w, h) {
+	selectedEntities = new Set(p.simulator.entities.filter(e => {
+		return pointInPoly(e.position, p.selectionRegion);
+	}));
+
+	p.dispatch('selection', selectedEntities);
+}
+
+function selectRectangularRegion(x, y, w, h) {
 	// TODO: support modifiers to add to/remove from selection
 	selectedEntities.clear();
 

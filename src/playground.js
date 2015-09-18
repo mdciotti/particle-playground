@@ -232,7 +232,8 @@ export default class Playground {
 			this.simulator.stats,
 			this.simulator.parameters,
 			this.tool,
-			this.simulator.options
+			this.simulator.options,
+			this.selectionRegion
 		);
 		// this.dispatch('tick');
 	}
