@@ -10,7 +10,7 @@ export default function collider(entities, response, bounded, bounds, dt) {
 	let to_create = [];
 
 	entities.forEach((A, iA) => {
-		if (A.ignoreCollisions) { return; }
+		if (A.ignoreCollisions || A.isGhost) { return; }
 
 		// Bound points within container
 		// Apply spring force when out of bounds
@@ -39,7 +39,7 @@ export default function collider(entities, response, bounded, bounds, dt) {
 		}
 
 		entities.slice(iA + 1).forEach((B, iB) => {
-			if (B.ignoreCollisions) { return; }
+			if (B.ignoreCollisions || B.isGhost) { return; }
 
 			// If the `disableSelfCollisions` flag is set on a constraint common
 			// to both entities, do not collide these entities,

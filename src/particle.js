@@ -32,10 +32,21 @@ export default class Particle extends Entity {
 		this.acceleration.addSelf(F.scale(1 / this.mass));
 	}
 
+	applyFriction(coefficient) {
+		if (coefficient > 0) {
+			let v2 = this.velocity.magnitudeSq();
+			if (v2 > 0) {
+				this.applyForce(this.velocity.normalize()
+					.scaleSelf(-v2 * coefficient * this.radius / 100));
+			}
+		}
+	}
+
 	draw(ctx, isolated) {
 		ctx.save();
 		ctx.fillStyle = this.color;
 		if (isolated) { ctx.globalAlpha = 1; }
+		if (this.isGhost) { ctx.globalAlpha = 0.25; }
 		ctx.beginPath();
 		ctx.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI, false);
 		ctx.closePath();

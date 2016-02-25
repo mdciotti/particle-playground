@@ -26,6 +26,11 @@ export default class Spring extends Constraint {
 			this.dampingCoefficient1 = zeta * 2 * Math.sqrt(p1.mass * k);
 			this.dampingCoefficient2 = zeta * 2 * Math.sqrt(p2.mass * k);
 		}
+		this._energy = 0;
+	}
+
+	get energy() {
+		return this._energy;
 	}
 
 	update() {
@@ -52,6 +57,8 @@ export default class Spring extends Constraint {
 			this.p1.applyForce(v1.scale(-this.dampingCoefficient1));
 			this.p2.applyForce(v2.scale(-this.dampingCoefficient2));
 		}
+
+		this._energy = 0.5 * this.stiffness * dx * dx;
 	}
 
 	draw(ctx) {

@@ -21,6 +21,7 @@ export default class Entity {
 		this.deleteConstraintsOnGrab = true;
 		this.createConstraintsOnRelease = true;
 		this.springRadius = 100;
+		this.isGhost = false;
 	}
 
 	draw(ctx) {
@@ -135,5 +136,38 @@ export default class Entity {
 	disableCollisions() {
 		this.ignoreCollisions = true;
 		return this;
+	}
+
+	integrate(dt, method) {
+		let next;
+
+		if (this.fixed) {
+			this.acceleration.zero();
+			this.velocity.zero();
+			// continue;
+			return;
+		}
+
+		switch (method) {
+		case 'euler':
+			this.velocity.addSelf(this.acceleration.scale(dt));
+			this.lastPosition = this.position;
+			this.position.addSelf(this.velocity.scale(dt));
+			this.acceleration.zero();
+			break;
+
+		case 'verlet':
+			this.velocity = this.position.subtract(this.lastPosition);
+			// next = this.position.add(this.velocity.scale(dt)).addSelf(this.acceleration.scale(dt * dt));
+			next = this.position.add(this.velocity).addSelf(this.acceleration.scale(dt * dt));
+			this.lastPosition = this.position;
+			this.position = next;
+			this.velocity = next.subtract(this.lastPosition);
+			this.acceleration.zero();
+			break;
+
+		case 'RK4':
+			break;
+		}
 	}
 }

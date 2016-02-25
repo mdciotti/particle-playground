@@ -67,14 +67,7 @@ export default class Simulator {
 
 			if (!A.hasOwnProperty('mass') || A.fixed) { continue; }
 
-			// Apply friction
-			if (this.options.friction > 0) {
-				v2 = A.velocity.magnitudeSq();
-				if (v2 > 0) {
-					A.applyForce(A.velocity.normalize()
-						.scaleSelf(-v2 * this.options.friction * A.radius / 100));
-				}
-			}
+			A.applyFriction(this.options.friction);
 
 			if (this.options.gravity) {
 				for (iB = iA + 1; iB < entity_count; iB++) {
@@ -99,41 +92,16 @@ export default class Simulator {
 		}
 
 		// Accumulate spring forces
-		for (i = 0; i < constraint_count; i++) { this.constraints[i].update(); }
+		for (i = 0; i < constraint_count; i++) {
+			let c = this.constraints[i];
+			c.update();
+			this.stats.totalPotentialEnergy -= c.energy;
+		}
 
 		// Integrator
 		for (i = 0; i < entity_count; i++) {
 			e = this.entities[i];
-			if (e.fixed) {
-				e.acceleration.zero();
-				e.velocity.zero();
-				continue;
-			}
-
-			switch (this.options.integrator) {
-				case 'euler':
-					e.velocity.addSelf(e.acceleration.scale(dt));
-					e.lastPosition = e.position;
-					e.position.addSelf(e.velocity.scale(dt));
-					e.acceleration.zero();
-					break;
-
-				case 'verlet':
-					e.velocity = e.position.subtract(e.lastPosition);
-					// next = e.position.add(e.velocity.scale(dt)).addSelf(e.acceleration.scale(dt * dt));
-					next = e.position.add(e.velocity).addSelf(e.acceleration.scale(dt * dt));
-					e.lastPosition = e.position;
-					e.position = next;
-					e.velocity = next.subtract(e.lastPosition);
-					e.acceleration.zero();
-					break;
-
-				case 'RK4':
-					break;
-
-				default:
-					this.stop();
-			}
+			e.integrate(dt, this.options.integrator);
 
 			if (e.hasOwnProperty('mass')) {
 				this.stats.totalMass += e.mass;

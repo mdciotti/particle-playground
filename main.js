@@ -284,6 +284,31 @@ window.addEventListener('load', () => {
 	}
 
 	let grabbedEntity = null;
+	function makeSprings(ghost) {
+		if (ghost) {
+			grabbedEntity.constraints.forEach(c => {
+				if (c.isGhost) { c.destroy(); }
+			});
+		} else {
+			p.simulator.constraints.forEach(c => {
+				if (c.isGhost) { c.destroy(); }
+			});
+		}
+		if (grabbedEntity.createConstraintsOnRelease) {
+			let r2 = grabbedEntity.springRadius * grabbedEntity.springRadius;
+			p.simulator.entities.forEach(e => {
+				if (e === grabbedEntity) { return; }
+				if (e.position.distSq(grabbedEntity.position) < r2) {
+					p.simulator.add(new Spring(grabbedEntity, e, {
+						restingDistance: grabbedEntity.springRadius,
+						stiffness: 2,
+						dampingRatio: 0.5,
+						ghost: ghost
+					}));
+				}
+			});
+		}
+	}
 
 	// Update properties bin on selection
 	p.on('selection', setEntityControllers);
@@ -347,19 +372,7 @@ window.addEventListener('load', () => {
 				p.renderer.setCursor(tool._currentData.cursor);
 				if (grabbedEntity !== null) {
 					grabbedEntity.fixed = grabbedEntity._fixed;
-					if (grabbedEntity.createConstraintsOnRelease) {
-						let r2 = grabbedEntity.springRadius * grabbedEntity.springRadius;
-						p.simulator.entities.forEach(e => {
-							if (e === grabbedEntity) { return; }
-							if (e.position.distSq(grabbedEntity.position) < r2) {
-								p.simulator.add(new Spring(grabbedEntity, e, {
-									restingDistance: grabbedEntity.springRadius,
-									stiffness: 2,
-									dampingRatio: 0.5
-								}));
-							}
-						});
-					}
+					makeSprings(false);
 					grabbedEntity = null;
 				}
 				break;
@@ -394,6 +407,7 @@ window.addEventListener('load', () => {
 						// 		// TODO: draw ghosted (preview) spring
 						// 	}
 						// });
+						makeSprings(true);
 					}
 				}
 				break;
