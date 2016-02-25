@@ -1,0 +1,616 @@
+@import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400,600,700,900);@import url(http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css);.gui-pane {
+  background-color: rgba(0, 35, 64, 0.9);
+  color: #ffffff;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Source Sans Pro', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  font-weight: 300;
+  font-size: 16px;
+  cursor: default;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  position: relative;
+  line-height: 1;
+}
+.gui-pane.right {
+  order: 1;
+}
+.gui-pane.left {
+  order: 0;
+}
+.gui-pane.overlay {
+  position: absolute;
+  height: 100%;
+  transition: transform 300ms cubic-bezier(0.19, 1, 0.22, 1);
+  transform: translateX(0%);
+  will-change: transform;
+}
+.gui-pane.overlay.right {
+  right: 0;
+}
+.gui-pane.overlay.left {
+  left: 0;
+}
+.gui-pane.overlay.hidden.right {
+  transform: translateX(100%);
+}
+.gui-pane.overlay.hidden.left {
+  transform: translateX(-100%);
+}
+.gui-pane .gui-tab-bar {
+  flex: 0 0 auto;
+  display: flex;
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button {
+  flex: 1 1 auto;
+  text-align: center;
+  margin-right: 1px;
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button:last-child {
+  margin-right: 0;
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button::before {
+  display: block;
+  content: '';
+  width: 100%;
+  height: 2px;
+  background-color: #a4ceef;
+  left: 0;
+  top: 0;
+  transform: scale(0.9, 1);
+  transition: transform 300ms cubic-bezier(0.19, 1, 0.22, 1);
+  will-change: transform;
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button span {
+  display: block;
+  padding: 16px;
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button i {
+  display: block;
+  font-size: 32px;
+  padding: 8px 16px;
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button.disabled {
+  opacity: 0.25;
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button.selected {
+  background-color: rgba(0, 78, 139, 0.9);
+  border-color: #a4ceef;
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button.selected::before {
+  transform: scale(1, 1);
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button.selected:not(.disabled):hover {
+  background-color: rgba(25, 96, 151, 0.9);
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button.selected:not(.disabled):active {
+  background-color: rgba(12, 86, 145, 0.9);
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button:not(.disabled):hover {
+  background-color: rgba(25, 57, 82, 0.9);
+  border-color: #a4ceef;
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button:not(.disabled):hover::before {
+  transform: scale(1, 1);
+}
+.gui-pane .gui-tab-bar .gui-tab-bar-button:not(.disabled):active {
+  background-color: rgba(13, 47, 72, 0.9);
+}
+.gui-pane .gui-tab-view {
+  display: flex;
+  flex: 1 1 auto;
+  transition: transform 300ms cubic-bezier(0.19, 1, 0.22, 1);
+  will-change: transform;
+  transform: translateX(0%);
+  overflow-y: auto;
+}
+.gui-pane .gui-tab {
+  flex: 0 0 auto;
+}
+.gui-pane .bin {
+  flex: 0 0 auto;
+  display: block;
+}
+.gui-pane .bin.open .bin-title-bar i {
+  transform: rotate(90deg);
+}
+.gui-pane .bin:not(.open) .bin-container,
+.gui-pane .bin:not(.open) .bin-nav {
+  height: 0 !important;
+}
+.gui-pane .bin .bin-title-bar {
+  background-color: rgba(13, 47, 72, 0.9);
+  border-top: 2px solid #a4ceef;
+  padding: 8px 8px;
+  text-transform: uppercase;
+  font-size: 75%;
+  letter-spacing: 0.125em;
+  position: relative;
+  display: block;
+  outline: none;
+}
+.gui-pane .bin .bin-title-bar.hidden {
+  display: none;
+}
+.gui-pane .bin .bin-title-bar::-webkit-details-marker {
+  opacity: 0.5;
+  display: none;
+}
+.gui-pane .bin .bin-title-bar i {
+  display: inline-block;
+  margin-right: 8px;
+  transform: rotate(0deg);
+  transition: transform 300ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+.gui-pane .bin .bin-title-bar:focus {
+  background-color: rgba(25, 57, 82, 0.9);
+}
+.gui-pane .bin-nav {
+  display: flex;
+  font-size: 100%;
+  line-height: 1;
+  height: 24px;
+  background-color: rgba(13, 47, 72, 0.9);
+  transition: height 300ms cubic-bezier(0.19, 1, 0.22, 1);
+  overflow: hidden;
+}
+.gui-pane .bin-nav .bin-nav-button {
+  flex: 0 0 16px;
+  padding: 4px;
+  text-align: center;
+}
+.gui-pane .bin-nav .bin-nav-button.disabled {
+  opacity: 0.25;
+}
+.gui-pane .bin-nav .bin-nav-button:not(.disabled):hover {
+  background-color: rgba(25, 57, 82, 0.9);
+}
+.gui-pane .bin-nav .bin-nav-button:not(.disabled):active {
+  background-color: transparent;
+}
+.gui-pane .bin-nav .bin-nav-info {
+  font-size: 75%;
+  flex: 1 1 auto;
+  padding: 6px 4px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-align: center;
+}
+.gui-pane .bin-container {
+  display: block;
+  transition: height 300ms cubic-bezier(0.19, 1, 0.22, 1);
+  overflow: hidden;
+}
+.gui-pane .bin-container.bin-grid {
+  display: flex;
+  flex-wrap: wrap;
+  overflow: auto;
+}
+.gui-pane .bin-container.bin-grid .bin-item {
+  height: 48px;
+  width: 48px;
+  flex: 0 0 auto;
+  position: relative;
+  transition: all 0.1s ease-out;
+}
+.gui-pane .bin-container.bin-grid .bin-item:not(.disabled):hover {
+  background-color: rgba(25, 57, 82, 0.9);
+}
+.gui-pane .bin-container.bin-grid .bin-item:not(.disabled):active {
+  background-color: rgba(13, 47, 72, 0.9);
+}
+.gui-pane .bin-container.bin-grid .bin-item.selected {
+  background-color: rgba(0, 78, 139, 0.9);
+}
+.gui-pane .bin-container.bin-grid .bin-item.selected:not(.disabled):hover {
+  background-color: rgba(25, 96, 151, 0.9);
+}
+.gui-pane .bin-container.bin-grid .bin-item.selected:not(.disabled):active {
+  background-color: rgba(12, 86, 145, 0.9);
+}
+.gui-pane .bin-container.bin-grid .bin-item.disabled {
+  opacity: 0.25;
+}
+.gui-pane .bin-container.bin-grid .bin-item i {
+  font-style: normal;
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 32px;
+  width: 32px;
+  text-align: center;
+  font-size: 32px;
+  margin: auto;
+}
+.gui-pane .bin-container.bin-collection .bin-item,
+.gui-pane .bin-container.bin-generic .bin-item {
+  transition: all 0.1s ease-out;
+}
+.gui-pane .bin-container.bin-collection .bin-item label,
+.gui-pane .bin-container.bin-generic .bin-item label {
+  display: block;
+  height: 32px;
+  padding: 8px 8px;
+  display: flex;
+  font-size: 100%;
+}
+.gui-pane .bin-container.bin-collection .bin-item label .bin-item-name,
+.gui-pane .bin-container.bin-generic .bin-item label .bin-item-name {
+  display: block;
+  flex: 1 1 auto;
+  padding: 8px;
+}
+.gui-pane .bin-container.bin-collection .bin-item label .bin-item-value,
+.gui-pane .bin-container.bin-generic .bin-item label .bin-item-value {
+  border: none;
+  background: inherit;
+  display: block;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  outline: none;
+}
+.gui-pane .bin-container.bin-collection .bin-item label .bin-item-value[type="text"],
+.gui-pane .bin-container.bin-generic .bin-item label .bin-item-value[type="text"],
+.gui-pane .bin-container.bin-collection .bin-item label .bin-item-value[type="number"],
+.gui-pane .bin-container.bin-generic .bin-item label .bin-item-value[type="number"] {
+  flex: 1 1 20%;
+  text-align: right;
+}
+.gui-pane .bin-container.bin-collection .bin-item label .bin-item-value i,
+.gui-pane .bin-container.bin-generic .bin-item label .bin-item-value i {
+  display: block;
+  font-size: 32px;
+  text-align: center;
+  height: 32px;
+  width: 32px;
+}
+.gui-pane .bin-container.bin-collection .bin-item label button,
+.gui-pane .bin-container.bin-generic .bin-item label button {
+  display: none;
+}
+.gui-pane .bin-container.bin-collection .bin-item label input[type="checkbox"],
+.gui-pane .bin-container.bin-generic .bin-item label input[type="checkbox"],
+.gui-pane .bin-container.bin-collection .bin-item label input[type="radio"],
+.gui-pane .bin-container.bin-generic .bin-item label input[type="radio"] {
+  display: none;
+}
+.gui-pane .bin-container.bin-collection .bin-item label input[type="checkbox"]:not(:checked) ~ i.checked,
+.gui-pane .bin-container.bin-generic .bin-item label input[type="checkbox"]:not(:checked) ~ i.checked,
+.gui-pane .bin-container.bin-collection .bin-item label input[type="radio"]:not(:checked) ~ i.checked,
+.gui-pane .bin-container.bin-generic .bin-item label input[type="radio"]:not(:checked) ~ i.checked {
+  display: none;
+}
+.gui-pane .bin-container.bin-collection .bin-item label input[type="checkbox"]:checked ~ i.unchecked,
+.gui-pane .bin-container.bin-generic .bin-item label input[type="checkbox"]:checked ~ i.unchecked,
+.gui-pane .bin-container.bin-collection .bin-item label input[type="radio"]:checked ~ i.unchecked,
+.gui-pane .bin-container.bin-generic .bin-item label input[type="radio"]:checked ~ i.unchecked {
+  display: none;
+}
+.gui-pane .bin-container.bin-collection .bin-item:not(.disabled):hover,
+.gui-pane .bin-container.bin-generic .bin-item:not(.disabled):hover {
+  background-color: rgba(25, 57, 82, 0.9);
+}
+.gui-pane .bin-container.bin-collection .bin-item:not(.disabled):active,
+.gui-pane .bin-container.bin-generic .bin-item:not(.disabled):active {
+  background-color: rgba(13, 47, 72, 0.9);
+}
+.gui-pane .bin-container.bin-collection .bin-item:not(.disabled):focus,
+.gui-pane .bin-container.bin-generic .bin-item:not(.disabled):focus {
+  background-color: rgba(25, 57, 82, 0.9);
+}
+.gui-pane .bin-container.bin-collection .bin-item.html,
+.gui-pane .bin-container.bin-generic .bin-item.html {
+  padding: 16px;
+}
+.gui-pane .bin-container.bin-collection .bin-item.html div,
+.gui-pane .bin-container.bin-generic .bin-item.html div {
+  padding: 16px;
+}
+.gui-pane .bin-container.bin-collection .bin-item.html h1,
+.gui-pane .bin-container.bin-generic .bin-item.html h1 {
+  font-size: 175%;
+  font-weight: 200;
+  margin: 0;
+}
+.gui-pane .bin-container.bin-collection .bin-item.html p,
+.gui-pane .bin-container.bin-generic .bin-item.html p {
+  font-size: 100%;
+  margin: 8px 0 0 0;
+  line-height: 1.5;
+  hyphens: auto;
+}
+.gui-pane .bin-container.bin-collection .bin-item.html small,
+.gui-pane .bin-container.bin-generic .bin-item.html small {
+  font-size: 75%;
+  color: rgba(255, 255, 255, 0.5);
+}
+.gui-pane .bin-container.bin-collection .bin-item.html hr,
+.gui-pane .bin-container.bin-generic .bin-item.html hr {
+  border: none;
+  border-top: 1px solid #ffffff;
+  opacity: 0.25;
+}
+.gui-pane .bin-container.bin-collection .bin-item.html a:link,
+.gui-pane .bin-container.bin-generic .bin-item.html a:link,
+.gui-pane .bin-container.bin-collection .bin-item.html a:visited,
+.gui-pane .bin-container.bin-generic .bin-item.html a:visited {
+  color: #a4ceef;
+  text-decoration: none;
+}
+.gui-pane .bin-container.bin-collection .bin-item.html a:link:hover,
+.gui-pane .bin-container.bin-generic .bin-item.html a:link:hover,
+.gui-pane .bin-container.bin-collection .bin-item.html a:visited:hover,
+.gui-pane .bin-container.bin-generic .bin-item.html a:visited:hover {
+  color: #ffffff;
+}
+.gui-pane .bin-container .bin-item:not(.canvas).disabled .bin-item-value {
+  opacity: 0.25;
+}
+.gui-pane .bin-container .bin-item.dropdown {
+  position: relative;
+}
+.modal-overlay {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  font-size: 20px;
+  color: #ffffff;
+  align-items: center;
+  font-family: 'Source Sans Pro', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  font-weight: 300;
+  cursor: default;
+  background-color: rgba(0, 98, 135, 0.5);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  animation: fadein 1s 1 linear 0s;
+}
+.modal-overlay .container {
+  width: 100%;
+  background-color: rgba(0, 172, 237, 0.6);
+  animation: slideupin 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0s, fadein 1s 1 linear 0s;
+  overflow: hidden;
+}
+.modal-overlay .container .content {
+  margin: 0 auto;
+  width: 60%;
+  max-height: 75vh;
+  padding: 32px 32px 32px 192px;
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+.modal-overlay .container .content .content-view {
+  flex: 1 1 auto;
+  animation: slideupin 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0.1s, fadein 1.1s 1 linear 0s;
+}
+.modal-overlay .container .content .content-view.scrollable {
+  overflow-y: auto;
+  border: 2px solid #33bdf1;
+  padding: 16px;
+  margin-top: 16px;
+}
+.modal-overlay .container .content.no-icon {
+  padding: 32px;
+}
+.modal-overlay .container .content .icon {
+  width: 128px;
+  height: 128px;
+  display: block;
+  line-height: 1;
+  position: absolute;
+  left: 32px;
+  top: 32px;
+  font-size: 128px;
+  animation: slideupin 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0.05s, fadein 1.05s 1 linear 0s;
+}
+.modal-overlay .container .content h1 {
+  font-weight: 100;
+  line-height: 1;
+  margin: 0 0 16px 0;
+  animation: slideupin 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0.05s, fadein 1.05s 1 linear 0s;
+  flex: 0 0 auto;
+}
+.modal-overlay .container .content h1.x-large {
+  font-size: 300%;
+}
+.modal-overlay .container .content h1.large {
+  font-size: 250%;
+}
+.modal-overlay .container .content h1.medium {
+  font-size: 200%;
+}
+.modal-overlay .container .content h1.small {
+  font-size: 150%;
+}
+.modal-overlay .container .content h1.x-small {
+  font-size: 100%;
+}
+.modal-overlay .container .content p {
+  line-height: 1.5;
+  margin-top: 0;
+  color: #ffffff;
+}
+.modal-overlay .container .content p:last-child {
+  margin-bottom: 0;
+}
+.modal-overlay .container .content a:link,
+.modal-overlay .container .content a:visited {
+  color: #80d6f6;
+  text-decoration: none;
+  transition: all 0.1s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.modal-overlay .container .content a:link:hover,
+.modal-overlay .container .content a:visited:hover {
+  color: #ffffff;
+}
+.modal-overlay .container .content .actions {
+  animation: slideupin 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0.2s, fadein 1.2s 1 linear 0s;
+  margin-top: 16px;
+  align-self: flex-end;
+  flex: 0 0 auto;
+}
+.modal-overlay .container .content .actions a {
+  display: inline-block;
+  cursor: default;
+  padding: 8px 32px;
+  text-align: center;
+  min-width: 64px;
+  border: 2px solid #33bdf1;
+  margin-left: 16px;
+  color: #cceefb;
+  text-decoration: none;
+  transition: all 0.1s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.modal-overlay .container .content .actions a:hover,
+.modal-overlay .container .content .actions a:focus {
+  color: #ffffff;
+  border: 2px solid #99def8;
+}
+.modal-overlay .container .content .actions a:active {
+  background: #ffffff;
+  color: #00aced;
+  border-color: #ffffff;
+}
+.modal-overlay .container .content .actions a.soft {
+  border: none;
+  background: none;
+}
+.modal-overlay .container .content .actions a.soft:active {
+  color: #66cdf4;
+}
+.modal-overlay .container .content .actions a.default {
+  color: #ffffff;
+  border-color: transparent;
+  background: #33bdf1;
+}
+.modal-overlay .container .content .actions a.default:hover {
+  border-color: #ffffff;
+}
+.modal-overlay .container .content .actions a.default:active {
+  background: #ffffff;
+  color: #00aced;
+}
+.modal-overlay.hidden {
+  animation: fadeout 1s 1 linear 0s;
+}
+.modal-overlay.hidden .container {
+  animation: slideupout 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0s, fadeout 1s 1 linear 0s;
+}
+.modal-overlay.hidden .container h1,
+.modal-overlay.hidden .container .icon {
+  animation: slideupout 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0.05s, fadeout 1.05s 1 linear 0s;
+}
+.modal-overlay.hidden .container .content-view {
+  animation: slideupout 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0.1s, fadeout 1.1s 1 linear 0s;
+}
+.modal-overlay.hidden .container .actions {
+  animation: slideupout 1s 1 cubic-bezier(0.19, 1, 0.22, 1) 0.2s, fadeout 1.2s 1 linear 0s;
+}
+@keyframes fadein {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes fadeout {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes slideupin {
+  0% {
+    transform: translate3D(0, 64px, 0);
+  }
+  100% {
+    transform: translate3D(0, 0, 0);
+  }
+}
+@keyframes slideupout {
+  0% {
+    transform: translate3D(0, 0, 0);
+  }
+  100% {
+    transform: translate3D(0, -64px, 0);
+  }
+}
+body {
+  background: #000000;
+  margin: 0;
+}
+.playground {
+  display: flex;
+  background: #000000;
+  transition: filter 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  transition: -webkit-filter 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.playground canvas[data-cursor="default"] {
+  cursor: default;
+}
+.playground canvas[data-cursor="crosshair"] {
+  cursor: crosshair;
+}
+.playground canvas[data-cursor="pointer"] {
+  cursor: pointer;
+}
+.playground canvas[data-cursor="move"] {
+  cursor: move;
+}
+.playground canvas[data-cursor="zoom-in"] {
+  cursor: zoom-in;
+  cursor: -webkit-zoom-in;
+  cursor: -moz-zoom-in;
+}
+.playground canvas[data-cursor="zoom-out"] {
+  cursor: zoom-out;
+  cursor: -webkit-zoom-out;
+  cursor: -moz-zoom-out;
+}
+.playground canvas[data-cursor="grab"] {
+  cursor: grab;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+}
+.playground canvas[data-cursor="grabbing"] {
+  cursor: grabbing;
+  cursor: -webkit-grabbing;
+  cursor: -moz-grabbing;
+}
+.playground canvas[data-cursor="not-allowed"] {
+  cursor: not-allowed;
+}
+.playground.defocus {
+  filter: blur(8px);
+  -webkit-filter: blur(8px);
+}
+
+/*# sourceMappingURL=styles.css.map*/
